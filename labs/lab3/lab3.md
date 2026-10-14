@@ -1,563 +1,691 @@
 ---
 layout: lab
-title: "Práctica 3: CAMBIAR_AQUI_NOMBRE_DE_LA_PRACTICA"
+title: "Práctica 3: Migrar el estado local a Google Cloud Storage (GCS) con locking"
 permalink: /lab3/lab3/
 images_base: /labs/lab3/img
-duration: "## minutos"
+duration: "45 minutos"
 objective:
-  - OBJETIVO_DE_LA_PRACTICA
+  - "Crear un estado local con una VPC en GCP, migrarlo al backend GCS y verificar conservación del estado, versionado de objetos y bloqueo de operaciones concurrentes."
 prerequisites:
-  - PREREQUISITO_1
-  - PREREQUISITO_2
-  - PREREQUISITO_3
-  - PREREQUISITO_4
-  - PREREQUISITO_X
+  - "Prácticas 1 y 2 realizadas; carpeta terraform-gcp-intermediate creada en el Escritorio de Windows."
+  - "VM Windows con VS Code, Git Bash integrado, Terraform y Google Cloud CLI instalados."
+  - "Proyecto GCP con facturación, Compute Engine API y Cloud Storage API habilitadas y permisos para administrar VPC y buckets."
+  - "Cuenta de gcloud y credenciales ADC configuradas; permisos de lectura/escritura y eliminación de objetos en el bucket creado."
 introduction:
-  - INTRODUCCION_DE_LA_PRACTICA_BREVE_RESUMEN_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  - "Desplegarás una VPC con estado local, crearás un bucket de Cloud Storage con Object Versioning y migrarás el estado existente mediante terraform init -migrate-state. Comprobarás versiones y locking con dos terminales y limpiarás los recursos sin dejar un backend apuntando a un bucket eliminado."
 slug: lab3
 lab_number: 3
 final_result: >
-  RESULTADO_FINAL_ESPERADO_DE_LA_PRACTICA_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  Habrás creado una VPC real con estado local; migrado su estado a un bucket GCS versionado; comprobado que Terraform sigue administrando la misma infraestructura sin recrearla; observado versiones y bloqueo del estado; y retirado los recursos de forma controlada, conservando el código del laboratorio.
 notes:
-  - NOTAS_CONSIDERACIONES_ADICIONALES
-  - NOTAS_CONSIDERACIONES_ADICIONALES
+  - "Todos los comandos de terminal se ejecutan en Git Bash integrado en VS Code, dentro de terraform-gcp-intermediate/lab3, salvo cuando se indiquen dos terminales."
+  - "El backend GCS necesita un bucket ya existente y credenciales ADC válidas. Su configuración no admite referencias var.* ni valores local.*."
+  - "Conserva el nombre de bucket en .lab3-bucket.env; nunca subas estados, planes o credenciales a Git."
+  - "El archivo terraform.tfstate puede contener información sensible; no lo publiques y elimina sus copias temporales después del laboratorio."
+  - "La estimación de 30 minutos supone permisos y APIs preparados; despliegue, cambios de estado y limpieza pueden ampliar el tiempo."
 references:
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://developer.hashicorp.com/terraform
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://learn.microsoft.com/es-es/cli/azure/
+  - text: "Terraform - Backend GCS y soporte de locking"
+    url: https://developer.hashicorp.com/terraform/language/backend/gcs
+  - text: "Terraform - Migración y configuración de backends"
+    url: https://developer.hashicorp.com/terraform/language/backend
+  - text: "Terraform - State Locking"
+    url: https://developer.hashicorp.com/terraform/language/state/locking
+  - text: "Google Cloud - Object Versioning"
+    url: https://cloud.google.com/storage/docs/using-object-versioning
+  - text: "gcloud storage rm y limpieza de versiones"
+    url: https://cloud.google.com/sdk/gcloud/reference/storage/rm
+  - text: "Google Provider - google_compute_network"
+    url: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network
 prev: /lab2/lab2/
 next: /lab4/lab4/
 ---
 
 ---
 
-<!-- Aquí comienzan las instrucciones paso a paso de la práctica -->
+## 🔎 Tarea 1. Preparar lab3 y generar un estado local real — 8 min
 
-## 🔎 Tarea 1. NOMBRE DE LA TAREA — ## min
+Prepararás un estado real desde el backend local para demostrar una migración con recursos existentes.
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+### Tarea 1.1. Crear la carpeta y verificar herramientas
 
-### Tarea 1.1. NOMBRE DE_LA_SUBTAREA
+Crear un directorio exclusivo de esta práctica y confirmar que VS Code utiliza Git Bash con Terraform y gcloud disponibles.
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+- {% include step_label.html %} Abre **Terminal > New Terminal**, selecciona **Git Bash** y crea el directorio `lab3` en el Escritorio.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  > **Nota:** La ruta real puede estar redirigida a OneDrive; el comando consulta la ubicación de Windows.
   {: .lab-note .info .compact}
 
-  {% include step_image.html %}
-
   ```bash
-  CODIGO_DEL_PASO_1
+  DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
+  DESKTOP="$(cygpath -u "$DESKTOP_WIN")"
+  mkdir -p "$DESKTOP/terraform-gcp-intermediate/lab3"
+  cd "$DESKTOP/terraform-gcp-intermediate/lab3"
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** El directorio actual termina en `/terraform-gcp-intermediate/lab3`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Comprueba las herramientas y el proyecto activo desde **Git Bash**.
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
+  > **Nota:** Si falta ADC, ejecuta `gcloud auth application-default login` y regresa a esta carpeta.
+  {: .lab-note .info .compact}
 
   ```bash
-  CODIGO_DEL_PASO_2
+  terraform version
+  gcloud auth list --filter="status:ACTIVE" --format="value(account)"
+  gcloud config get-value project
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** Terraform muestra su versión, y gcloud la cuenta y el proyecto correctos.
   {: .lab-note .output .compact}
 
-### Tarea 1.2. NOMBRE_DE_LA_SUBTAREA
+### Tarea 1.2. Definir el proveedor y una VPC con configuración local
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Declarar una sola VPC sencilla para disponer de un recurso real administrado inicialmente con estado local.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} En **Git Bash**, crea los archivos de configuración y exclusiones locales.
 
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+  > **Nota:** Deja `backend.tf` sin crear por ahora; así Terraform usará el backend local durante el primer despliegue.
+  {: .lab-note .info .compact}
 
   ```bash
-  CODIGO_DEL_PASO_3
+  touch providers.tf main.tf variables.tf terraform.tfvars outputs.tf .gitignore
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** Aparecen los archivos vacíos en el explorador de VS Code.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En **VS Code**, pega el proveedor Google y la restricción de versiones en `lab3/providers.tf`.
+
+  > **Nota:** Si el proveedor autorizado en el curso tiene otra versión, ajusta esta restricción antes de ejecutar `init`.
+  {: .lab-note .info .compact}
+
+  ```hcl
+  terraform {
+    required_version = ">= 1.5.0"
+    required_providers {
+      google = {
+        source  = "hashicorp/google"
+        version = ">= 5.0, < 8.0"
+      }
+    }
+  }
+  
+  provider "google" {
+    project = var.project_id
+    region  = var.region
+  }
+  ```
+
+  > **Salida esperada:** El archivo declara el provider `hashicorp/google` y utiliza variables del módulo raíz.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `lab3/variables.tf`, declara `project_id`, `region` y la variable `network_name` según los requisitos.
+
+  > **Nota:** **Completa `network_name` debajo de `region`**: debe ser de tipo `string`, describir el nombre de la VPC y no tener valor predeterminado. Referencia: https://developer.hashicorp.com/terraform/language/values/variables
+  {: .lab-note .info .compact}
+
+  ```hcl
+  variable "project_id" {
+    description = "ID del proyecto Google Cloud"
+    type        = string
+  }
+
+  variable "region" {
+    description = "Región de GCP"
+    type        = string
+    default     = "us-central1"
+  }
+
+  variable "network_name" {
+    description = "Red de GCP"
+    type        = string
+  }
+  ```
+
+  > **Salida esperada:** Quedan declaradas tres variables; `network_name` será proporcionada mediante `terraform.tfvars`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `lab3/main.tf`, define el recurso VPC con red personalizada y una descripción inicial.
+
+  > **Nota:** Conserva el recurso `google_compute_network.vpc`: la descripción se modificará después para probar Object Versioning.
+  {: .lab-note .info .compact}
+
+  ```hcl
+  resource "google_compute_network" "vpc" {
+    name                    = var.network_name
+    auto_create_subnetworks = false
+    description             = "Estado local inicial - laboratorio 3"
+  }
+  ```
+
+  > **Salida esperada:** La VPC depende de `var.network_name` y no crea subredes automáticas.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `lab3/terraform.tfvars`, configura el proyecto real y el nombre único de la red.
+
+  > **Nota:** Sustituye **TU_PROJECT_ID** por el resultado de `gcloud config get-value project` antes de continuar.
+  {: .lab-note .info .compact}
+
+  ```hcl
+  project_id   = "TU_PROJECT_ID"
+  region       = "us-central1"
+  network_name = "lab3-vpc-estado-remoto"
+  ```
+
+  > **Salida esperada:** El archivo contiene el ID real del proyecto, la región y el nombre de VPC.
+  {: .lab-note .output .compact}
+
+### Tarea 1.3. Inicializar, desplegar y comprobar el estado local
+
+Ejecutar por primera vez Terraform sin backend remoto y comprobar que el archivo de estado contiene una VPC creada.
+
+- {% include step_label.html %} En `lab3/outputs.tf`, expón el identificador y el nombre de la VPC.
+
+  > **Nota:** Guarda todos los archivos con **Ctrl + S** antes de comenzar el flujo Terraform.
+  {: .lab-note .info .compact}
+
+  ```hcl
+  output "vpc_id" {
+    value = google_compute_network.vpc.id
+  }
+  
+  output "vpc_name" {
+    value = google_compute_network.vpc.name
+  }
+  ```
+
+  > **Salida esperada:** Los outputs referencian el recurso declarado en `main.tf`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `.gitignore`, excluye estados, planes, credenciales y el archivo local con el bucket.
+
+  > **Nota:** No elimines el archivo `.terraform.lock.hcl` del directorio; permite reproducir la selección de proveedor.
+  {: .lab-note .info .compact}
+
+  ```gitignore
+  .terraform/
+  *.tfstate
+  *.tfstate.*
+  *.tfplan
+  .lab3-bucket.env
+  .lab3-vpc-*.txt
+  .lab3-state-*.txt
+  crash.log
+  ```
+
+  > **Salida esperada:** Git no incorporará estados ni el archivo de variables de entorno del bucket.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En **Git Bash**, inicializa Terraform y verifica el formato y la configuración.
+
+  > **Nota:** No debe existir aún un bloque `backend "gcs"` dentro del directorio.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Terraform informa que la configuración es válida y prepara el backend local.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Revisa el plan y despliega únicamente la VPC del laboratorio.
+
+  > **Nota:** Confirma con `yes` solo si el plan muestra **1 recurso para crear**, sin cambios ajenos al laboratorio.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Aparece `Apply complete! Resources: 1 added` y el output con el nombre de VPC.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Confirma que `terraform.tfstate` existe y contiene la VPC creada.
+
+  > **Nota:** **No copies ni publiques** el contenido completo de `terraform.tfstate`; puede incluir datos internos o sensibles.
+  {: .lab-note .info .compact}
+
+  ```bash
+  test -f terraform.tfstate && echo "OK: estado local existente"
+  terraform state list
+  terraform output vpc_name
+  ```
+
+  > **Salida esperada:** La lista contiene `google_compute_network.vpc` y el output `lab3-vpc-estado-remoto`.
   {: .lab-note .output .compact}
 
 {% assign results = site.data.task-results[page.slug].results %}
 {% capture r1 %}{{ results[0] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r1 %}
 
-{% include support-prompt.html task="tarea1" %}
-
 ---
 
-## ☁️ Tarea 2. NOMBRE DE LA TAREA — ## min
+## ☁️ Tarea 2. Crear un bucket GCS con versionado habilitado — 5 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Crearás un bucket exclusivo con acceso uniforme y Object Versioning antes de migrar el archivo tfstate.
 
-### Tarea 2.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 2.1. Elegir un nombre persistente y crear el bucket
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Preparar un bucket nuevo y exclusivo para el estado de la práctica; guardar su nombre para las sesiones posteriores.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} En **Git Bash**, identifica el proyecto y crea un nombre de bucket con sufijo aleatorio.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  > **Nota:** El nombre del bucket debe ser globalmente único, en minúsculas y sin espacios.
   {: .lab-note .info .compact}
 
   ```bash
-  CODIGO_DEL_PASO_1
+  PROJECT_ID="$(gcloud config get-value project)"
+  BUCKET_NAME="tfstate-lab3-${PROJECT_ID,,}-$(date +%s)-$RANDOM"
+  BUCKET_LOCATION="us-central1"
+  PREFIX="terraform/state/lab3"
+  printf "Bucket: gs://%s\n" "$BUCKET_NAME"
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** La terminal muestra el identificador del nuevo bucket.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Guarda las variables en `lab3/.lab3-bucket.env` para poder recuperarlas si cierras VS Code.
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
+  > **Nota:** Este archivo está excluido en `.gitignore`. No contiene credenciales; conserva el nombre exacto del bucket.
+  {: .lab-note .info .compact}
 
   ```bash
-  CODIGO_DEL_PASO_2
+  printf "export BUCKET_NAME=%q\nexport BUCKET_LOCATION=%q\nexport PREFIX=%q\n" "$BUCKET_NAME" "$BUCKET_LOCATION" "$PREFIX" > .lab3-bucket.env
+  cat .lab3-bucket.env
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** El archivo contiene tres declaraciones `export` y puede cargarse con `source .lab3-bucket.env`. 
   {: .lab-note .output .compact}
 
-### Tarea 2.2. NOMBRE_DE_LA_SUBTAREA
+- {% include step_label.html %} En **Git Bash**, crea el bucket con acceso uniforme y bloqueo de acceso público preventivo.
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+  > **Nota:** Si la organización impone restricciones de ubicación, consulta al instructor antes de cambiar `us-central1`.
+  {: .lab-note .info .compact}
 
   ```bash
-  CODIGO_DEL_PASO_3
+  gcloud storage buckets create "gs://$BUCKET_NAME" --project="$PROJECT_ID" --location="$BUCKET_LOCATION" --uniform-bucket-level-access --public-access-prevention
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** El bucket es creado sin errores y puede consultarse en Cloud Storage.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Verifica los detalles del bucket que acabas de crear.
+
+  > **Nota:** No utilices buckets existentes que pertenezcan a otras prácticas o participantes.
+  {: .lab-note .info .compact}
+
+  ```bash
+  gcloud storage buckets describe "gs://$BUCKET_NAME" --format="yaml(name,location,iamConfiguration)"
+  ```
+
+  > **Salida esperada:** Aparece la ubicación `US-CENTRAL1` y el acceso uniforme habilitado.
+  {: .lab-note .output .compact}
+
+### Tarea 2.2. Habilitar Object Versioning y validar las propiedades
+
+Activar la conservación de generaciones de objeto para recuperar versiones anteriores del estado en caso de error.
+
+- {% include step_label.html %} Habilita Object Versioning desde **Git Bash**.
+
+  > **Nota:** El versionado conserva generaciones previas, pero puede generar costos de almacenamiento si no se eliminan.
+  {: .lab-note .info .compact}
+
+  ```bash
+  gsutil versioning set on "gs://$BUCKET_NAME"
+  ```
+
+  > **Salida esperada:** La actualización del bucket termina correctamente.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Consulta nuevamente las propiedades para verificar que `versioning` esté habilitado.
+
+  > **Nota:** Si aparece `enabled: true`, el bucket está listo para recibir el estado de Terraform.
+  {: .lab-note .info .compact}
+
+  ```bash
+  gsutil versioning get "gs://$BUCKET_NAME"
+  ```
+
+  > **Salida esperada:** La salida muestra `Enabled`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Comprueba que el bucket se encuentra vacío antes de migrar el estado.
+
+  > **Nota:** Una salida vacía o un aviso de cero objetos es normal antes de migrar.
+  {: .lab-note .info .compact}
+
+  ```bash
+  gcloud storage ls "gs://$BUCKET_NAME/"
+  ```
+
+  > **Salida esperada:** Todavía no existe un archivo `default.tfstate` en el bucket.
   {: .lab-note .output .compact}
 
 {% capture r2 %}{{ results[1] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r2 %}
 
-{% include support-prompt.html task="tarea2" %}
-
 ---
 
-## 🚀 Tarea 3. NOMBRE DE LA TAREA — ## min
+## 🔄 Tarea 3. Configurar el backend remoto y migrar el estado — 6 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Configurarás el backend GCS y migrarás el estado sin recrear la VPC desplegada.
 
-### Tarea 3.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 3.1. Configurar backend.tf y conservar una referencia del estado
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Preparar la conexión al bucket sin redefinir variables dentro del bloque backend ni perder el estado ya creado.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} En **Git Bash**, recupera el nombre del bucket guardado en el archivo local.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  > **Nota:** El bucket debe coincidir con el creado en la tarea anterior.
   {: .lab-note .info .compact}
 
   ```bash
-  CODIGO_DEL_PASO_1
+  source .lab3-bucket.env
+  printf "Destino: gs://%s/%s\n" "$BUCKET_NAME" "$PREFIX"
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** La terminal muestra la ruta de destino del backend remoto.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Antes de la migración, registra los identificadores del estado y de la VPC en archivos temporales.
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+  > **Nota:** Estos archivos son solo referencias locales de validación; no los subas a Git.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform output -raw vpc_id > .lab3-vpc-before.txt
+  terraform state list > .lab3-state-before.txt
+  ```
+
+  > **Salida esperada:** Los archivos muestran el identificador de la VPC y el recurso Terraform administrado.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En **VS Code**, abre `lab3/backend.tf` (créalo si no existe) y configura un backend GCS.
+
+  > **Importante:** **Construcción dirigida:** agrega un bloque `terraform` con `backend "gcs"` que contenga `bucket` con el nombre **literal** mostrado en Git Bash y `prefix = "terraform/state/lab3"`. No uses `var.*`. Documentación: https://developer.hashicorp.com/terraform/language/backend/gcs
   {: .lab-note .important .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** `backend.tf` contiene un único backend GCS, con nombre real de bucket y prefijo válido.
   {: .lab-note .output .compact}
 
-### Tarea 3.2. NOMBRE_DE_LA_SUBTAREA
+### Tarea 3.2. Migrar y comprobar que el estado apunta a la misma VPC
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Realizar la migración explícita y demostrar que se conserva el recurso existente sin crear una segunda red.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Ejecuta el comando de migración en **Git Bash**, desde `lab3`.
 
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+  > **Nota:** Si Terraform solicita copiar el estado existente, responde `yes`; no uses `-reconfigure`, que no migra el estado.
+  {: .lab-note .info .compact}
 
   ```bash
-  CODIGO_DEL_PASO_3
+  terraform init -migrate-state
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** Terraform termina con `Successfully configured the backend "gcs"!`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Consulta los recursos administrados después de la migración.
+
+  > **Nota:** No ejecutes `terraform apply` todavía: primero confirmaremos que el recurso sigue siendo el original.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform state list
+  terraform output -raw vpc_id
+  ```
+
+  > **Salida esperada:** Continúa apareciendo `google_compute_network.vpc` y el identificador de VPC esperado.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Comprueba que el identificador del recurso es exactamente el mismo antes y después.
+
+  > **Nota:** `diff` sin diferencias prueba que no se recreó el recurso durante la migración.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform output -raw vpc_id > .lab3-vpc-after.txt
+  diff -u .lab3-vpc-before.txt .lab3-vpc-after.txt && echo "OK: misma VPC"
+  ```
+
+  > **Salida esperada:** Aparece `OK: misma VPC`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Ejecuta un plan de control para verificar que Terraform no quiere recrear la infraestructura.
+
+  > **Nota:** Espera `No changes. Your infrastructure matches the configuration.`. Si aparecen cambios, detente y revisa.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform plan
+  ```
+
+  > **Salida esperada:** El plan no propone crear, modificar ni destruir recursos.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En Git Bash, localiza el objeto de estado del workspace `default` dentro de GCS.
+
+  > **Nota:** El backend GCS utiliza `default.tfstate` para el workspace `default`.
+  {: .lab-note .info .compact}
+
+  ```bash
+  gcloud storage ls "gs://$BUCKET_NAME/$PREFIX/"
+  ```
+
+  > **Salida esperada:** La ruta del objeto remoto incluye `terraform/state/lab3/default.tfstate`.
   {: .lab-note .output .compact}
 
 {% capture r3 %}{{ results[2] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r3 %}
 
-{% include support-prompt.html task="tarea3" %}
+---
+
+## 🔐 Tarea 4. Verificar versiones del estado y bloqueo de operaciones — 7 min
+
+Comprobarás generaciones de estado y una condición de bloqueo entre dos terminales Git Bash.
+
+### Tarea 4.1. Consultar el estado remoto y las generaciones de objeto
+
+Observar el archivo `default.tfstate` y registrar su historial de generaciones antes y después de un cambio aplicado.
+
+- {% include step_label.html %} Lista las generaciones disponibles de `default.tfstate` desde Git Bash.
+
+  > **Nota:** No compartas el contenido del estado: basta con visualizar nombre, tamaños y generaciones.
+  {: .lab-note .info .compact}
+
+  ```bash
+  STATE_OBJECT="gs://$BUCKET_NAME/$PREFIX/default.tfstate"
+  gcloud storage ls --all-versions --long "$STATE_OBJECT"
+  ```
+
+  > **Salida esperada:** Aparece al menos una generación del archivo `default.tfstate`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `lab3/main.tf`, cambia solamente el texto de `description` de la VPC, manteniendo el resto igual.
+
+  > **Importante:** **Construcción dirigida:** dentro de `resource "google_compute_network" "vpc"`, reemplaza el valor de `description` por `Estado remoto versionado - laboratorio 3`. No cambies `name` ni `auto_create_subnetworks`. Documentación: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network
+  {: .lab-note .important .compact}
+
+  > **Salida esperada:** El archivo conserva la misma VPC y únicamente presenta una descripción nueva.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Verifica con Terraform que la descripción se actualizará sin reemplazar la VPC.
+
+  > **Nota:** El resumen esperado es `Plan: 0 to add, 1 to change, 0 to destroy` si la API admite la actualización.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform fmt
+  terraform validate
+  terraform plan
+  ```
+
+  > **Salida esperada:** El plan muestra una actualización in-place de la descripción; no se crea una VPC adicional.
+  {: .lab-note .output .compact}
+
+### Tarea 4.2. Comprobar versionado tras un cambio real
+
+Realizar una modificación segura sobre la VPC y comprobar que Cloud Storage conserva la generación anterior del estado.
+
+- {% include step_label.html %} Aplica la actualización y confirma de manera interactiva.
+
+  > **Nota:** Responde `yes` solo si el plan no muestra un reemplazo ni recursos adicionales.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform apply
+  ```
+
+  > **Salida esperada:** Terraform termina con una VPC modificada y sin destrucciones.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Consulta otra vez las generaciones del objeto de estado.
+
+  > **Nota:** El versionado es del objeto en GCS; `terraform plan` por sí solo no garantiza una nueva generación.
+  {: .lab-note .info .compact}
+
+  ```bash
+  gcloud storage ls --all-versions --long "$STATE_OBJECT"
+  ```
+
+  > **Salida esperada:** Deben existir varias generaciones del mismo objeto de estado.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Comprueba que Terraform sigue gestionando un único recurso y que el estado está actualizado.
+
+  > **Nota:** Si la actualización se aplicó correctamente, el segundo plan no debe proponer cambios.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform state list
+  terraform plan
+  ```
+
+  > **Salida esperada:** Hay un solo recurso `google_compute_network.vpc` y el plan está sin cambios.
+  {: .lab-note .output .compact}
+
+### Tarea 4.3. Demostrar locking sin alterar el estado manualmente
+
+Mantener una sesión interactiva que retiene el lock mientras una segunda terminal intenta planificar el mismo estado.
+
+- {% include step_label.html %} Abre una **Terminal A** en VS Code, entra en `lab3`, realiza una modificación menor en la descripción o etiquetas de tu archivo main.tf y ejecuta `terraform apply`.
+
+  > **Importante:** **Importante:** Deja abierta la terminal en la pantalla de confirmación que solicita escribir yes/no; no escribas nada ni canceles el comando hasta terminar la prueba. Esto mantendrá el bloqueo activo en Google Cloud Storage durante la sesión.
+  {: .lab-note .important .compact}
+
+  > **Salida esperada:**  La Terminal A se pausa y muestra el prompt de confirmación interactivo de **Terraform (Enter a value:).**
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Abre una **Terminal B** en el **mismo directorio lab3** y lanza un plan sin espera de locking.
+
+  > **Nota:** Si la consola A retiene el lock, la Terminal B debe mostrar `Error acquiring the state lock` y el objeto `.tflock`. No uses `-lock=false`.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform plan -lock-timeout=0s
+  ```
+
+  > **Salida esperada:** Se observa el bloqueo concurrente; si no ocurre, no afirmes que la prueba lo demostró.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En la **Terminal A**, escribe `no` para cancelar el apply de forma segura y repite el plan desde la **Terminal B**.
+
+  > **Nota:** Ejecuta `no` **en el prompt de confirmación de terraform**, no cierres la shell de VS Code. Esto liberará automáticamente el candado en tu bucket de GCS. Si el bloqueo persiste, revisa sesiones abiertas antes de actuar.
+  {: .lab-note .info .compact}
+
+  ```bash
+  terraform plan
+  ```
+
+  > **Salida esperada:** Una vez liberado el lock, Terraform ejecuta el plan y muestra `No changes`.
+  {: .lab-note .output .compact}
+
+{% capture r4 %}{{ results[3] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r4 %}
 
 ---
 
-<!--
-======================================================================
-GUÍA DE USO DE LA PLANTILLA DEL LABORATORIO
-======================================================================
+## 🧹 Tarea 5. Destruir la VPC y retirar el bucket remoto — 4 min
 
-Este archivo es una plantilla base. Las 3 tareas incluidas sirven únicamente
-como referencia de estructura. La práctica final puede tener más o menos
-tareas, subtareas y pasos según lo requiera el contenido.
+Destruirás la infraestructura, desconectarás el backend y eliminarás exclusivamente el bucket de esta práctica.
 
----------------------------------------------------------------------
-1. FRONT MATTER
----------------------------------------------------------------------
+### Tarea 5.1. Destruir infraestructura y verificar la ausencia de recursos
 
-Completa los campos de la cabecera YAML sin cambiar sus nombres:
+Liberar la VPC creada para la práctica manteniendo el backend GCS disponible durante todo el proceso de destrucción.
 
-- title:
-    Nombre completo de la práctica.
+- {% include step_label.html %} Desde Git Bash, confirma el proyecto y el recurso exacto que vas a eliminar.
 
-- duration:
-    Duración total estimada de la práctica en minutos.
-
-- objective:
-    Objetivo principal de aprendizaje de la práctica.
-
-- prerequisites:
-    Requisitos previos necesarios para realizarla.
-    Agrega o elimina elementos según corresponda.
-
-- introduction:
-    Introducción breve de la práctica. Se recomienda un solo párrafo.
-
-- final_result:
-    Resultado final esperado al terminar toda la práctica.
-    Se recomienda describirlo en un solo párrafo.
-
-- notes:
-    Consideraciones generales que apliquen a toda la práctica.
-
-- references:
-    Documentación oficial o referencias técnicas relevantes.
-    Mantén la estructura:
-
-      - text: DESCRIPCION
-        url: URL
-
-- permalink, images_base, slug y lab_number:
-    Son generados automáticamente. No deben modificarse salvo que cambie
-    deliberadamente la estructura del sitio.
-
-- prev y next:
-    Son generados automáticamente por este script para navegación entre labs.
-
----------------------------------------------------------------------
-2. ESTRUCTURA GENERAL DE UNA TAREA
----------------------------------------------------------------------
-
-Cada tarea debe seguir esta estructura:
-
-  ## ICONO Tarea N. NOMBRE DE LA TAREA — ## min
-
-  DESCRIPCION_DE_LA_TAREA.
-
-  ### Tarea N.1. NOMBRE_DE_LA_SUBTAREA
-
-  DESCRIPCION_DE_LA_SUBTAREA.
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-La descripción de la tarea debe explicar qué se realizará y para qué.
-Como referencia, se recomiendan aproximadamente 200-250 caracteres.
-
-La descripción de cada subtarea debe indicar claramente el objetivo de esa
-sección. Como referencia, se recomiendan aproximadamente 120-150 caracteres.
-
----------------------------------------------------------------------
-3. TAREAS
----------------------------------------------------------------------
-
-Las tareas principales se numeran de forma consecutiva:
-
-  Tarea 1
-  Tarea 2
-  Tarea 3
-  Tarea 4
-  ...
-
-La plantilla incluye solamente 3 tareas como ejemplo.
-
-Si la práctica necesita más tareas:
-
-1) Duplica COMPLETA una sección de tarea existente.
-2) Cambia el encabezado de la tarea.
-3) Cambia la numeración de todas sus subtareas.
-4) Cambia el resultado asociado results[N].
-5) Cambia el identificador de support-prompt.html.
-
-Ejemplo para una Tarea 4:
-
-  ## 🔧 Tarea 4. NOMBRE DE LA TAREA — ## min
-
-Al finalizar debe contener:
-
-  {% capture r4 %}{{ results[3] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r4 %}
-
-  {% include support-prompt.html task="tarea4" %}
-
-IMPORTANTE:
-El arreglo results utiliza índice base 0:
-
-  Tarea 1 -> results[0]
-  Tarea 2 -> results[1]
-  Tarea 3 -> results[2]
-  Tarea 4 -> results[3]
-  Tarea 5 -> results[4]
-  Tarea 6 -> results[5]
-  Tarea N -> results[N-1]
-
----------------------------------------------------------------------
-4. SUBTAREAS
----------------------------------------------------------------------
-
-Cada tarea puede contener tantas subtareas como sea necesario.
-La numeración debe conservar la relación con la tarea principal.
-
-Ejemplo para la Tarea 4:
-
-  ### Tarea 4.1. PRIMERA SUBTAREA
-  ### Tarea 4.2. SEGUNDA SUBTAREA
-  ### Tarea 4.3. TERCERA SUBTAREA
-  ### Tarea 4.4. CUARTA SUBTAREA
-
-No existe un límite fijo de subtareas.
-
----------------------------------------------------------------------
-5. PASOS
----------------------------------------------------------------------
-
-Cada acción que debe realizar el participante debe escribirse como un paso
-independiente utilizando:
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-No combines varias acciones importantes dentro de un único paso cuando puedan
-realizarse o validarse por separado.
-
-Cada paso debe contener, cuando corresponda:
-
-- Una descripción clara de la acción.
-- Una Nota, Importante o Advertencia.
-- Una imagen de referencia.
-- Un bloque de código o comando.
-- Una salida esperada o criterio de validación.
-
----------------------------------------------------------------------
-6. NOTAS, IMPORTANTES Y ADVERTENCIAS
----------------------------------------------------------------------
-
-Usa los bloques obligatoriamente aportando informacion util en cada paso.
-Nota, Advertencia, Importante, Siempre ponerla debajo del texto del paso.
-Salida esperada, siempr ponerla al finalizar el paso y antes del siguiente paso.
-
-Nota informativa:
-
-  > **Nota:** TEXTO.
+  > **Nota:** No ejecutes destrucción si la lista contiene recursos que no pertenecen a esta práctica.
   {: .lab-note .info .compact}
 
-Consideración importante:
-
-  > **Importante:** TEXTO.
-  {: .lab-note .important .compact}
-
-Advertencia:
-
-  > **Advertencia:** TEXTO.
-  {: .lab-note .warning .compact}
-
-Salida esperada:
-
-  > **Salida esperada:** TEXTO.
-  {: .lab-note .output .compact}
-
-No es obligatorio incluir los tres tipos de nota en todos los pasos.
-Utiliza solamente el que corresponda al contexto.
-
----------------------------------------------------------------------
-7. BLOQUES DE CÓDIGO
----------------------------------------------------------------------
-
-Cada comando o fragmento que el participante deba ejecutar debe tener su
-propio bloque de código.
-
-Ejemplo Bash:
-
   ```bash
-  COMANDO
+  gcloud config get-value project
+  terraform state list
   ```
 
-Cambia el identificador del lenguaje cuando corresponda, por ejemplo:
-
-  ```yaml
-  ```json
-  ```sql
-  ```powershell
-  ```python
-
-Evita colocar varios pasos independientes dentro de un único bloque de código
-si deben ejecutarse y validarse por separado.
-
----------------------------------------------------------------------
-8. SALIDA ESPERADA
----------------------------------------------------------------------
-
-Después de un comando o acción importante debe existir una forma clara de
-validar que el paso fue realizado correctamente.
-
-Utiliza:
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_VALIDACION.
+  > **Salida esperada:** Solo figura `google_compute_network.vpc`.
   {: .lab-note .output .compact}
 
-La salida esperada no necesita reproducir siempre todo el texto del comando.
-Puede describir el estado, recurso, valor o comportamiento que debe observarse.
+- {% include step_label.html %} Ejecuta `terraform destroy` con confirmación interactiva.
 
----------------------------------------------------------------------
-9. IMÁGENES
----------------------------------------------------------------------
+  > **Advertencia:** **Advertencia:** revisa que el plan destruya solo la VPC de `lab3`; después confirma con `yes`.
+  {: .lab-note .warning .compact}
 
-La carpeta de imágenes de esta práctica se encuentra en:
+  ```bash
+  terraform destroy
+  ```
 
-  labs/labN/img/
+  > **Salida esperada:** Aparece `Destroy complete! Resources: 1 destroyed.`.
+  {: .lab-note .output .compact}
 
-Para insertar una imagen mediante el mecanismo de la plantilla utiliza:
+- {% include step_label.html %} Confirma que ya no hay recursos administrados y que el backend remoto sigue accesible.
 
-  {% include step_image.html %}
+  > **Nota:** No elimines el bucket si cualquiera de estos comandos falla: el estado debe seguir accesible.
+  {: .lab-note .info .compact}
 
-Conserva este include solamente en los pasos que realmente tengan una imagen.
-Si el paso no requiere imagen, elimínalo.
+  ```bash
+  terraform state list
+  terraform plan
+  ```
 
-No es necesario agregar una imagen a cada paso.
+  > **Salida esperada:** No hay recursos listados y el plan informa que no hay cambios.
+  {: .lab-note .output .compact}
 
----------------------------------------------------------------------
-10. RESULTADO DE CADA TAREA
----------------------------------------------------------------------
+### Tarea 5.2. Desconectar el backend y eliminar el bucket de la práctica
 
-Cada tarea debe terminar con un resultado esperado asociado a
-_data/task-results.yml.
+Completar la limpieza sin dejar Terraform configurado hacia un bucket eliminado ni borrar estados de otros laboratorios.
 
-La asignación de results debe realizarse una sola vez antes del primer uso:
+- {% include step_label.html %} En **VS Code**, elimina únicamente el archivo `lab3/backend.tf` y reinicializa el backend local vacío.
 
-  {% assign results = site.data.task-results[page.slug].results %}
+  > **Nota:** Hazlo solo **después** de comprobar que no existen recursos. `-reconfigure` no migra estado; aquí se usa para dejar de apuntar al bucket.
+  {: .lab-note .info .compact}
 
-En esta plantilla se realiza en la Tarea 1.
-No es necesario repetir el assign en las tareas siguientes.
+  ```bash
+  rm backend.tf
+  terraform init -reconfigure
+  ```
 
-Después utiliza el índice correspondiente:
+  > **Salida esperada:** Terraform queda inicializado con backend local. El estado remoto anterior permanece en GCS hasta eliminar el bucket.
+  {: .lab-note .output .compact}
 
-  {% capture r1 %}{{ results[0] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r1 %}
+- {% include step_label.html %} Consulta el nombre exacto del bucket y elimina **solo el bucket exclusivo de lab3** con todas sus versiones.
 
-Para la Tarea 2:
+  > **Advertencia:** **Advertencia:** `--recursive` también elimina las generaciones antiguas y el bucket. Revisa el nombre antes de confirmar. No uses buckets compartidos.
+  {: .lab-note .warning .compact}
 
-  {% capture r2 %}{{ results[1] }}{% endcapture %}
+  ```bash
+  source .lab3-bucket.env
+  echo "BUCKET A ELIMINAR: gs://$BUCKET_NAME"
+  gcloud storage rm --recursive "gs://$BUCKET_NAME/"
+  ```
 
-Para la Tarea 3:
+  > **Salida esperada:** Cloud Storage informa la eliminación de los objetos versionados y del bucket.
+  {: .lab-note .output .compact}
 
-  {% capture r3 %}{{ results[2] }}{% endcapture %}
+- {% include step_label.html %} Verifica que el bucket no existe y conserva los archivos fuente para estudiar la migración.
 
-Y así sucesivamente.
+  > **Nota:** Un error de consulta no prueba por sí solo la eliminación; confirma en la consola de Cloud Storage si hay dudas.
+  {: .lab-note .info .compact}
 
----------------------------------------------------------------------
-11. PROMPT DE SOPORTE
----------------------------------------------------------------------
+  ```bash
+  gcloud storage buckets describe "gs://$BUCKET_NAME" 2>&1 || echo "OK: bucket ausente o sin acceso"
+  terraform validate
+  ```
 
-Después del resultado de cada tarea debe incluirse el prompt de soporte
-correspondiente:
+  > **Salida esperada:** La configuración local es válida y la VPC y el bucket de la práctica ya no están disponibles.
+  {: .lab-note .output .compact}
 
-  {% include support-prompt.html task="tarea1" %}
-
-La numeración debe coincidir exactamente con la tarea:
-
-  Tarea 1 -> task="tarea1"
-  Tarea 2 -> task="tarea2"
-  Tarea 3 -> task="tarea3"
-  Tarea 4 -> task="tarea4"
-  ...
-
----------------------------------------------------------------------
-12. SEPARACIÓN ENTRE TAREAS
----------------------------------------------------------------------
-
-Separa cada tarea principal utilizando:
-
-  ---
-
-No utilices este separador entre pasos o subtareas de la misma tarea.
-
----------------------------------------------------------------------
-13. ICONOS DE LAS TAREAS
----------------------------------------------------------------------
-
-El icono del encabezado es visual y puede cambiarse de acuerdo con el tema de
-la tarea. Ejemplos utilizados en esta plantilla:
-
-  🔎  ☁️  🚀
-
-La numeración y el texto "Tarea N." son más importantes que el icono.
-
----------------------------------------------------------------------
-14. QUÉ SE PUEDE ELIMINAR
----------------------------------------------------------------------
-
-Si un elemento no aplica a la práctica puede eliminarse, por ejemplo:
-
-- Prerequisitos adicionales.
-- Notas generales.
-- Referencias adicionales.
-- Una Nota/Importante/Advertencia de un paso.
-- {% include step_image.html %} cuando no existe imagen.
-- Subtareas que no sean necesarias.
-- Tareas de ejemplo que no formen parte de la práctica real.
-
-No elimines los elementos estructurales necesarios para el funcionamiento del
-layout, resultados o navegación sin revisar primero su dependencia.
-
----------------------------------------------------------------------
-15. VALIDACIÓN FINAL DEL ARCHIVO
----------------------------------------------------------------------
-
-Antes de considerar terminado el laboratorio verifica:
-
-- El título y duración son correctos.
-- El objetivo describe claramente el aprendizaje esperado.
-- La introducción está completa.
-- Todas las tareas están numeradas consecutivamente.
-- Todas las subtareas corresponden al número de su tarea.
-- Cada acción del participante está separada como paso cuando corresponde.
-- Los comandos tienen bloques de código adecuados.
-- Los pasos importantes tienen una salida esperada o criterio de validación.
-- Los índices results[N] corresponden a cada número de tarea.
-- Cada tarea utiliza support-prompt.html con su número correcto.
-- Las imágenes utilizadas existen en la carpeta img de la práctica.
-- El resultado final describe lo que el participante habrá conseguido.
-- No permanecen textos de marcador como CAMBIAR_AQUI, DESCRIPCION_, NOMBRE_DE_,
-  CODIGO_, PREREQUISITO_, RESULTADO_ o ## min en la versión final.
-
-======================================================================
-FIN DE LA GUÍA DE USO DE LA PLANTILLA
-======================================================================
--->
+{% capture r5 %}{{ results[4] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r5 %}
