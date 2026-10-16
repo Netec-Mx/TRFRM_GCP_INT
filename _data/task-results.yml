@@ -1,65 +1,40 @@
-
 lab1:
   results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
+    - "**Resultado esperado:** El directorio lab1 está creado, Terraform y Google Cloud CLI funcionan correctamente, las credenciales ADC están configuradas y el proyecto de Google Cloud está seleccionado."
+    - "**Resultado esperado:** El archivo main.tf contiene la configuración del proveedor Google, la variable project_id, una VPC personalizada, una subred, una VM e2-micro y el output de su dirección IP pública."
+    - "**Resultado esperado:** Terraform inicializa y valida la configuración, genera un plan de tres recursos y despliega correctamente la VPC, la subred y la VM, verificando su existencia en Google Cloud."
+    - "**Resultado esperado:** El estado local identifica los tres recursos desplegados, Terraform confirma que no existen cambios pendientes y la infraestructura se elimina correctamente sin perder el código HCL."
 
 lab2:
   results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
+    - "**Resultado esperado:** El entorno de Google Cloud está verificado y el directorio lab2 contiene la estructura del módulo raíz y los módulos reutilizables network y vm, con sus respectivos archivos Terraform."
+    - "**Resultado esperado:** El módulo network define una VPC, una subred y una regla de firewall SSH restringida a una dirección IP autorizada, exponiendo los outputs necesarios para reutilizar sus recursos."
+    - "**Resultado esperado:** El módulo vm contiene una instancia Compute Engine parametrizada con imagen, disco, red, metadatos SSH y etiquetas, además de outputs para identificar la instancia y su IP pública."
+    - "**Resultado esperado:** El módulo raíz configura el proveedor, las variables, la clave pública SSH y los módulos network y vm, conectando ambos mediante outputs y referencias entre módulos."
+    - "**Resultado esperado:** Terraform valida y despliega cuatro recursos en Google Cloud: VPC, subred, firewall y VM. La dirección IP pública es accesible y se comprueba correctamente la conexión SSH a la instancia."
+    - "**Resultado esperado:** El estado de Terraform registra los cuatro recursos, los outputs muestran información válida y la infraestructura se destruye completamente, conservando los archivos y módulos reutilizables."
 
 lab3:
   results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
+    - "**Resultado esperado:** El directorio lab3 contiene la configuración de Terraform, el proveedor Google y una VPC desplegada correctamente, cuyo recurso e identificador están registrados inicialmente en el estado local."
+    - "**Resultado esperado:** Se crea un bucket exclusivo en Google Cloud Storage con acceso uniforme, prevención de acceso público y Object Versioning habilitado, preparado para almacenar el estado remoto de Terraform."
+    - "**Resultado esperado:** El estado local se migra correctamente al backend GCS mediante terraform init -migrate-state, conservando la misma VPC sin recrearla y confirmando que el estado remoto permanece accesible."
+    - "**Resultado esperado:** Google Cloud Storage conserva distintas generaciones del archivo de estado y se comprueba el mecanismo de state locking mediante operaciones concurrentes desde dos terminales de Terraform."
+    - "**Resultado esperado:** La VPC se destruye correctamente, el backend remoto se desconecta de forma controlada y el bucket exclusivo del laboratorio se elimina junto con sus versiones, conservando el código Terraform."
 
 lab4:
   results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
+    - "**Resultado esperado:** El directorio lab4 contiene los archivos Terraform necesarios y se confirma que las herramientas, credenciales ADC y servicios de Google Cloud están disponibles para administrar los entornos."
+    - "**Resultado esperado:** La configuración HCL utiliza terraform.workspace para definir nombres dinámicos, rangos CIDR independientes y recursos de VPC y subred, restringiendo el despliegue a los entornos dev, test y prod."
+    - "**Resultado esperado:** Se crean los Workspaces dev, test y prod y se despliegan correctamente tres VPC y tres subredes utilizando una única configuración Terraform, con nombres y rangos CIDR específicos por entorno."
+    - "**Resultado esperado:** Se verifica en Google Cloud la existencia de las tres VPC y sus subredes, y se comprueba que cada Workspace mantiene un estado local independiente y outputs correspondientes a su entorno."
+    - "**Resultado esperado:** Los recursos de dev, test y prod se destruyen de forma independiente, los tres Workspaces se eliminan correctamente y únicamente permanece default, sin infraestructura activa del laboratorio."
 
 lab5:
   results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
+    - "**Resultado esperado:** El directorio lab5 contiene los archivos Terraform y los parámetros independientes de DEV y PROD. Terraform, Google Cloud CLI, las credenciales y la API de Compute Engine están disponibles."
+    - "**Resultado esperado:** La configuración define variables complejas list(object) y map, una variable sensible, recursos de red y máquinas virtuales filtradas con for_each, utilizando dynamic para asignar direcciones IP públicas condicionales."
+    - "**Resultado esperado:** Los archivos dev.tfvars y prod.tfvars contienen las configuraciones específicas de cada entorno. Los outputs muestran las VMs habilitadas, sus direcciones IP públicas cuando corresponden y ocultan el valor sensible de demostración."
+    - "**Resultado esperado:** Terraform despliega correctamente cuatro recursos en DEV y cinco en PROD mediante Workspaces independientes. Se comprueba que existen tres VMs activas, una instancia deshabilitada no se crea y la VM API funciona sin IP pública."
+    - "**Resultado esperado:** Los estados independientes de DEV y PROD contienen únicamente sus recursos correspondientes. Terraform destruye los nueve recursos desplegados, elimina ambos Workspaces y conserva los archivos de configuración."
 
-lab6:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-
-lab7:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-
-lab8:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-
-lab9:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-
-lab10:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-
-lab11:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-
-lab12:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-
-lab13:
-  results:
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"
-    - "**Resultado esperado:** MODIFICAR AQUI EL TEXTO DE LA DESCRIPCION DEL RESULTADO ESPERADO"

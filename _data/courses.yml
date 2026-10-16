@@ -1,83 +1,35 @@
 # _data/courses.yml
 terrgcpint:
-  title: "NOMBRE_DEL_CURSO_AQUI" # COLOCAR EL NOMBRE DEL CURSO
-  intro: "DESCRIPCIÓN_DEL_CURSO_AQUI"
+  title: "Terraform en Google Cloud: Nivel intermedio"
+  intro: "Implementa infraestructura en Google Cloud con Terraform utilizando módulos, estado remoto, Workspaces y prácticas de gestión de infraestructura como código."
   labs:
 
-    - id: lab1 
-      title: "NOMBRE_DE_LA_PRACTICA_1" # NOMBRE DE LA PRACTICA
-      url:  "/lab1/lab1/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
+    - id: lab1
+      title: "Práctica 1: Validar y desplegar una configuración básica de Terraform en Google Cloud"
+      url: "/lab1/lab1/"
+      duration: "25 min"
+      desc: "Crea y valida una VPC, una subred y una VM en Google Cloud mediante el flujo esencial de Terraform."
 
-    - id: lab2 
-      title: "NOMBRE_DE_LA_PRACTICA_2" # NOMBRE DE LA PRACTICA
-      url:  "/lab2/lab2/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
+    - id: lab2
+      title: "Práctica 2: Crear y usar módulos reutilizables en Terraform"
+      url: "/lab2/lab2/"
+      duration: "55 min"
+      desc: "Construye módulos reutilizables de red y cómputo, intégralos desde el módulo raíz y valida el acceso a la VM."
 
-    - id: lab3 
-      title: "NOMBRE_DE_LA_PRACTICA_3" # NOMBRE DE LA PRACTICA
-      url:  "/lab3/lab3/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
+    - id: lab3
+      title: "Práctica 3: Migrar el estado local a Google Cloud Storage (GCS) con locking"
+      url: "/lab3/lab3/"
+      duration: "45 min"
+      desc: "Migra el estado local de Terraform a GCS, habilita versionado y comprueba el bloqueo de operaciones concurrentes."
 
-    - id: lab4 
-      title: "NOMBRE_DE_LA_PRACTICA_4" # NOMBRE DE LA PRACTICA
-      url:  "/lab4/lab4/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
+    - id: lab4
+      title: "Práctica 4: Crear y gestionar entornos dev, test, prod con Workspaces"
+      url: "/lab4/lab4/"
+      duration: "35 min"
+      desc: "Administra entornos dev, test y prod con Terraform Workspaces y valida el aislamiento de recursos y estados."
 
-    - id: lab5 
-      title: "NOMBRE_DE_LA_PRACTICA_5" # NOMBRE DE LA PRACTICA
-      url:  "/lab5/lab5/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab6 
-      title: "NOMBRE_DE_LA_PRACTICA_6" # NOMBRE DE LA PRACTICA
-      url:  "/lab6/lab6/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab7 
-      title: "NOMBRE_DE_LA_PRACTICA_7" # NOMBRE DE LA PRACTICA
-      url:  "/lab7/lab7/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab8 
-      title: "NOMBRE_DE_LA_PRACTICA_8" # NOMBRE DE LA PRACTICA
-      url:  "/lab8/lab8/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab9 
-      title: "NOMBRE_DE_LA_PRACTICA_9" # NOMBRE DE LA PRACTICA
-      url:  "/lab9/lab9/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab10 
-      title: "NOMBRE_DE_LA_PRACTICA_10" # NOMBRE DE LA PRACTICA
-      url:  "/lab10/lab10/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab11 
-      title: "NOMBRE_DE_LA_PRACTICA_11" # NOMBRE DE LA PRACTICA
-      url:  "/lab11/lab11/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab12 
-      title: "NOMBRE_DE_LA_PRACTICA_12" # NOMBRE DE LA PRACTICA
-      url:  "/lab12/lab12/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
-
-    - id: lab13 
-      title: "NOMBRE_DE_LA_PRACTICA_13" # NOMBRE DE LA PRACTICA
-      url:  "/lab13/lab13/"
-      duration: "## min" # AJUSTAR TIEMPO DE LA PRACTICA
-      desc: "DESCRIPCION_CORTA_DE_LA_PRACTICA" # DESCRIPCION BREVE DE LA PRACTICA 100-120 CARACTERES
+    - id: lab5
+      title: "Práctica 5: Crear archivos .tfvars por entorno y outputs condicionales"
+      url: "/lab5/lab5/"
+      duration: "35 min"
+      desc: "Configura variables complejas y archivos .tfvars para DEV y PROD, creando máquinas virtuales y outputs condicionales."

@@ -1,563 +1,600 @@
 ---
 layout: lab
-title: "Práctica 4: CAMBIAR_AQUI_NOMBRE_DE_LA_PRACTICA"
+title: "Práctica 4: Crear y gestionar entornos dev, test, prod con Workspaces."
 permalink: /lab4/lab4/
 images_base: /labs/lab4/img
-duration: "## minutos"
+duration: "35 minutos"
 objective:
-  - OBJETIVO_DE_LA_PRACTICA
+  - "Administrar entornos dev, test y prod mediante Terraform Workspaces, desplegando VPC y subred con nombres y CIDR específicos y comprobando el aislamiento del estado local."
 prerequisites:
-  - PREREQUISITO_1
-  - PREREQUISITO_2
-  - PREREQUISITO_3
-  - PREREQUISITO_4
-  - PREREQUISITO_X
+  - "Prácticas 1, 2 y 3 realizadas; directorio terraform-gcp-intermediate ya creado en el Escritorio de Windows."
+  - "VM Windows con Visual Studio Code, Git Bash integrado, Terraform y Google Cloud CLI instalados."
+  - "Proyecto de Google Cloud con facturación, Compute Engine API habilitada y permisos para administrar VPC y subredes."
+  - "Cuenta gcloud y credenciales Application Default Credentials (ADC) previamente configuradas."
 introduction:
-  - INTRODUCCION_DE_LA_PRACTICA_BREVE_RESUMEN_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  - "Trabajarás con una única configuración Terraform que creará redes independientes para los workspaces dev, test y prod. Identificarás el entorno activo mediante terraform.workspace, asignarás rangos CIDR distintos, verificarás los recursos con gcloud y compararás los archivos de estado antes de destruirlos."
 slug: lab4
 lab_number: 4
 final_result: >
-  RESULTADO_FINAL_ESPERADO_DE_LA_PRACTICA_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  Habrás creado y utilizado los workspaces dev, test y prod con una única configuración HCL; comprobado tres VPC y tres subredes con nombres y CIDR distintos; identificado estados locales separados; y eliminado los recursos y workspaces, conservando los archivos fuente del laboratorio.
 notes:
-  - NOTAS_CONSIDERACIONES_ADICIONALES
-  - NOTAS_CONSIDERACIONES_ADICIONALES
+  - "Todos los comandos se ejecutan desde Git Bash integrado en VS Code, dentro de terraform-gcp-intermediate/lab4."
+  - "A diferencia de la Práctica 3, esta práctica usa un backend local independiente; no reutiliza el bucket GCS. Los workspaces no aíslan identidades, permisos ni proyectos."
+  - "El workspace default no debe desplegar recursos; se agrega una precondición para evitar su uso accidental."
+  - "Los entornos dev, test y prod son simulados y se despliegan dentro del mismo proyecto de capacitación."
+  - "La estimación de 30 minutos supone autenticación, API y permisos preparados; los tiempos de aprovisionamiento pueden variar."
 references:
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://developer.hashicorp.com/terraform
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://learn.microsoft.com/es-es/cli/azure/
+  - text: "Terraform CLI Workspaces"
+    url: https://developer.hashicorp.com/terraform/cli/workspaces
+  - text: "Referencia de terraform.workspace"
+    url: https://developer.hashicorp.com/terraform/language/expressions/references
+  - text: "Variables de entrada en Terraform"
+    url: https://developer.hashicorp.com/terraform/language/values/variables
+  - text: "Outputs de Terraform"
+    url: https://developer.hashicorp.com/terraform/language/values/outputs
+  - text: "Recurso google_compute_network"
+    url: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network
+  - text: "Recurso google_compute_subnetwork"
+    url: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_subnetwork
 prev: /lab3/lab3/
 next: /lab5/lab5/
 ---
 
 ---
 
-<!-- Aquí comienzan las instrucciones paso a paso de la práctica -->
+## 🔎 Tarea 1. Preparar lab4 y verificar el acceso a GCP — 4 min
 
-## 🔎 Tarea 1. NOMBRE DE LA TAREA — ## min
+Crearás el directorio `lab4` dentro del árbol del curso y comprobarás herramientas, proyecto y autenticación. Conservarás intactas las carpetas de las prácticas anteriores y trabajarás únicamente con la terminal Git Bash integrada.
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+### Tarea 1.1. Crear el directorio y los archivos Terraform
 
-### Tarea 1.1. NOMBRE DE_LA_SUBTAREA
+Preparar cinco archivos HCL en una carpeta propia, sin reutilizar archivos `.tfstate` de prácticas anteriores.
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+- {% include step_label.html %} En **VS Code**, abre la carpeta **terraform-gcp-intermediate** mediante **File > Open Folder**.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  > **Nota:** Utiliza la carpeta que creaste en la Práctica 1; no generes un segundo directorio central.
   {: .lab-note .info .compact}
 
-  {% include step_image.html %}
-
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** El explorador de VS Code muestra `lab1`, `lab2` y `lab3` dentro de la carpeta del curso.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Abre **Terminal > New Terminal** y selecciona **Git Bash** como perfil de la terminal integrada.
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+  > **Salida esperada:** La terminal muestra un prompt Bash con el símbolo `$`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En **Git Bash**, crea y abre `lab4` desde la carpeta del curso y genera los cinco archivos iniciales.
+
+  ```bash
+  DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
+  DESKTOP="$(cygpath -u "$DESKTOP_WIN")"
+  mkdir -p "$DESKTOP/terraform-gcp-intermediate/lab4"
+  cd "$DESKTOP/terraform-gcp-intermediate/lab4"
+  touch providers.tf main.tf variables.tf outputs.tf terraform.tfvars
+  ```
+
+  > **Salida esperada:** Existe `lab4` con `providers.tf`, `main.tf`, `variables.tf`, `outputs.tf` y `terraform.tfvars`.
+  {: .lab-note .output .compact}
+
+### Tarea 1.2. Comprobar Terraform y el proyecto activo
+
+Verificar el entorno de ejecución ya instalado y que la cuenta puede acceder al proyecto asignado para los tres entornos.
+
+- {% include step_label.html %} En **Git Bash**, comprueba la ubicación actual y la versión instalada de Terraform.
+
+  ```bash
+  pwd
+  terraform version
+  ```
+
+  > **Salida esperada:** La ruta termina en `/terraform-gcp-intermediate/lab4` y Terraform muestra su versión.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Confirma en la misma terminal la cuenta activa de **gcloud** y el proyecto seleccionado.
+
+  ```bash
+  gcloud auth list --filter="status:ACTIVE" --format="value(account)"
+  gcloud config get-value project
+  ```
+
+  > **Importante:** Si falta el proyecto, ejecuta `gcloud config set project TU_PROJECT_ID`. Utiliza tu ID real.
   {: .lab-note .important .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** Aparecen la cuenta del curso y el identificador correcto del proyecto GCP.
   {: .lab-note .output .compact}
 
-### Tarea 1.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+- {% include step_label.html %} Comprueba que las credenciales **ADC** y la API de Compute Engine están disponibles.
 
   ```bash
-  CODIGO_DEL_PASO_3
+  gcloud auth application-default print-access-token >/dev/null && echo "ADC disponible"
+  gcloud services list --enabled --filter="NAME:compute.googleapis.com" --format="value(NAME)"
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Nota:** Si ADC no está disponible, ejecuta `gcloud auth application-default login`. Si la API no aparece, solicita o ejecuta `gcloud services enable compute.googleapis.com` con permisos adecuados.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Aparece `ADC disponible` y el servicio `compute.googleapis.com`.
   {: .lab-note .output .compact}
 
 {% assign results = site.data.task-results[page.slug].results %}
 {% capture r1 %}{{ results[0] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r1 %}
 
-{% include support-prompt.html task="tarea1" %}
-
 ---
 
-## ☁️ Tarea 2. NOMBRE DE LA TAREA — ## min
+## ☁️ Tarea 2. Definir infraestructura dinámica por entorno — 8 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Configurarás un único conjunto de archivos HCL que define una VPC y una subred por workspace, utilizando nombres derivados del entorno y una tabla de rangos CIDR sin superposición. Completarás algunos bloques a partir de requisitos concretos.
 
-### Tarea 2.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 2.1. Configurar el proveedor y las variables
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Establecer el proveedor de Google Cloud y los valores de entrada necesarios para el proyecto, región y rangos CIDR.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} En **VS Code**, abre `lab4/providers.tf` y pega la configuración de Terraform y del proveedor Google.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  ```hcl
+  terraform {
+    required_version = ">= 1.6.0"
+
+    required_providers {
+      google = {
+        source  = "hashicorp/google"
+        version = ">= 5.0, < 8.0"
+      }
+    }
+  }
+
+  provider "google" {
+    project = var.project_id
+    region  = var.region
+  }
+  ```
+
+  > **Nota:** `.terraform.lock.hcl`, generado por `terraform init`, fijará la versión concreta instalada del proveedor.
   {: .lab-note .info .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** `providers.tf` define el proveedor Google y referencia `project_id` y `region`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} En **VS Code**, abre `lab4/variables.tf` y declara la variable `project_id`.
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+  ```hcl
+  variable "project_id" {
+    description = "Identificador del proyecto Google Cloud del curso"
+    type        = string
+  }
+  ```
+
+  > **Salida esperada:** La variable `project_id` está declarada sin un proyecto fijo dentro del código.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `lab4/variables.tf`, agrega **debajo de `variable "project_id"`** un bloque para la región.
+
+  > **Importante:** Escribe tú el bloque `variable`; debe llamarse `region`, usar `type = string` y tener `default = "us-central1"`. No lo insertes dentro de las llaves de `project_id`.
   {: .lab-note .important .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
+  > **Nota:** Consulta [Variables de entrada de Terraform](https://developer.hashicorp.com/terraform/language/values/variables) para verificar la sintaxis de `type` y `default`.
+  {: .lab-note .info .compact}
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** `variables.tf` contiene dos bloques `variable` independientes: `project_id` y `region`.
   {: .lab-note .output .compact}
 
-### Tarea 2.2. NOMBRE_DE_LA_SUBTAREA
+- {% include step_label.html %} En el mismo archivo, agrega **debajo de `variable "region"`** el mapa de CIDR para los tres entornos.
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_3
+  ```hcl
+  variable "subnet_cidrs" {
+    description = "Rango CIDR de subred para cada workspace"
+    type        = map(string)
+    default = {
+      dev  = "10.10.1.0/24"
+      test = "10.20.1.0/24"
+      prod = "10.30.1.0/24"
+    }
+  }
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** `subnet_cidrs` contiene tres claves (`dev`, `test`, `prod`) con rangos diferentes.
+  {: .lab-note .output .compact}
+
+### Tarea 2.2. Configurar nombres dinámicos y recursos de red
+
+Utilizar `terraform.workspace` para nombrar recursos y bloquear el despliegue involuntario desde el workspace default.
+
+- {% include step_label.html %} En **VS Code**, abre `lab4/main.tf` y agrega un bloque `locals` al comienzo del archivo.
+
+  > **Importante:** Construye una variable local llamada `env` cuyo valor sea `terraform.workspace`. El bloque debe quedar **antes de cualquier `resource`**, fuera de otras llaves.
+  {: .lab-note .important .compact}
+
+  > **Nota:** Consulta [Named Values: terraform.workspace](https://developer.hashicorp.com/terraform/language/expressions/references) para obtener la referencia exacta al workspace activo.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Los recursos podrán utilizar `local.env` para construir nombres según `dev`, `test` o `prod`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} **Debajo del bloque `locals`**, agrega en `main.tf` una VPC y una precondición que impida desplegar desde `default`.
+
+  ```hcl
+  resource "google_compute_network" "vpc" {
+    name                    = "lab4-${local.env}-vpc"
+    auto_create_subnetworks = false
+    description             = "VPC de laboratorio para ${local.env}"
+
+    lifecycle {
+      precondition {
+        condition     = terraform.workspace != "default" && contains(keys(var.subnet_cidrs), terraform.workspace)
+        error_message = "Selecciona un workspace válido: dev, test o prod; no utilices default."
+      }
+    }
+  }
+  ```
+
+  > **Importante:** La precondición evita un `apply` accidental en `default` y workspaces no definidos en el mapa.
+  {: .lab-note .important .compact}
+
+  > **Salida esperada:** La VPC utilizará nombres como `lab4-dev-vpc` y bloqueará workspaces no autorizados.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} **Debajo del recurso VPC**, agrega una subred que dependa de la VPC y obtenga su CIDR desde el mapa.
+
+  ```hcl
+  resource "google_compute_subnetwork" "subnet" {
+    name          = "lab4-${local.env}-subnet"
+    region        = var.region
+    network       = google_compute_network.vpc.id
+    ip_cidr_range = var.subnet_cidrs[local.env]
+    description   = "Subred de laboratorio para ${local.env}"
+  }
+  ```
+
+  > **Nota:** La referencia `google_compute_network.vpc.id` permite que Terraform detecte automáticamente la dependencia.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** El recurso `subnet` usa una VPC asociada y el rango del workspace activo.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Guarda `main.tf` y comprueba visualmente que `locals`, VPC y subred sean bloques independientes.
+
+  > **Salida esperada:** Las referencias `local.env`, `var.region` y `var.subnet_cidrs` corresponden a definiciones existentes.
+  {: .lab-note .output .compact}
+
+### Tarea 2.3. Configurar parámetros y salidas de infraestructura
+
+Definir el proyecto en un solo archivo de valores y preparar outputs para comparar lo desplegado por workspace.
+
+- {% include step_label.html %} En **VS Code**, abre `lab4/terraform.tfvars` y escribe tu ID real de GCP.
+
+  ```hcl
+  project_id = "REEMPLAZA_CON_TU_PROJECT_ID"
+  ```
+
+  > **Importante:** Obtén el ID con `gcloud config get-value project` en Git Bash y sustitúyelo entre comillas; no pegues claves privadas.
+  {: .lab-note .important .compact}
+
+  > **Salida esperada:** La variable `project_id` contiene tu identificador de proyecto GCP.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En **VS Code**, abre `lab4/outputs.tf` y agrega los valores del entorno, nombre de VPC y nombre de subred.
+
+  ```hcl
+  output "env" {
+    description = "Workspace activo"
+    value       = terraform.workspace
+  }
+
+  output "vpc_name" {
+    description = "Nombre de la VPC"
+    value       = google_compute_network.vpc.name
+  }
+
+  output "subnet_name" {
+    description = "Nombre de la subred"
+    value       = google_compute_subnetwork.subnet.name
+  }
+  ```
+
+  > **Salida esperada:** Hay tres outputs independientes que permiten identificar cada despliegue.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `lab4/outputs.tf`, agrega **debajo de `output "subnet_name"`** un cuarto output.
+
+  > **Importante:** Debe llamarse `subnet_cidr`, incluir `description` y devolver el atributo `ip_cidr_range` del recurso `google_compute_subnetwork.subnet`.
+  {: .lab-note .important .compact}
+
+  > **Nota:** Consulta [Outputs de Terraform](https://developer.hashicorp.com/terraform/language/values/outputs) para estructurar el bloque y referenciar un atributo del recurso.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** `outputs.tf` contiene cuatro outputs y el último devuelve el CIDR asignado a la subred.
   {: .lab-note .output .compact}
 
 {% capture r2 %}{{ results[1] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r2 %}
 
-{% include support-prompt.html task="tarea2" %}
-
 ---
 
-## 🚀 Tarea 3. NOMBRE DE LA TAREA — ## min
+## 🚀 Tarea 3. Crear Workspaces y desplegar tres entornos — 10 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Inicializarás Terraform, crearás los workspaces `dev`, `test` y `prod` y desplegarás dos recursos por entorno. El mismo conjunto de archivos funcionará en los tres casos, cambiando el nombre y CIDR según el workspace activo.
 
-### Tarea 3.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 3.1. Inicializar y comprobar los Workspaces
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Validar HCL, instalar el proveedor y crear workspaces nombrados antes de cualquier despliegue.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} En **Git Bash**, ubicado en `lab4`, inicializa Terraform y descarga el proveedor.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  ```bash
+  terraform init
+  ```
+
+  > **Salida esperada:** Se muestra `Terraform has been successfully initialized!` y aparece `.terraform.lock.hcl`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Ejecuta el formato y la validación antes de crear recursos.
+
+  ```bash
+  terraform fmt
+  terraform validate
+  ```
+
+  > **Salida esperada:** El comando `validate` indica `Success! The configuration is valid.`
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Crea los workspaces **dev**, **test** y **prod** de forma consecutiva.
+
+  ```bash
+  terraform workspace new dev
+  terraform workspace new test
+  terraform workspace new prod
+  ```
+
+  > **Nota:** Cada `workspace new` activa el workspace recién creado; después de estos comandos quedará activo `prod`.
   {: .lab-note .info .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** Se crean los tres workspaces sin errores de nombres duplicados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Lista los workspaces y verifica cuál está seleccionado.
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+  ```bash
+  terraform workspace list
+  terraform workspace show
+  ```
+
+  > **Salida esperada:** Aparecen `default`, `dev`, `test` y `prod`; `prod` está marcado con `*`.
+  {: .lab-note .output .compact}
+
+### Tarea 3.2. Planificar y aplicar en dev, test y prod
+
+Ejecutar el mismo código para crear VPC y subred por entorno, inspeccionando los cambios propuestos antes de aplicarlos.
+
+- {% include step_label.html %} Selecciona **dev** y confirma que es el workspace activo.
+
+  ```bash
+  terraform workspace select dev
+  terraform workspace show
+  ```
+
+  > **Salida esperada:** El workspace activo se muestra como `dev`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En **dev**, revisa el plan y crea los recursos después de comprobar sus nombres.
+
+  ```bash
+  terraform plan
+  terraform apply
+  ```
+
+  > **Importante:** El plan debe indicar **2 to add, 0 to change, 0 to destroy**; comprueba los nombres `lab4-dev-*` antes de escribir `yes`.
   {: .lab-note .important .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** `Apply complete! Resources: 2 added, 0 changed, 0 destroyed.`
   {: .lab-note .output .compact}
 
-### Tarea 3.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+- {% include step_label.html %} Cambia a **test**, revisa el plan y despliega la VPC y la subred de pruebas.
 
   ```bash
-  CODIGO_DEL_PASO_3
+  terraform workspace select test
+  terraform plan
+  terraform apply
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Importante:** Antes de confirmar `yes`, valida que los nombres comiencen con `lab4-test-` y el CIDR sea `10.20.1.0/24`.
+  {: .lab-note .important .compact}
+
+  > **Salida esperada:** Se crean `lab4-test-vpc` y `lab4-test-subnet`, sin cambios en dev.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Cambia a **prod**, revisa el plan y despliega el entorno simulado de producción.
+
+  ```bash
+  terraform workspace select prod
+  terraform plan
+  terraform apply
+  ```
+
+  > **Advertencia:** `prod` es solo un nombre lógico de laboratorio; comparte el mismo proyecto y los mismos permisos que los demás workspaces.
+  {: .lab-note .warning .compact}
+
+  > **Salida esperada:** Se crean `lab4-prod-vpc` y `lab4-prod-subnet`, con CIDR `10.30.1.0/24`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Consulta los outputs del workspace activo **prod** para confirmar sus valores.
+
+  ```bash
+  terraform workspace show
+  terraform output
+  ```
+
+  > **Salida esperada:** Aparecen `env = "prod"`, `vpc_name`, `subnet_name` y `subnet_cidr = "10.30.1.0/24"`.
   {: .lab-note .output .compact}
 
 {% capture r3 %}{{ results[2] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r3 %}
 
-{% include support-prompt.html task="tarea3" %}
+---
+
+## 🔍 Tarea 4. Verificar recursos y separación del estado — 5 min
+
+Contrastarás la infraestructura real de Google Cloud con los outputs de Terraform y explorarás el estado de cada workspace. Comprobarás que cambiar de workspace modifica el estado consultado, pero no altera los otros entornos.
+
+### Tarea 4.1. Validar VPC, subred y CIDR en Google Cloud
+
+Comprobar por separado la existencia de las seis piezas de red desplegadas en el proyecto del curso.
+
+- {% include step_label.html %} En **Git Bash**, lista únicamente las VPC de la Práctica 4 en el proyecto activo.
+
+  ```bash
+  gcloud compute networks list --filter="name~'^lab4-(dev|test|prod)-vpc$'" --format="table(name,subnet_mode)"
+  ```
+
+  > **Salida esperada:** Aparecen `lab4-dev-vpc`, `lab4-test-vpc` y `lab4-prod-vpc`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Lista las subredes y compara los rangos CIDR asignados a cada entorno.
+
+  ```bash
+  gcloud compute networks subnets list --filter="name~'^lab4-(dev|test|prod)-subnet$'" --format="table(name,region,ipCidrRange)"
+  ```
+
+  > **Salida esperada:** Las subredes `dev`, `test` y `prod` muestran `10.10.1.0/24`, `10.20.1.0/24` y `10.30.1.0/24`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Selecciona **dev** y comprueba con Terraform que no quedan cambios pendientes.
+
+  ```bash
+  terraform workspace select dev
+  terraform plan
+  ```
+
+  > **Salida esperada:** Terraform informa `No changes. Your infrastructure matches the configuration.`
+  {: .lab-note .output .compact}
+
+### Tarea 4.2. Examinar estados independientes de Workspaces
+
+Identificar la organización del estado local y verificar que los recursos de cada entorno pertenecen únicamente a su workspace.
+
+- {% include step_label.html %} En **Git Bash**, localiza los archivos locales de estado bajo `terraform.tfstate.d`.
+
+  ```bash
+  find terraform.tfstate.d -type f -name 'terraform.tfstate' | sort
+  ```
+
+  > **Salida esperada:** Se muestran los archivos `dev/terraform.tfstate`, `test/terraform.tfstate` y `prod/terraform.tfstate`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Con **dev** activo, consulta el workspace y los recursos almacenados en su estado.
+
+  ```bash
+  terraform workspace show
+  terraform state list
+  terraform output
+  ```
+
+  > **Salida esperada:** Dev presenta dos recursos Terraform y los outputs correspondientes al prefijo `lab4-dev-`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Compara el estado de **test** con el de **dev**, sin modificar ni crear infraestructura.
+
+  > **Importante:** Selecciona `test`, ejecuta `terraform state list` y `terraform output`, y compara `vpc_name` y `subnet_cidr` con los resultados anteriores de dev.
+  {: .lab-note .important .compact}
+
+  > **Nota:** Consulta [CLI Workspaces](https://developer.hashicorp.com/terraform/cli/workspaces) para comprender por qué cada workspace utiliza una instancia distinta del estado.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Test conserva los mismos tipos de recursos, pero reporta `lab4-test-vpc` y `10.20.1.0/24`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En **Git Bash**, vuelve a **prod** y comprueba que conserva sus outputs originales.
+
+  ```bash
+  terraform workspace select prod
+  terraform output vpc_name
+  terraform output subnet_cidr
+  ```
+
+  > **Salida esperada:** Prod sigue mostrando `lab4-prod-vpc` y `10.30.1.0/24`, sin haberse afectado por las consultas anteriores.
+  {: .lab-note .output .compact}
+
+{% capture r4 %}{{ results[3] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r4 %}
 
 ---
 
-<!--
-======================================================================
-GUÍA DE USO DE LA PLANTILLA DEL LABORATORIO
-======================================================================
+## 🧹 Tarea 5. Destruir recursos y retirar Workspaces — 3 min
 
-Este archivo es una plantilla base. Las 3 tareas incluidas sirven únicamente
-como referencia de estructura. La práctica final puede tener más o menos
-tareas, subtareas y pasos según lo requiera el contenido.
+Liberarás los recursos de los tres entornos para evitar costos y después eliminarás los workspaces vacíos. Conservarás los archivos `.tf` como material de estudio y no borrarás directorios de prácticas anteriores.
 
----------------------------------------------------------------------
-1. FRONT MATTER
----------------------------------------------------------------------
+### Tarea 5.1. Destruir las VPC y subredes por entorno
 
-Completa los campos de la cabecera YAML sin cambiar sus nombres:
+Eliminar primero los recursos administrados en cada estado, verificando que cada ejecución apunte al workspace correcto.
 
-- title:
-    Nombre completo de la práctica.
-
-- duration:
-    Duración total estimada de la práctica en minutos.
-
-- objective:
-    Objetivo principal de aprendizaje de la práctica.
-
-- prerequisites:
-    Requisitos previos necesarios para realizarla.
-    Agrega o elimina elementos según corresponda.
-
-- introduction:
-    Introducción breve de la práctica. Se recomienda un solo párrafo.
-
-- final_result:
-    Resultado final esperado al terminar toda la práctica.
-    Se recomienda describirlo en un solo párrafo.
-
-- notes:
-    Consideraciones generales que apliquen a toda la práctica.
-
-- references:
-    Documentación oficial o referencias técnicas relevantes.
-    Mantén la estructura:
-
-      - text: DESCRIPCION
-        url: URL
-
-- permalink, images_base, slug y lab_number:
-    Son generados automáticamente. No deben modificarse salvo que cambie
-    deliberadamente la estructura del sitio.
-
-- prev y next:
-    Son generados automáticamente por este script para navegación entre labs.
-
----------------------------------------------------------------------
-2. ESTRUCTURA GENERAL DE UNA TAREA
----------------------------------------------------------------------
-
-Cada tarea debe seguir esta estructura:
-
-  ## ICONO Tarea N. NOMBRE DE LA TAREA — ## min
-
-  DESCRIPCION_DE_LA_TAREA.
-
-  ### Tarea N.1. NOMBRE_DE_LA_SUBTAREA
-
-  DESCRIPCION_DE_LA_SUBTAREA.
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-La descripción de la tarea debe explicar qué se realizará y para qué.
-Como referencia, se recomiendan aproximadamente 200-250 caracteres.
-
-La descripción de cada subtarea debe indicar claramente el objetivo de esa
-sección. Como referencia, se recomiendan aproximadamente 120-150 caracteres.
-
----------------------------------------------------------------------
-3. TAREAS
----------------------------------------------------------------------
-
-Las tareas principales se numeran de forma consecutiva:
-
-  Tarea 1
-  Tarea 2
-  Tarea 3
-  Tarea 4
-  ...
-
-La plantilla incluye solamente 3 tareas como ejemplo.
-
-Si la práctica necesita más tareas:
-
-1) Duplica COMPLETA una sección de tarea existente.
-2) Cambia el encabezado de la tarea.
-3) Cambia la numeración de todas sus subtareas.
-4) Cambia el resultado asociado results[N].
-5) Cambia el identificador de support-prompt.html.
-
-Ejemplo para una Tarea 4:
-
-  ## 🔧 Tarea 4. NOMBRE DE LA TAREA — ## min
-
-Al finalizar debe contener:
-
-  {% capture r4 %}{{ results[3] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r4 %}
-
-  {% include support-prompt.html task="tarea4" %}
-
-IMPORTANTE:
-El arreglo results utiliza índice base 0:
-
-  Tarea 1 -> results[0]
-  Tarea 2 -> results[1]
-  Tarea 3 -> results[2]
-  Tarea 4 -> results[3]
-  Tarea 5 -> results[4]
-  Tarea 6 -> results[5]
-  Tarea N -> results[N-1]
-
----------------------------------------------------------------------
-4. SUBTAREAS
----------------------------------------------------------------------
-
-Cada tarea puede contener tantas subtareas como sea necesario.
-La numeración debe conservar la relación con la tarea principal.
-
-Ejemplo para la Tarea 4:
-
-  ### Tarea 4.1. PRIMERA SUBTAREA
-  ### Tarea 4.2. SEGUNDA SUBTAREA
-  ### Tarea 4.3. TERCERA SUBTAREA
-  ### Tarea 4.4. CUARTA SUBTAREA
-
-No existe un límite fijo de subtareas.
-
----------------------------------------------------------------------
-5. PASOS
----------------------------------------------------------------------
-
-Cada acción que debe realizar el participante debe escribirse como un paso
-independiente utilizando:
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-No combines varias acciones importantes dentro de un único paso cuando puedan
-realizarse o validarse por separado.
-
-Cada paso debe contener, cuando corresponda:
-
-- Una descripción clara de la acción.
-- Una Nota, Importante o Advertencia.
-- Una imagen de referencia.
-- Un bloque de código o comando.
-- Una salida esperada o criterio de validación.
-
----------------------------------------------------------------------
-6. NOTAS, IMPORTANTES Y ADVERTENCIAS
----------------------------------------------------------------------
-
-Usa los bloques obligatoriamente aportando informacion util en cada paso.
-Nota, Advertencia, Importante, Siempre ponerla debajo del texto del paso.
-Salida esperada, siempr ponerla al finalizar el paso y antes del siguiente paso.
-
-Nota informativa:
-
-  > **Nota:** TEXTO.
-  {: .lab-note .info .compact}
-
-Consideración importante:
-
-  > **Importante:** TEXTO.
-  {: .lab-note .important .compact}
-
-Advertencia:
-
-  > **Advertencia:** TEXTO.
-  {: .lab-note .warning .compact}
-
-Salida esperada:
-
-  > **Salida esperada:** TEXTO.
-  {: .lab-note .output .compact}
-
-No es obligatorio incluir los tres tipos de nota en todos los pasos.
-Utiliza solamente el que corresponda al contexto.
-
----------------------------------------------------------------------
-7. BLOQUES DE CÓDIGO
----------------------------------------------------------------------
-
-Cada comando o fragmento que el participante deba ejecutar debe tener su
-propio bloque de código.
-
-Ejemplo Bash:
+- {% include step_label.html %} En **Git Bash**, selecciona **dev** y destruye sus recursos tras revisar el plan.
 
   ```bash
-  COMANDO
+  terraform workspace select dev
+  terraform destroy
   ```
 
-Cambia el identificador del lenguaje cuando corresponda, por ejemplo:
+  > **Advertencia:** Comprueba que el plan solo incluya la VPC y subred con prefijo `lab4-dev-` antes de confirmar con `yes`.
+  {: .lab-note .warning .compact}
 
-  ```yaml
-  ```json
-  ```sql
-  ```powershell
-  ```python
-
-Evita colocar varios pasos independientes dentro de un único bloque de código
-si deben ejecutarse y validarse por separado.
-
----------------------------------------------------------------------
-8. SALIDA ESPERADA
----------------------------------------------------------------------
-
-Después de un comando o acción importante debe existir una forma clara de
-validar que el paso fue realizado correctamente.
-
-Utiliza:
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_VALIDACION.
+  > **Salida esperada:** `Destroy complete! Resources: 2 destroyed.`
   {: .lab-note .output .compact}
 
-La salida esperada no necesita reproducir siempre todo el texto del comando.
-Puede describir el estado, recurso, valor o comportamiento que debe observarse.
+- {% include step_label.html %} Selecciona **test** y destruye únicamente los recursos de ese workspace.
 
----------------------------------------------------------------------
-9. IMÁGENES
----------------------------------------------------------------------
+  ```bash
+  terraform workspace select test
+  terraform destroy
+  ```
 
-La carpeta de imágenes de esta práctica se encuentra en:
+  > **Importante:** Comprueba que el plan solo incluye `lab4-test-vpc` y `lab4-test-subnet` antes de confirmar.
+  {: .lab-note .important .compact}
 
-  labs/labN/img/
+  > **Salida esperada:** `Destroy complete! Resources: 2 destroyed.`
+  {: .lab-note .output .compact}
 
-Para insertar una imagen mediante el mecanismo de la plantilla utiliza:
+- {% include step_label.html %} Selecciona **prod** y destruye los dos recursos del entorno simulado.
 
-  {% include step_image.html %}
+  ```bash
+  terraform workspace select prod
+  terraform destroy
+  ```
 
-Conserva este include solamente en los pasos que realmente tengan una imagen.
-Si el paso no requiere imagen, elimínalo.
+  > **Importante:** El nombre `prod` no lo convierte en producción real; aun así, valida siempre el plan antes de destruir.
+  {: .lab-note .important .compact}
 
-No es necesario agregar una imagen a cada paso.
+  > **Salida esperada:** `Destroy complete! Resources: 2 destroyed.`
+  {: .lab-note .output .compact}
 
----------------------------------------------------------------------
-10. RESULTADO DE CADA TAREA
----------------------------------------------------------------------
+### Tarea 5.2. Eliminar los Workspaces y verificar la limpieza
 
-Cada tarea debe terminar con un resultado esperado asociado a
-_data/task-results.yml.
+Volver a default para eliminar los workspaces vacíos sin intentar borrar el workspace activo.
 
-La asignación de results debe realizarse una sola vez antes del primer uso:
+- {% include step_label.html %} Selecciona **default** y elimina los workspaces `dev`, `test` y `prod`.
 
-  {% assign results = site.data.task-results[page.slug].results %}
+  ```bash
+  terraform workspace select default
+  terraform workspace delete dev
+  terraform workspace delete test
+  terraform workspace delete prod
+  ```
 
-En esta plantilla se realiza en la Tarea 1.
-No es necesario repetir el assign en las tareas siguientes.
+  > **Advertencia:** Solo elimines un workspace si su `terraform destroy` terminó correctamente. No uses `-force`.
+  {: .lab-note .warning .compact}
 
-Después utiliza el índice correspondiente:
+  > **Salida esperada:** Terraform elimina los tres workspaces sin advertencias de estado con recursos.
+  {: .lab-note .output .compact}
 
-  {% capture r1 %}{{ results[0] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r1 %}
+- {% include step_label.html %} Verifica los workspaces restantes y confirma en GCP que no persisten redes `lab4-*`.
 
-Para la Tarea 2:
+  ```bash
+  terraform workspace list
+  gcloud compute networks list --filter="name~'^lab4-(dev|test|prod)-vpc$'" --format="value(name)"
+  gcloud compute networks subnets list --filter="name~'^lab4-(dev|test|prod)-subnet$'" --format="value(name)"
+  ```
 
-  {% capture r2 %}{{ results[1] }}{% endcapture %}
+  > **Salida esperada:** Solo permanece `default` y las consultas de redes y subredes no devuelven recursos de la Práctica 4.
+  {: .lab-note .output .compact}
 
-Para la Tarea 3:
-
-  {% capture r3 %}{{ results[2] }}{% endcapture %}
-
-Y así sucesivamente.
-
----------------------------------------------------------------------
-11. PROMPT DE SOPORTE
----------------------------------------------------------------------
-
-Después del resultado de cada tarea debe incluirse el prompt de soporte
-correspondiente:
-
-  {% include support-prompt.html task="tarea1" %}
-
-La numeración debe coincidir exactamente con la tarea:
-
-  Tarea 1 -> task="tarea1"
-  Tarea 2 -> task="tarea2"
-  Tarea 3 -> task="tarea3"
-  Tarea 4 -> task="tarea4"
-  ...
-
----------------------------------------------------------------------
-12. SEPARACIÓN ENTRE TAREAS
----------------------------------------------------------------------
-
-Separa cada tarea principal utilizando:
-
-  ---
-
-No utilices este separador entre pasos o subtareas de la misma tarea.
-
----------------------------------------------------------------------
-13. ICONOS DE LAS TAREAS
----------------------------------------------------------------------
-
-El icono del encabezado es visual y puede cambiarse de acuerdo con el tema de
-la tarea. Ejemplos utilizados en esta plantilla:
-
-  🔎  ☁️  🚀
-
-La numeración y el texto "Tarea N." son más importantes que el icono.
-
----------------------------------------------------------------------
-14. QUÉ SE PUEDE ELIMINAR
----------------------------------------------------------------------
-
-Si un elemento no aplica a la práctica puede eliminarse, por ejemplo:
-
-- Prerequisitos adicionales.
-- Notas generales.
-- Referencias adicionales.
-- Una Nota/Importante/Advertencia de un paso.
-- {% include step_image.html %} cuando no existe imagen.
-- Subtareas que no sean necesarias.
-- Tareas de ejemplo que no formen parte de la práctica real.
-
-No elimines los elementos estructurales necesarios para el funcionamiento del
-layout, resultados o navegación sin revisar primero su dependencia.
-
----------------------------------------------------------------------
-15. VALIDACIÓN FINAL DEL ARCHIVO
----------------------------------------------------------------------
-
-Antes de considerar terminado el laboratorio verifica:
-
-- El título y duración son correctos.
-- El objetivo describe claramente el aprendizaje esperado.
-- La introducción está completa.
-- Todas las tareas están numeradas consecutivamente.
-- Todas las subtareas corresponden al número de su tarea.
-- Cada acción del participante está separada como paso cuando corresponde.
-- Los comandos tienen bloques de código adecuados.
-- Los pasos importantes tienen una salida esperada o criterio de validación.
-- Los índices results[N] corresponden a cada número de tarea.
-- Cada tarea utiliza support-prompt.html con su número correcto.
-- Las imágenes utilizadas existen en la carpeta img de la práctica.
-- El resultado final describe lo que el participante habrá conseguido.
-- No permanecen textos de marcador como CAMBIAR_AQUI, DESCRIPCION_, NOMBRE_DE_,
-  CODIGO_, PREREQUISITO_, RESULTADO_ o ## min en la versión final.
-
-======================================================================
-FIN DE LA GUÍA DE USO DE LA PLANTILLA
-======================================================================
--->
+{% capture r5 %}{{ results[4] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r5 %}
