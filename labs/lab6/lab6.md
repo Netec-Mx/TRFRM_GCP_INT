@@ -1,563 +1,806 @@
 ---
 layout: lab
-title: "Práctica 6: CAMBIAR_AQUI_NOMBRE_DE_LA_PRACTICA"
+title: "Práctica 6: Crear múltiples subredes y validar valores de entrada"
 permalink: /lab6/lab6/
 images_base: /labs/lab6/img
-duration: "## minutos"
+duration: "55 minutos"
 objective:
-  - OBJETIVO_DE_LA_PRACTICA
+  - "Implementar una VPC con subredes dinámicas mediante for_each, validar entradas mediante validation y crear reglas de firewall condicionales limitadas a rangos de laboratorio."
 prerequisites:
-  - PREREQUISITO_1
-  - PREREQUISITO_2
-  - PREREQUISITO_3
-  - PREREQUISITO_4
-  - PREREQUISITO_X
+  - "Prácticas 1 a 5 completadas y directorio terraform-gcp-intermediate en el Escritorio de Windows."
+  - "VS Code con terminal Git Bash, Terraform >= 1.5 y Google Cloud CLI instalados."
+  - "Proyecto GCP con Compute Engine API habilitada, facturación y permisos para redes, subredes y reglas de firewall."
+  - "gcloud y Application Default Credentials configurados para el proyecto del curso."
 introduction:
-  - INTRODUCCION_DE_LA_PRACTICA_BREVE_RESUMEN_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  - "Construirás la red lab6-vpc con dos subredes y una regla de firewall que se crea solo para elementos clasificados lógicamente como public. Probarás validaciones negativas controladas y verificarás los recursos con Terraform y gcloud antes de eliminarlos. En Google Cloud, public/private no es una propiedad nativa de la subred y las reglas de firewall se aplican a la VPC, no directamente a una subred."
 slug: lab6
 lab_number: 6
 final_result: >
-  RESULTADO_FINAL_ESPERADO_DE_LA_PRACTICA_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  Habrás creado una VPC y dos subredes mediante for_each, validado parámetros inválidos antes del despliegue,
+  generado una regla de firewall condicional con destino limitado y comprobado la eliminación de todos los recursos.
 notes:
-  - NOTAS_CONSIDERACIONES_ADICIONALES
-  - NOTAS_CONSIDERACIONES_ADICIONALES
+  - "Ejecuta los comandos en Git Bash integrado en VS Code desde terraform-gcp-intermediate/lab6."
+  - "Esta práctica utiliza estado local independiente; no reutilices backend ni Workspaces de laboratorios anteriores."
+  - "La clasificación public/private es una etiqueta de configuración Terraform; ninguna subred es pública por sí misma en Google Cloud."
+  - "La regla de firewall del laboratorio limita origen y destino; no se crean máquinas virtuales ni se prueba tráfico HTTP real."
+  - "Los bloques de construcción dirigida son ejercicios: completa el HCL solicitado antes de ejecutar validate o plan."
 references:
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://developer.hashicorp.com/terraform
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://learn.microsoft.com/es-es/cli/azure/
+  - text: "Terraform: Validación de variables"
+    url: https://developer.hashicorp.com/terraform/language/values/variables#custom-validation-rules
+  - text: "Terraform: for_each"
+    url: https://developer.hashicorp.com/terraform/language/meta-arguments/for_each
+  - text: "Terraform: cidrhost"
+    url: https://developer.hashicorp.com/terraform/language/functions/cidrhost
+  - text: "Google Cloud: VPC firewall rules"
+    url: https://cloud.google.com/firewall/docs/firewalls
+  - text: "Terraform Google: google_compute_firewall"
+    url: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_firewall
 prev: /lab5/lab5/
 next: /lab7/lab7/
 ---
 
+{% assign results = site.data.task-results[page.slug].results %}
+
 ---
 
-<!-- Aquí comienzan las instrucciones paso a paso de la práctica -->
+## 🔎 Tarea 1. Preparar directorio y verificar el entorno GCP — 5 min
 
-## 🔎 Tarea 1. NOMBRE DE LA TAREA — ## min
+Organizarás la carpeta `lab6` dentro del directorio principal del curso y confirmarás que Terraform y Google Cloud CLI apuntan al proyecto correcto. Esta preparación evita modificar accidentalmente la infraestructura de otras prácticas.
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
 
-### Tarea 1.1. NOMBRE DE_LA_SUBTAREA
+### Tarea 1.1. Crear directorio lab6 y archivos Terraform
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Preparar un directorio independiente para no modificar los recursos de prácticas anteriores.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+- {% include step_label.html %} En **VS Code**, abre el directorio principal del curso con las siguientes opciones. Comprueba la carpeta elegida antes de crear nuevos archivos.
+
+  > **Nota:** No abras `lab5`; el laboratorio tendrá su propio estado local.
   {: .lab-note .info .compact}
 
-  {% include step_image.html %}
+  | Campo o acción | Valor esperado |
+  |---|---|
+  | Menú | **File > Open Folder...** |
+  | Ubicación | **Desktop (Escritorio)** |
+  | Carpeta | `terraform-gcp-intermediate` |
+  | Confirmación | **Select Folder** |
 
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** El archivo o la configuración indicada queda guardado correctamente para la siguiente validación con Terraform.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+- {% include step_label.html %} Abre una terminal integrada y comprueba que sea **Git Bash** antes de pegar comandos de Linux.
+
+  > **Nota:** Todos los comandos bash se ejecutarán dentro de la terminal integrada.
+  {: .lab-note .info .compact}
+
+  - En VS Code, selecciona **Terminal > New Terminal**.
+  - Si aparece PowerShell, abre la flecha junto al botón **+** y elige **Git Bash**.
+  - Comprueba que el prompt corresponda al directorio `terraform-gcp-intermediate` o navega a él en el siguiente paso.
+
+  > **Salida esperada:** El archivo o la configuración indicada queda guardado correctamente para la siguiente validación con Terraform.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En **Git Bash**, crea `lab6` y los archivos del ejercicio.
+
+
+  ```bash
+  cd "$(cygpath -u "$USERPROFILE")/Desktop/terraform-gcp-intermediate"
+  mkdir -p lab6 && cd lab6
+  touch providers.tf variables.tf main.tf outputs.tf terraform.tfvars .gitignore
+  pwd
+  ```
+
+  > **Importante:** Antes de subir este directorio a Git, agrega a `.gitignore` las entradas `.terraform/`, `*.tfstate`, `*.tfstate.*`, `*.tfplan` y `*.tfvars` si contienen información sensible.
   {: .lab-note .important .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** La terminal muestra una ruta que termina en `/terraform-gcp-intermediate/lab6` y los seis archivos están disponibles en VS Code.
   {: .lab-note .output .compact}
 
-### Tarea 1.2. NOMBRE_DE_LA_SUBTAREA
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+### Tarea 1.2. Comprobar herramientas, autenticación y proyecto
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+Validar el contexto para evitar crear recursos en un proyecto incorrecto.
 
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+
+- {% include step_label.html %} Comprueba las versiones instaladas de Terraform y gcloud.
+
 
   ```bash
-  CODIGO_DEL_PASO_3
+  terraform version
+  gcloud version
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** Se muestran las versiones instaladas de Terraform y Google Cloud CLI; Terraform cumple el requisito `>= 1.5`.
   {: .lab-note .output .compact}
 
-{% assign results = site.data.task-results[page.slug].results %}
+
+- {% include step_label.html %} Consulta la cuenta y el proyecto configurados; confirma que pertenecen al curso.
+
+
+  ```bash
+  gcloud auth list --filter="status:ACTIVE" --format="value(account)"
+  gcloud config get-value project
+  ```
+
+  > **Salida esperada:** Se muestra la cuenta activa del curso y el ID del proyecto seleccionado, sin errores de autenticación.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Guarda y verifica el Project ID activo; comprueba que la API de Compute esté habilitada.
+
+
+  ```bash
+  PROJECT_ID="$(gcloud config get-value project)"
+  echo "Proyecto: $PROJECT_ID"
+  gcloud services list --enabled --project="$PROJECT_ID" --filter="config.name=compute.googleapis.com" --format="value(config.name)"
+  ```
+
+  > **Salida esperada:** Aparece `compute.googleapis.com`; si no aparece, solicita habilitarla antes de continuar.
+  {: .lab-note .output .compact}
+
+
 {% capture r1 %}{{ results[0] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r1 %}
 
-{% include support-prompt.html task="tarea1" %}
 
 ---
 
-## ☁️ Tarea 2. NOMBRE DE LA TAREA — ## min
+## 🔎 Tarea 2. Definir variables y reglas de validación — 12 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Declararás variables tipadas y reglas `validation` para controlar nombres, regiones, tipos y rangos CIDR. Probarás estas restricciones posteriormente, antes de crear infraestructura y generar costos.
 
-### Tarea 2.1. NOMBRE_DE_LA_SUBTAREA
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+### Tarea 2.1. Definir proyecto, región y nombre de VPC
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+Crear variables sencillas y una validación de región.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
-  {: .lab-note .info .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_1
+- {% include step_label.html %} En `lab6/providers.tf`, configura Terraform y Google Provider.
+
+
+  ```hcl
+  terraform {
+    required_version = ">= 1.5.0"
+    required_providers {
+      google = {
+        source  = "hashicorp/google"
+        version = ">= 5.0, < 8.0"
+      }
+    }
+  }
+  
+  provider "google" {
+    project = var.project_id
+    region  = var.region
+  }
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+
+  > **Salida esperada:** `providers.tf` contiene `required_providers` y el bloque `provider "google"` que utiliza `var.project_id` y `var.region`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+- {% include step_label.html %} En `lab6/variables.tf`, crea la variable obligatoria `project_id` y `network_name`.
+
+
+  ```hcl
+  variable "project_id" {
+    description = "Identificador del proyecto del curso"
+    type        = string
+    validation {
+      condition     = length(trimspace(var.project_id)) > 0
+      error_message = "project_id no puede estar vacío."
+    }
+  }
+  
+  variable "network_name" {
+    description = "Nombre único de la VPC de este laboratorio"
+    type        = string
+    default     = "lab6-vpc"
+    validation {
+      condition     = can(regex("^[a-z]([-a-z0-9]*[a-z0-9])?$", var.network_name)) && length(var.network_name) <= 63
+      error_message = "network_name debe ser un nombre GCP válido de hasta 63 caracteres."
+    }
+  }
+  ```
+
+
+  > **Salida esperada:** `variables.tf` declara `project_id` y `network_name`, incluida la validación del nombre de la VPC.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Debajo de `network_name`, crea la variable `region` mediante una **construcción dirigida**.
+
+  > **Importante:** Declara `region` al nivel raíz del archivo, debajo del cierre de `network_name`.
   {: .lab-note .important .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
+  **Requisitos:**
+  
+  - Nombre `region`, tipo `string`, valor predeterminado `us-central1`.
+  - Agrega un bloque `validation` que acepte **solo** `us-central1` o `us-east1`.
+  - Utiliza `contains([...], var.region)` y un `error_message` claro.
+  - Referencia: [Validación de variables](https://developer.hashicorp.com/terraform/language/values/variables#custom-validation-rules).
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+
+  > **Salida esperada:** La variable `region` rechaza valores que no pertenezcan a las dos regiones permitidas.
   {: .lab-note .output .compact}
 
-### Tarea 2.2. NOMBRE_DE_LA_SUBTAREA
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+- {% include step_label.html %} Guarda `providers.tf` y `variables.tf` con **Ctrl+S**. Revisa el panel **Problems** de VS Code y verifica que no haya llaves sin cerrar ni variables duplicadas; no confundas las advertencias del editor con una validación definitiva de Terraform.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
+  > **Nota:** Terraform realizará la comprobación efectiva con `terraform validate` más adelante.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** El archivo o la configuración indicada queda guardado correctamente para la siguiente validación con Terraform.
+  {: .lab-note .output .compact}
+
+
+### Tarea 2.2. Definir mapa de subredes y restricciones
+
+Usar `map(object)` y controles de formato, tipo y duplicados.
+
+
+- {% include step_label.html %} Al final de `variables.tf`, agrega una variable `subnets` que acepte un mapa de objetos.
+
+  > **Importante:** Deja abierto este bloque `variable "subnets"` mientras añades las validaciones siguientes.
+  {: .lab-note .important .compact}
+
+  ```hcl
+  variable "subnets" {
+    description = "Subredes: nombre lógico => CIDR y tipo"
+    type = map(object({
+      cidr = string
+      tipo = string
+    }))
+  ```
+
+  > **Salida esperada:** Se inició el bloque `variable "subnets"` con tipo `map(object({ cidr = string, tipo = string }))`; todavía falta agregar validaciones y el cierre final.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Dentro de `subnets`, agrega una validación de nombres y cantidad de elementos.
+
+
+  ```hcl
+  validation {
+      condition = length(var.subnets) >= 1 && alltrue([
+        for name, subnet in var.subnets :
+        can(regex("^[a-z]([-a-z0-9]*[a-z0-9])?$", name)) && length(name) <= 63
+      ])
+      error_message = "Declara al menos una subred y utiliza nombres GCP válidos."
+    }
+  ```
+
+
+  > **Salida esperada:** La primera validación exige al menos una subred y claves compatibles con nombres de subred de GCP.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Dentro de `subnets`, construye una validación para `tipo` **sin copiar un bloque completo**.
+
+
+  **Requisitos:**
+  
+  - Agrega otro `validation` después del control de nombres.
+  - Recorre `var.subnets` mediante una expresión `for` dentro de `alltrue`.
+  - Usa `contains` para aceptar únicamente `public` y `private`.
+  - Incluye el mensaje `Cada tipo debe ser public o private.`
+  - Referencia: [Terraform variable validation](https://developer.hashicorp.com/terraform/language/values/variables#custom-validation-rules).
+
+
+  > **Salida esperada:** La validación para `tipo` permite solo `public` o `private`.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Agrega una validación del formato IPv4/CIDR utilizando `can(cidrhost(...))`.
+
+  > **Nota:** `cidrhost` comprueba que el prefijo sea interpretable; la expresión regular limita la entrada a notación IPv4.
+  {: .lab-note .info .compact}
+
+  ```hcl
+  validation {
+      condition = alltrue([
+        for name, subnet in var.subnets :
+        can(regex("^[0-9.]+/[0-9]+$", subnet.cidr)) &&
+        can(cidrhost(subnet.cidr, 0))
+      ])
+      error_message = "Cada cidr debe ser un rango IPv4/CIDR válido."
+    }
+  ```
+
+  > **Salida esperada:** La condición comprueba la notación IPv4/CIDR y utiliza `cidrhost` para rechazar prefijos no válidos.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Agrega una validación de CIDR repetidos y cierra `variable "subnets"`.
+
+  > **Advertencia:** Esta validación detecta duplicados exactos; no identifica todos los rangos CIDR parcialmente superpuestos.
   {: .lab-note .warning .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_3
+  ```hcl
+  validation {
+      condition = length(distinct([
+        for name, subnet in var.subnets : subnet.cidr
+      ])) == length(var.subnets)
+      error_message = "No se permiten CIDR duplicados."
+    }
+  }
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** El bloque `subnets` queda cerrado y Terraform rechazará dos cadenas CIDR idénticas.
   {: .lab-note .output .compact}
+
+
+### Tarea 2.3. Configurar parámetros de las dos subredes
+
+Asignar CIDR diferentes y clasificación lógica public/private.
+
+
+- {% include step_label.html %} En `lab6/terraform.tfvars`, define el proyecto del curso y la región; sustituye `TU_PROJECT_ID`.
+
+
+  ```hcl
+  project_id   = "TU_PROJECT_ID"
+  region       = "us-central1"
+  network_name = "lab6-vpc"
+  ```
+
+
+  > **Salida esperada:** `terraform.tfvars` contiene el Project ID real, `us-central1` y `lab6-vpc`.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Debajo de `network_name`, define `subnets` con frontend y backend.
+
+
+  ```hcl
+  subnets = {
+    frontend = {
+      cidr = "10.60.1.0/24"
+      tipo = "public"
+    }
+    backend = {
+      cidr = "10.60.2.0/24"
+      tipo = "private"
+    }
+  }
+  ```
+
+
+  > **Salida esperada:** `terraform.tfvars` incluye `frontend` y `backend` con sus CIDR y tipo; el mapa está cerrado correctamente.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Comprueba en `terraform.tfvars` que ambos registros tengan valores diferentes antes de guardar con **Ctrl+S**.
+
+  > **Nota:** La clasificación `public` y `private` es una etiqueta lógica para filtrar recursos; GCP no asigna esa propiedad a las subredes.
+  {: .lab-note .info .compact}
+
+  | Entrada | CIDR | Clasificación lógica |
+  |---|---|---|
+  | `frontend` | `10.60.1.0/24` | `public` |
+  | `backend` | `10.60.2.0/24` | `private` |
+
+  > **Salida esperada:** El archivo o la configuración indicada queda guardado correctamente para la siguiente validación con Terraform.
+  {: .lab-note .output .compact}
+
 
 {% capture r2 %}{{ results[1] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r2 %}
 
-{% include support-prompt.html task="tarea2" %}
 
 ---
 
-## 🚀 Tarea 3. NOMBRE DE LA TAREA — ## min
+## 🔎 Tarea 3. Implementar infraestructura dinámica de red — 10 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Construirás una VPC personalizada y generarás dos subredes a partir de un solo bloque `for_each`. Agregarás una regla Firewall condicional y outputs que permitan inspeccionar los recursos sin duplicar configuraciones.
 
-### Tarea 3.1. NOMBRE_DE_LA_SUBTAREA
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+### Tarea 3.1. Configurar VPC y su relación con el Provider
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+Usar una red personalizada sin crear automáticamente subredes.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+
+- {% include step_label.html %} En `lab6/main.tf`, crea una VPC personalizada `google_compute_network.vpc`.
+
+
+  ```hcl
+  resource "google_compute_network" "vpc" {
+    name                    = var.network_name
+    auto_create_subnetworks = false
+    description             = "VPC de laboratorio para for_each y validation"
+  }
+  ```
+
+
+  > **Salida esperada:** `main.tf` declara `google_compute_network.vpc` con nombre `lab6-vpc` y creación automática de subredes desactivada.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Confirma que la VPC utiliza `var.network_name` y tiene `auto_create_subnetworks = false`.
+
+
+  > **Salida esperada:** La VPC tiene `auto_create_subnetworks = false`, por lo que únicamente existirán las subredes declaradas explícitamente.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En `main.tf`, deja una línea en blanco después del cierre de la VPC para insertar el bloque de subredes.
+
+  > **Nota:** La siguiente configuración va al nivel raíz, nunca dentro de la VPC.
   {: .lab-note .info .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** El siguiente bloque `resource` podrá agregarse fuera de `google_compute_network.vpc`, en el nivel raíz de `main.tf`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+### Tarea 3.2. Crear subredes dinámicas con for_each
+
+Crear dos recursos a partir de un mapa sin duplicar bloques.
+
+
+- {% include step_label.html %} Debajo de la VPC, inicia un recurso `google_compute_subnetwork.subnets`.
+
+  > **Importante:** El bloque está incompleto deliberadamente: `each.key` todavía requiere `for_each`.
   {: .lab-note .important .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_2
+  ```hcl
+  resource "google_compute_subnetwork" "subnets" {
+    name          = "lab6-${each.key}"
+    ip_cidr_range = each.value.cidr
+    region        = var.region
+    network       = google_compute_network.vpc.id
+  }
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** El recurso de subred tiene `name`, `ip_cidr_range`, `region` y `network`; el siguiente paso agregará `for_each`.
   {: .lab-note .output .compact}
 
-### Tarea 3.2. NOMBRE_DE_LA_SUBTAREA
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+- {% include step_label.html %} Dentro del bloque de subredes, agrega `for_each` como **construcción dirigida**.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+  **Requisitos:**
+  
+  - Debe ubicarse inmediatamente después de la apertura `resource "google_compute_subnetwork" "subnets" {`.
+  - Itera **todos** los elementos de `var.subnets`.
+  - Mantén `each.key` en `name` y `each.value.cidr` en `ip_cidr_range`.
+  - Referencia: [for_each](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each).
 
-  ```bash
-  CODIGO_DEL_PASO_3
+
+  > **Salida esperada:** El bloque de subredes itera el mapa de entrada mediante `for_each`.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Verifica que `network` se asocie con `google_compute_network.vpc.id` y no con otra VPC.
+
+
+  > **Nota:** El recurso crea automáticamente la dependencia entre subredes y VPC.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** La expresión `google_compute_network.vpc.id` asocia ambas subredes con la VPC del laboratorio.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Identifica cómo Terraform nombrará cada subred: `lab6-frontend` y `lab6-backend`.
+
+
+  > **Salida esperada:** Durante `terraform plan` aparecerán `google_compute_subnetwork.subnets["frontend"]` y `google_compute_subnetwork.subnets["backend"]`.
+  {: .lab-note .output .compact}
+
+
+### Tarea 3.3. Filtrar subredes public, Firewall y outputs
+
+Configurar una regla condicional con origen y destino limitados.
+
+
+- {% include step_label.html %} Debajo del recurso subredes, declara `locals` y construye `public_subnets` mediante un filtro **dirigido**.
+
+
+  **Requisitos:**
+  
+  - Declara `locals { ... }` al nivel raíz de `main.tf`.
+  - Dentro crea `public_subnets` como mapa derivado de `var.subnets`.
+  - Utiliza una expresión `for key, subnet in var.subnets : key => subnet if ...`.
+  - Conserva solo los objetos cuyo `tipo` sea `public`.
+  - Referencia: [for expressions](https://developer.hashicorp.com/terraform/language/expressions/for).
+
+
+  > **Salida esperada:** `local.public_subnets` contiene `frontend` y excluye `backend`.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Al final de `main.tf`, crea un Firewall condicional para cada entrada de `local.public_subnets`.
+
+
+  ```hcl
+  resource "google_compute_firewall" "http_public" {
+    for_each = local.public_subnets
+  
+    name      = "lab6-${each.key}-http"
+    network   = google_compute_network.vpc.name
+    direction = "INGRESS"
+  
+    allow {
+      protocol = "tcp"
+      ports    = ["80"]
+    }
+  
+    source_ranges      = ["10.60.0.0/16"]
+    destination_ranges = [each.value.cidr]
+    description        = "Demostracion restringida: HTTP hacia ${each.key}"
+  }
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+
+  > **Salida esperada:** La regla `lab6-frontend-http` se declarará solo para la entrada `frontend` del mapa filtrado.
   {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Verifica la diferencia entre origen y destino de la regla Firewall.
+
+
+  > **Importante:** `source_ranges` limita IPs de origen y `destination_ranges` limita IPs de destino. Las reglas VPC se aplican a la red, no se adjuntan directamente a subredes.
+  {: .lab-note .important .compact}
+  
+  > **Nota:** No se abre HTTP a Internet (`0.0.0.0/0`) ni se crean instancias que acepten tráfico.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** La regla solo permite TCP/80 con origen `10.60.0.0/16` y destino `10.60.1.0/24`; no se abre HTTP hacia Internet.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En `outputs.tf`, agrega nombres de VPC y Firewall condicional para inspección.
+
+
+  ```hcl
+  output "vpc_name" {
+    description = "VPC creada"
+    value       = google_compute_network.vpc.name
+  }
+  
+  output "firewall_names" {
+    description = "Reglas creadas para subredes public"
+    value       = [for name, fw in google_compute_firewall.http_public : fw.name]
+  }
+  ```
+
+
+  > **Salida esperada:** La regla `lab6-frontend-http` se declarará solo para la entrada `frontend` del mapa filtrado.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En `outputs.tf`, agrega el output `subnets` como **construcción dirigida**.
+
+
+  **Requisitos:**
+  
+  - Declara `output "subnets"` después de `firewall_names`.
+  - Devuelve un mapa con una entrada por subred creada en `google_compute_subnetwork.subnets`.
+  - Incluye para cada entrada `cidr` y `region` obtenidos del recurso real.
+  - Usa una expresión `for key, subnet in ... : key => {...}`.
+  - Referencia: [Outputs](https://developer.hashicorp.com/terraform/language/values/outputs).
+
+
+  > **Salida esperada:** `terraform output subnets` entregará frontend y backend con CIDR y región.
+  {: .lab-note .output .compact}
+
 
 {% capture r3 %}{{ results[2] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r3 %}
 
-{% include support-prompt.html task="tarea3" %}
 
 ---
 
-<!--
-======================================================================
-GUÍA DE USO DE LA PLANTILLA DEL LABORATORIO
-======================================================================
+## 🔎 Tarea 4. Validar configuraciones y desplegar recursos — 9 min
 
-Este archivo es una plantilla base. Las 3 tareas incluidas sirven únicamente
-como referencia de estructura. La práctica final puede tener más o menos
-tareas, subtareas y pasos según lo requiera el contenido.
+Ejecutarás pruebas negativas de `validation` con valores inválidos y después restaurarás la configuración. Cuando Terraform confirme que el plan es correcto, desplegarás cuatro recursos y verificarás sus atributos con `gcloud`.
 
----------------------------------------------------------------------
-1. FRONT MATTER
----------------------------------------------------------------------
 
-Completa los campos de la cabecera YAML sin cambiar sus nombres:
+### Tarea 4.1. Inicializar y probar validaciones negativas
 
-- title:
-    Nombre completo de la práctica.
+Verificar la sintaxis y rechazar valores inválidos antes del despliegue.
 
-- duration:
-    Duración total estimada de la práctica en minutos.
 
-- objective:
-    Objetivo principal de aprendizaje de la práctica.
+- {% include step_label.html %} En `lab6`, inicializa Terraform y da formato a todos los archivos HCL.
 
-- prerequisites:
-    Requisitos previos necesarios para realizarla.
-    Agrega o elimina elementos según corresponda.
-
-- introduction:
-    Introducción breve de la práctica. Se recomienda un solo párrafo.
-
-- final_result:
-    Resultado final esperado al terminar toda la práctica.
-    Se recomienda describirlo en un solo párrafo.
-
-- notes:
-    Consideraciones generales que apliquen a toda la práctica.
-
-- references:
-    Documentación oficial o referencias técnicas relevantes.
-    Mantén la estructura:
-
-      - text: DESCRIPCION
-        url: URL
-
-- permalink, images_base, slug y lab_number:
-    Son generados automáticamente. No deben modificarse salvo que cambie
-    deliberadamente la estructura del sitio.
-
-- prev y next:
-    Son generados automáticamente por este script para navegación entre labs.
-
----------------------------------------------------------------------
-2. ESTRUCTURA GENERAL DE UNA TAREA
----------------------------------------------------------------------
-
-Cada tarea debe seguir esta estructura:
-
-  ## ICONO Tarea N. NOMBRE DE LA TAREA — ## min
-
-  DESCRIPCION_DE_LA_TAREA.
-
-  ### Tarea N.1. NOMBRE_DE_LA_SUBTAREA
-
-  DESCRIPCION_DE_LA_SUBTAREA.
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-La descripción de la tarea debe explicar qué se realizará y para qué.
-Como referencia, se recomiendan aproximadamente 200-250 caracteres.
-
-La descripción de cada subtarea debe indicar claramente el objetivo de esa
-sección. Como referencia, se recomiendan aproximadamente 120-150 caracteres.
-
----------------------------------------------------------------------
-3. TAREAS
----------------------------------------------------------------------
-
-Las tareas principales se numeran de forma consecutiva:
-
-  Tarea 1
-  Tarea 2
-  Tarea 3
-  Tarea 4
-  ...
-
-La plantilla incluye solamente 3 tareas como ejemplo.
-
-Si la práctica necesita más tareas:
-
-1) Duplica COMPLETA una sección de tarea existente.
-2) Cambia el encabezado de la tarea.
-3) Cambia la numeración de todas sus subtareas.
-4) Cambia el resultado asociado results[N].
-5) Cambia el identificador de support-prompt.html.
-
-Ejemplo para una Tarea 4:
-
-  ## 🔧 Tarea 4. NOMBRE DE LA TAREA — ## min
-
-Al finalizar debe contener:
-
-  {% capture r4 %}{{ results[3] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r4 %}
-
-  {% include support-prompt.html task="tarea4" %}
-
-IMPORTANTE:
-El arreglo results utiliza índice base 0:
-
-  Tarea 1 -> results[0]
-  Tarea 2 -> results[1]
-  Tarea 3 -> results[2]
-  Tarea 4 -> results[3]
-  Tarea 5 -> results[4]
-  Tarea 6 -> results[5]
-  Tarea N -> results[N-1]
-
----------------------------------------------------------------------
-4. SUBTAREAS
----------------------------------------------------------------------
-
-Cada tarea puede contener tantas subtareas como sea necesario.
-La numeración debe conservar la relación con la tarea principal.
-
-Ejemplo para la Tarea 4:
-
-  ### Tarea 4.1. PRIMERA SUBTAREA
-  ### Tarea 4.2. SEGUNDA SUBTAREA
-  ### Tarea 4.3. TERCERA SUBTAREA
-  ### Tarea 4.4. CUARTA SUBTAREA
-
-No existe un límite fijo de subtareas.
-
----------------------------------------------------------------------
-5. PASOS
----------------------------------------------------------------------
-
-Cada acción que debe realizar el participante debe escribirse como un paso
-independiente utilizando:
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-No combines varias acciones importantes dentro de un único paso cuando puedan
-realizarse o validarse por separado.
-
-Cada paso debe contener, cuando corresponda:
-
-- Una descripción clara de la acción.
-- Una Nota, Importante o Advertencia.
-- Una imagen de referencia.
-- Un bloque de código o comando.
-- Una salida esperada o criterio de validación.
-
----------------------------------------------------------------------
-6. NOTAS, IMPORTANTES Y ADVERTENCIAS
----------------------------------------------------------------------
-
-Usa los bloques obligatoriamente aportando informacion util en cada paso.
-Nota, Advertencia, Importante, Siempre ponerla debajo del texto del paso.
-Salida esperada, siempr ponerla al finalizar el paso y antes del siguiente paso.
-
-Nota informativa:
-
-  > **Nota:** TEXTO.
-  {: .lab-note .info .compact}
-
-Consideración importante:
-
-  > **Importante:** TEXTO.
-  {: .lab-note .important .compact}
-
-Advertencia:
-
-  > **Advertencia:** TEXTO.
-  {: .lab-note .warning .compact}
-
-Salida esperada:
-
-  > **Salida esperada:** TEXTO.
-  {: .lab-note .output .compact}
-
-No es obligatorio incluir los tres tipos de nota en todos los pasos.
-Utiliza solamente el que corresponda al contexto.
-
----------------------------------------------------------------------
-7. BLOQUES DE CÓDIGO
----------------------------------------------------------------------
-
-Cada comando o fragmento que el participante deba ejecutar debe tener su
-propio bloque de código.
-
-Ejemplo Bash:
 
   ```bash
-  COMANDO
+  terraform init
+  terraform fmt -recursive
   ```
 
-Cambia el identificador del lenguaje cuando corresponda, por ejemplo:
 
-  ```yaml
-  ```json
-  ```sql
-  ```powershell
-  ```python
-
-Evita colocar varios pasos independientes dentro de un único bloque de código
-si deben ejecutarse y validarse por separado.
-
----------------------------------------------------------------------
-8. SALIDA ESPERADA
----------------------------------------------------------------------
-
-Después de un comando o acción importante debe existir una forma clara de
-validar que el paso fue realizado correctamente.
-
-Utiliza:
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_VALIDACION.
+  > **Salida esperada:** Se descarga/inicializa el proveedor y `terraform fmt` deja los archivos HCL con formato consistente.
   {: .lab-note .output .compact}
 
-La salida esperada no necesita reproducir siempre todo el texto del comando.
-Puede describir el estado, recurso, valor o comportamiento que debe observarse.
 
----------------------------------------------------------------------
-9. IMÁGENES
----------------------------------------------------------------------
+- {% include step_label.html %} Comprueba estructura y sintaxis ejecutando `terraform validate`.
 
-La carpeta de imágenes de esta práctica se encuentra en:
 
-  labs/labN/img/
+  ```bash
+  terraform validate
+  ```
 
-Para insertar una imagen mediante el mecanismo de la plantilla utiliza:
 
-  {% include step_image.html %}
+  > **Salida esperada:** Terraform muestra `Success! The configuration is valid.`
+  {: .lab-note .output .compact}
 
-Conserva este include solamente en los pasos que realmente tengan una imagen.
-Si el paso no requiere imagen, elimínalo.
 
-No es necesario agregar una imagen a cada paso.
+- {% include step_label.html %} Prueba una región no permitida sin editar archivos; espera un error de `validation`.
 
----------------------------------------------------------------------
-10. RESULTADO DE CADA TAREA
----------------------------------------------------------------------
 
-Cada tarea debe terminar con un resultado esperado asociado a
-_data/task-results.yml.
+  ```bash
+  terraform plan -var="region=us-west1"
+  ```
 
-La asignación de results debe realizarse una sola vez antes del primer uso:
 
-  {% assign results = site.data.task-results[page.slug].results %}
+  > **Salida esperada:** El plan rechaza `us-west1` mediante la validación de la variable `region`.
+  {: .lab-note .output .compact}
 
-En esta plantilla se realiza en la Tarea 1.
-No es necesario repetir el assign en las tareas siguientes.
 
-Después utiliza el índice correspondiente:
+- {% include step_label.html %} Prueba un valor `tipo` incorrecto editando temporalmente `terraform.tfvars`, luego restaura el valor.
 
-  {% capture r1 %}{{ results[0] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r1 %}
 
-Para la Tarea 2:
+  En `lab6/terraform.tfvars`, cambia únicamente `frontend.tipo` de `"public"` a `"externa"`. Ejecuta:
+  
+  ```bash
+  terraform plan
+  ```
+  
+  **Después del error**, devuelve `frontend.tipo` a `"public"` y guarda el archivo.
+  
+  > **Advertencia:** No continúes con una configuración inválida.
+  {: .lab-note .important .compact}
 
-  {% capture r2 %}{{ results[1] }}{% endcapture %}
+  > **Salida esperada:** El plan rechaza `externa` y el archivo queda restaurado a `public`.
+  {: .lab-note .output .compact}
 
-Para la Tarea 3:
 
-  {% capture r3 %}{{ results[2] }}{% endcapture %}
+- {% include step_label.html %} Prueba un CIDR inválido y vuelve al valor original.
 
-Y así sucesivamente.
 
----------------------------------------------------------------------
-11. PROMPT DE SOPORTE
----------------------------------------------------------------------
+  En `terraform.tfvars`, cambia temporalmente `frontend.cidr` a `"10.60.999.0/24"` y ejecuta:
+  
+  ```bash
+  terraform plan
+  ```
+  
+  Restaura inmediatamente `frontend.cidr = "10.60.1.0/24"` y guarda.
+  
+  > **Salida esperada:** El plan rechaza el CIDR inválido. Después de restaurar el archivo, las subredes vuelven a tener `10.60.1.0/24` y `10.60.2.0/24`.
+  {: .lab-note .output .compact}
 
-Después del resultado de cada tarea debe incluirse el prompt de soporte
-correspondiente:
 
-  {% include support-prompt.html task="tarea1" %}
+### Tarea 4.2. Planificar, aplicar y verificar en Google Cloud
 
-La numeración debe coincidir exactamente con la tarea:
+Crear cuatro recursos y comprobar las subredes y la regla Firewall.
 
-  Tarea 1 -> task="tarea1"
-  Tarea 2 -> task="tarea2"
-  Tarea 3 -> task="tarea3"
-  Tarea 4 -> task="tarea4"
-  ...
 
----------------------------------------------------------------------
-12. SEPARACIÓN ENTRE TAREAS
----------------------------------------------------------------------
+- {% include step_label.html %} Con todos los valores restaurados, ejecuta `terraform plan` y revisa los recursos esperados.
 
-Separa cada tarea principal utilizando:
 
-  ---
+  ```bash
+  terraform validate
+  terraform plan
+  ```
 
-No utilices este separador entre pasos o subtareas de la misma tarea.
 
----------------------------------------------------------------------
-13. ICONOS DE LAS TAREAS
----------------------------------------------------------------------
+  > **Salida esperada:** El plan indica 1 VPC, 2 subredes y 1 regla Firewall: 4 recursos por agregar.
+  {: .lab-note .output .compact}
 
-El icono del encabezado es visual y puede cambiarse de acuerdo con el tema de
-la tarea. Ejemplos utilizados en esta plantilla:
 
-  🔎  ☁️  🚀
+- {% include step_label.html %} Despliega la infraestructura desde **Git Bash** y confirma el resultado.
 
-La numeración y el texto "Tarea N." son más importantes que el icono.
 
----------------------------------------------------------------------
-14. QUÉ SE PUEDE ELIMINAR
----------------------------------------------------------------------
+  ```bash
+  terraform apply
+  ```
 
-Si un elemento no aplica a la práctica puede eliminarse, por ejemplo:
 
-- Prerequisitos adicionales.
-- Notas generales.
-- Referencias adicionales.
-- Una Nota/Importante/Advertencia de un paso.
-- {% include step_image.html %} cuando no existe imagen.
-- Subtareas que no sean necesarias.
-- Tareas de ejemplo que no formen parte de la práctica real.
+  > **Salida esperada:** Terraform presenta `Apply complete! Resources: 4 added, 0 changed, 0 destroyed.` si no existían recursos previos.
+  {: .lab-note .output .compact}
 
-No elimines los elementos estructurales necesarios para el funcionamiento del
-layout, resultados o navegación sin revisar primero su dependencia.
 
----------------------------------------------------------------------
-15. VALIDACIÓN FINAL DEL ARCHIVO
----------------------------------------------------------------------
+- {% include step_label.html %} Consulta outputs y estado Terraform para comprobar los cuatro recursos.
 
-Antes de considerar terminado el laboratorio verifica:
 
-- El título y duración son correctos.
-- El objetivo describe claramente el aprendizaje esperado.
-- La introducción está completa.
-- Todas las tareas están numeradas consecutivamente.
-- Todas las subtareas corresponden al número de su tarea.
-- Cada acción del participante está separada como paso cuando corresponde.
-- Los comandos tienen bloques de código adecuados.
-- Los pasos importantes tienen una salida esperada o criterio de validación.
-- Los índices results[N] corresponden a cada número de tarea.
-- Cada tarea utiliza support-prompt.html con su número correcto.
-- Las imágenes utilizadas existen en la carpeta img de la práctica.
-- El resultado final describe lo que el participante habrá conseguido.
-- No permanecen textos de marcador como CAMBIAR_AQUI, DESCRIPCION_, NOMBRE_DE_,
-  CODIGO_, PREREQUISITO_, RESULTADO_ o ## min en la versión final.
+  ```bash
+  terraform output
+  terraform state list
+  ```
 
-======================================================================
-FIN DE LA GUÍA DE USO DE LA PLANTILLA
-======================================================================
--->
+
+  > **Salida esperada:** La salida contiene VPC, dos subredes y un firewall `lab6-frontend-http`.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Valida los recursos con gcloud en el proyecto asignado.
+
+
+  ```bash
+  gcloud compute networks describe lab6-vpc --project="$PROJECT_ID" --format="value(name)"
+  gcloud compute networks subnets list --project="$PROJECT_ID" --filter="network:lab6-vpc" --format="table(name,region,ipCidrRange)"
+  gcloud compute firewall-rules describe lab6-frontend-http --project="$PROJECT_ID" --format="yaml(name,network,sourceRanges,destinationRanges,allowed)"
+  ```
+
+
+  > **Salida esperada:** Existen `lab6-frontend` y `lab6-backend`, y la regla `lab6-frontend-http` apunta a `10.60.1.0/24`.
+  {: .lab-note .output .compact}
+
+
+{% capture r4 %}{{ results[3] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r4 %}
+
+
+---
+
+## 🔎 Tarea 5. Eliminar recursos y verificar limpieza — 4 min
+
+Eliminarás únicamente los recursos creados en `lab6` y verificarás tanto el estado local como el proyecto GCP. La inspección del plan de destrucción es obligatoria para evitar afectar otras prácticas.
+
+
+### Tarea 5.1. Destruir infraestructura controladamente
+
+Confirmar que la configuración es válida y evitar eliminar infraestructura de otras prácticas.
+
+
+- {% include step_label.html %} Confirma desde Git Bash que sigues en el directorio `lab6` y revisa recursos administrados.
+
+
+  ```bash
+  pwd
+  terraform state list
+  ```
+
+
+  > **Salida esperada:** Solo aparecen recursos de `lab6`.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Ejecuta `terraform destroy` y confirma `yes` después de revisar el plan.
+
+
+  ```bash
+  terraform destroy
+  ```
+
+
+  > **Salida esperada:** Terraform indica la destrucción de los cuatro recursos del laboratorio.
+  {: .lab-note .output .compact}
+
+
+### Tarea 5.2. Verificar que no queden recursos
+
+Comprobar el estado Terraform y consultar el proyecto GCP.
+
+
+- {% include step_label.html %} Comprueba que el estado Terraform ya no tenga recursos administrados.
+
+
+  ```bash
+  terraform state list
+  ```
+
+
+  > **Salida esperada:** No se listan recursos en el estado actual.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Verifica en GCP que la VPC y la regla firewall de lab6 ya no existan.
+
+
+  ```bash
+  gcloud compute networks list --project="$PROJECT_ID" --filter="name=lab6-vpc" --format="value(name)"
+  gcloud compute firewall-rules list --project="$PROJECT_ID" --filter="name=lab6-frontend-http" --format="value(name)"
+  ```
+
+
+  > **Salida esperada:** Ambos comandos devuelven resultados vacíos; los recursos de `lab6` han sido eliminados.
+  {: .lab-note .output .compact}
+
+
+{% capture r5 %}{{ results[4] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r5 %}

@@ -1,563 +1,448 @@
 ---
 layout: lab
-title: "Práctica 13: CAMBIAR_AQUI_NOMBRE_DE_LA_PRACTICA"
+title: "Práctica 13: Crear un wrapper básico con Terragrunt"
 permalink: /lab13/lab13/
 images_base: /labs/lab13/img
-duration: "## minutos"
+duration: "30 minutos"
 objective:
-  - OBJETIVO_DE_LA_PRACTICA
+  - "Crear un módulo Terraform reutilizable para Cloud Storage y administrarlo mediante Terragrunt desde tres entornos lógicos, con configuración compartida y estado local independiente."
+  - "Planificar, desplegar, verificar y destruir los buckets de dev, test y prod sin afectar recursos de otras prácticas."
 prerequisites:
-  - PREREQUISITO_1
-  - PREREQUISITO_2
-  - PREREQUISITO_3
-  - PREREQUISITO_4
-  - PREREQUISITO_X
+  - "Prácticas 1 a 12 realizadas y directorio terraform-gcp-intermediate disponible en el Escritorio de Windows."
+  - "VM Windows con VS Code, Git Bash, Terraform >= 1.6, Google Cloud CLI y Terragrunt instalado o acceso para descargarlo."
+  - "Proyecto GCP de capacitación con facturación, Cloud Storage API, permisos para crear y eliminar buckets y credenciales ADC configuradas."
 introduction:
-  - INTRODUCCION_DE_LA_PRACTICA_BREVE_RESUMEN_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  - "Crearás un único módulo Terraform que define un bucket GCS y lo consumirás desde tres unidades Terragrunt, dev, test y prod. root.hcl compartirá project_id y location; cada unidad tendrá su nombre de bucket y backend local independiente. Comprobarás las salidas y el estado por entorno, y eliminarás exclusivamente los tres buckets del laboratorio."
 slug: lab13
 lab_number: 13
 final_result: >
-  RESULTADO_FINAL_ESPERADO_DE_LA_PRACTICA_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  Habrás implementado un wrapper Terragrunt con configuración raíz reutilizable, tres entornos que consumen un único módulo Terraform y estados aislados; comprobarás los tres buckets en Google Cloud y realizarás una limpieza controlada sin dejar recursos activos del laboratorio.
 notes:
-  - NOTAS_CONSIDERACIONES_ADICIONALES
-  - NOTAS_CONSIDERACIONES_ADICIONALES
+  - "Todos los comandos locales se ejecutan desde Git Bash integrado en VS Code; cada cambio de directorio se indica expresamente."
+  - "Los entornos dev, test y prod son simulaciones dentro de un mismo proyecto GCP: separar estados no equivale a aislar permisos, redes o facturación."
+  - "No se reutiliza el backend GCS de las prácticas anteriores. Cada entorno usa backend local con estado en su directorio live correspondiente; no compartas archivos tfstate."
+  - "El nombre de cada bucket es globalmente único; se deriva del Project ID y del entorno. Valida que no exista antes de aplicar."
+  - "No se utilizarán credenciales JSON ni se concederán roles amplios; si faltan permisos, solicita apoyo del instructor."
+  - "Los 30 minutos suponen herramientas, autenticación, permisos y API preparados; descargas y aprovisionamiento pueden aumentar la duración."
 references:
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://developer.hashicorp.com/terraform
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://learn.microsoft.com/es-es/cli/azure/
+  - text: "Terragrunt: documentación oficial"
+    url: https://terragrunt.gruntwork.io/docs/
+  - text: "Terragrunt: configuración include y root.hcl"
+    url: https://terragrunt.gruntwork.io/docs/features/includes/
+  - text: "Terragrunt: funciones integradas"
+    url: https://terragrunt.gruntwork.io/docs/reference/built-in-functions/
+  - text: "Terragrunt: comandos run"
+    url: https://terragrunt.gruntwork.io/docs/reference/cli/commands/run/
+  - text: "Terraform: desarrollo de módulos"
+    url: https://developer.hashicorp.com/terraform/language/modules/develop
+  - text: "Google Provider: storage_bucket"
+    url: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket
+  - text: "Cloud Storage: nombres de buckets"
+    url: https://cloud.google.com/storage/docs/buckets#naming
 prev: /lab12/lab12/
-next: /
 ---
 
+
 ---
-
-<!-- Aquí comienzan las instrucciones paso a paso de la práctica -->
-
-## 🔎 Tarea 1. NOMBRE DE LA TAREA — ## min
-
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
-
-### Tarea 1.1. NOMBRE DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
-  {: .lab-note .info .compact}
-
-  {% include step_image.html %}
-
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+## 🔎 Tarea 1. Preparar Terragrunt y construir el módulo base — 7 min
+Prepararás `lab13` sin modificar laboratorios anteriores, comprobarás acceso a Google Cloud y crearás un módulo Terraform reutilizable que expone el nombre del bucket.
+### Tarea 1.1. Crear lab13 y verificar herramientas
+Trabajar exclusivamente desde el directorio central del curso, con Git Bash, Terraform, Terragrunt y gcloud disponibles.
+- {% include step_label.html %} En **VS Code**, abre **File > Open Folder...**, selecciona `terraform-gcp-intermediate` del Escritorio y abre **Terminal > New Terminal** con perfil **Git Bash**.
+  > **Salida esperada:** El Explorer muestra `lab1` a `lab12` y la terminal integrada presenta el prompt de Git Bash.
   {: .lab-note .output .compact}
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+- {% include step_label.html %} En **Git Bash**, localiza el Escritorio real de Windows, crea `lab13` y prepara las carpetas del módulo y los entornos.
+  ```bash
+  DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
+  DESKTOP="$(cygpath -u "$DESKTOP_WIN")"
+  mkdir -p "$DESKTOP/terraform-gcp-intermediate/lab13/modules/bucket"
+  mkdir -p "$DESKTOP/terraform-gcp-intermediate/lab13/live/"{dev,test,prod}
+  cd "$DESKTOP/terraform-gcp-intermediate/lab13"
+  pwd
+  ```
+  > **Salida esperada:** La ruta termina en `/terraform-gcp-intermediate/lab13` y existen `modules/bucket`, `live/dev`, `live/test` y `live/prod`.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} Comprueba versiones, cuenta y proyecto. Guarda el proyecto activo en una variable de entorno para que `root.hcl` pueda leerlo.
+  ```bash
+  terraform version
+  terragrunt --version
+  gcloud version | head -n 3
+  export GOOGLE_CLOUD_PROJECT="$(gcloud config get-value project)"
+  printf 'Proyecto: %s\n' "$GOOGLE_CLOUD_PROJECT"
+  gcloud auth list --filter='status:ACTIVE' --format='value(account)'
+  gcloud auth application-default print-access-token >/dev/null && echo 'ADC disponible' 
+  ```
+  > **Importante:** Si falta Terragrunt, consulta [Releases oficiales](https://github.com/gruntwork-io/terragrunt/releases), descarga el ejecutable Windows amd64 aprobado por tu instructor y verifica `terragrunt --version`. Si ADC falla, ejecuta `gcloud auth application-default login`.
   {: .lab-note .important .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** Terraform, Terragrunt y gcloud responden; aparece el Project ID y `ADC disponible`.
   {: .lab-note .output .compact}
-
-### Tarea 1.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
-
+### Tarea 1.2. Construir el módulo Terraform bucket
+Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `outputs.tf`, sin incrustar el ID del proyecto ni credenciales.
+- {% include step_label.html %} En Git Bash, crea los cuatro archivos del módulo y un `.gitignore` en `lab13`.
   ```bash
-  CODIGO_DEL_PASO_3
+  touch modules/bucket/providers.tf modules/bucket/variables.tf \
+        modules/bucket/main.tf modules/bucket/outputs.tf
+  cat > .gitignore <<'EOF'
+  .terragrunt-cache/
+  .terraform/
+  *.tfstate
+  *.tfstate.*
+  *.tfplan
+  *.tfvars
+  *.tfvars.json
+  *.json.credentials
+  EOF
   ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** Los cuatro archivos están dentro de `modules/bucket`; `.gitignore` excluye caché, estado y datos locales.
   {: .lab-note .output .compact}
-
-{% assign results = site.data.task-results[page.slug].results %}
+- {% include step_label.html %} En **VS Code**, abre `lab13/modules/bucket/providers.tf` y declara el proveedor Google con restricciones de versión.
+  ```hcl
+  terraform {
+    required_version = ">= 1.6.0"
+    required_providers {
+      google = {
+        source  = "hashicorp/google"
+        version = ">= 5.0, < 8.0"
+      }
+    }
+  }
+  ```
+  > **Salida esperada:** El módulo declara `hashicorp/google` y no contiene un bloque `provider` con credenciales.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} En `modules/bucket/variables.tf`, define las tres entradas que recibirán los entornos a través de Terragrunt.
+  ```hcl
+  variable "name" {
+    description = "Nombre globalmente unico del bucket"
+    type        = string
+  }
+  
+  variable "location" {
+    description = "Ubicacion GCP del bucket"
+    type        = string
+  }
+  
+  variable "project_id" {
+    description = "Proyecto GCP de capacitacion"
+    type        = string
+  }
+  ```
+  > **Salida esperada:** El módulo exige `name`, `location` y `project_id`; ninguna variable tiene un identificador de proyecto fijo.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} En `modules/bucket/main.tf`, crea el recurso GCS. Conservarás `force_destroy = false` para no borrar objetos por accidente.
+  ```hcl
+  resource "google_storage_bucket" "bucket" {
+    name                        = var.name
+    location                    = var.location
+    project                     = var.project_id
+    uniform_bucket_level_access = true
+    public_access_prevention    = "enforced"
+    force_destroy               = false
+  
+    labels = {
+      curso = "terraform"
+      lab   = "lab13"
+    }
+  }
+  ```
+  > **Salida esperada:** El bucket consume las variables del módulo, tiene UBLA y prevención de acceso público habilitados.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} **Construcción dirigida 1/4:** en `modules/bucket/outputs.tf`, crea un output llamado `bucket_name` cuyo valor sea `google_storage_bucket.bucket.name`.
+  > **Importante:** Coloca el bloque `output` como declaración independiente en `outputs.tf`, no dentro de otro bloque. Debe devolver el nombre real del recurso.
+  {: .lab-note .important .compact}
+  > **Salida esperada:** El módulo expone `bucket_name` con `description` y `value`, según la referencia oficial de [Outputs](https://developer.hashicorp.com/terraform/language/values/outputs).
+  {: .lab-note .output .compact}
 {% capture r1 %}{{ results[0] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r1 %}
-
-{% include support-prompt.html task="tarea1" %}
-
 ---
-
-## ☁️ Tarea 2. NOMBRE DE LA TAREA — ## min
-
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
-
-### Tarea 2.1. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
-  {: .lab-note .info .compact}
-
+## 🧩 Tarea 2. Configurar valores compartidos de Terragrunt — 5 min
+Crearás `root.hcl` para centralizar el proyecto y la ubicación, y prepararás la configuración reutilizable de los tres entornos sin convertir la raíz en una unidad ejecutable.
+### Tarea 2.1. Crear root.hcl con entradas compartidas
+Definir los valores comunes una sola vez y explicar la diferencia entre las entradas compartidas y las específicas de un entorno.
+- {% include step_label.html %} En **Git Bash**, desde `lab13`, crea `root.hcl` en la raíz del laboratorio; no lo nombres `terragrunt.hcl`.
   ```bash
-  CODIGO_DEL_PASO_1
+  touch root.hcl
+  pwd
+  ls -l root.hcl
   ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** `root.hcl` existe en `lab13` y no hay un `terragrunt.hcl` ejecutable en la raíz.
   {: .lab-note .output .compact}
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+- {% include step_label.html %} En **VS Code**, abre `lab13/root.hcl` y declara las entradas compartidas. Terragrunt tomará el proyecto desde la variable del shell.
+  ```hcl
+  inputs = {
+    project_id = get_env("GOOGLE_CLOUD_PROJECT")
+    location   = "us-central1"
+  }
+  ```
+  > **Importante:** El Project ID de Google Cloud debe estar configurado en la sesión Git Bash con `export GOOGLE_CLOUD_PROJECT="$(gcloud config get-value project)"`.
   {: .lab-note .important .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** `root.hcl` define `project_id` desde `GOOGLE_CLOUD_PROJECT` y `location = "us-central1"`.
   {: .lab-note .output .compact}
-
-### Tarea 2.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_3
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+- {% include step_label.html %} **Construcción dirigida 2/4:** identifica cuál variable del módulo se comparte (`project_id`, `location`) y cuál debe cambiar por entorno (`name`).
+  > **Nota:** Usa [Terragrunt Includes](https://terragrunt.gruntwork.io/docs/features/includes/) para revisar cómo se heredan los valores `inputs`.
+  {: .lab-note .info .compact}
+  > **Salida esperada:** Puedes explicar por qué `name` no pertenece al archivo común y por qué no se duplicará `project_id` en cada entorno.
   {: .lab-note .output .compact}
-
+### Tarea 2.2. Definir la estrategia de estados independientes
+Evitar que varios entornos administren un mismo estado y que este se pierda al limpiar la caché de Terragrunt.
+- {% include step_label.html %} Crea los tres directorios de trabajo si no existen y comprueba la estructura antes de definir los backends locales.
+  ```bash
+  mkdir -p live/dev live/test live/prod
+  find live -maxdepth 1 -type d | sort
+  ```
+  > **Salida esperada:** Existen `live/dev`, `live/test` y `live/prod` dentro de lab13.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} Revisa la regla de estado que agregarás a **cada** `terragrunt.hcl`: el backend `local` guardará el estado en el directorio propio de la unidad, no en `.terragrunt-cache`.
+  ```hcl
+  remote_state {
+    backend = "local"
+    config = {
+      path = "${get_terragrunt_dir()}/terraform.tfstate"
+    }
+  }
+  ```
+  > **Importante:** El mismo bloque se incorporará en los tres archivos de entorno; esta repetición evita depender de rutas de caché y mantiene el estado fuera de los módulos descargados.
+  {: .lab-note .important .compact}
+  > **Salida esperada:** Queda definido el patrón de un archivo `terraform.tfstate` distinto para cada unidad de `live/`.
+  {: .lab-note .output .compact}
 {% capture r2 %}{{ results[1] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r2 %}
-
-{% include support-prompt.html task="tarea2" %}
-
 ---
-
-## 🚀 Tarea 3. NOMBRE DE LA TAREA — ## min
-
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
-
-### Tarea 3.1. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
-  {: .lab-note .info .compact}
-
+## ☁️ Tarea 3. Configurar los entornos dev, test y prod — 6 min
+Crearás tres unidades Terragrunt que heredan la configuración de `root.hcl`, apuntan al mismo módulo y proporcionan un nombre de bucket único por entorno.
+### Tarea 3.1. Definir dev y test con el módulo compartido
+Escribir configuraciones que difieren solo en el nombre del bucket y almacenan su estado local en cada directorio.
+- {% include step_label.html %} Desde **Git Bash** en `lab13`, crea los archivos de configuración de los tres entornos.
   ```bash
-  CODIGO_DEL_PASO_1
+  touch live/dev/terragrunt.hcl live/test/terragrunt.hcl live/prod/terragrunt.hcl
+  find live -name 'terragrunt.hcl' | sort
   ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** Aparecen los tres archivos `terragrunt.hcl` bajo `live/dev`, `live/test` y `live/prod`.
   {: .lab-note .output .compact}
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
+- {% include step_label.html %} En `live/dev/terragrunt.hcl`, agrega la configuración completa de desarrollo. La ruta del módulo parte del archivo `root.hcl`, y el estado se guarda en `live/dev`.
+  ```hcl
+  include "root" {
+    path = find_in_parent_folders("root.hcl")
+  }
+  
+  terraform {
+    source = "${get_parent_terragrunt_dir("root")}/modules/bucket"
+  }
+  
+  remote_state {
+    backend = "local"
+    config = {
+      path = "${get_terragrunt_dir()}/terraform.tfstate"
+    }
+  }
+  
+  inputs = {
+    name = "lab13-dev-${get_env("GOOGLE_CLOUD_PROJECT")}" 
+  }
+  ```
+  > **Salida esperada:** El entorno dev hereda `project_id` y `location` y configura el bucket `lab13-dev-PROJECT_ID`.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} En `live/test/terragrunt.hcl`, usa el mismo módulo, el mismo include y un estado separado; cambia solo el nombre lógico del bucket.
+  ```hcl
+  include "root" {
+    path = find_in_parent_folders("root.hcl")
+  }
+  
+  terraform {
+    source = "${get_parent_terragrunt_dir("root")}/modules/bucket"
+  }
+  
+  remote_state {
+    backend = "local"
+    config = {
+      path = "${get_terragrunt_dir()}/terraform.tfstate"
+    }
+  }
+  
+  inputs = {
+    name = "lab13-test-${get_env("GOOGLE_CLOUD_PROJECT")}" 
+  }
+  ```
+  > **Salida esperada:** El entorno test crea un nombre distinto sin duplicar las definiciones Terraform.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} En Git Bash, revisa los nombres de ambos buckets con el Project ID real, sin crear recursos todavía.
+  ```bash
+  printf 'DEV  lab13-dev-%s\n' "$GOOGLE_CLOUD_PROJECT"
+  printf 'TEST lab13-test-%s\n' "$GOOGLE_CLOUD_PROJECT"
+  ```
+  > **Salida esperada:** Los nombres contienen prefijos diferentes y terminan en el Project ID globalmente único.
+  {: .lab-note .output .compact}
+### Tarea 3.2. Completar prod y comprobar rutas de ejecución
+Definir el tercer entorno y verificar la separación de los estados antes del primer despliegue.
+- {% include step_label.html %} **Construcción dirigida 3/4:** en `live/prod/terragrunt.hcl`, reproduce el esquema de `dev`, sustituyendo únicamente `lab13-dev-` por `lab13-prod-` en `inputs.name`.
+  > **Importante:** El `source` debe seguir apuntando a `get_parent_terragrunt_dir("root")/modules/bucket`, no a un directorio dentro de otro entorno. Consulta las [funciones de Terragrunt](https://terragrunt.gruntwork.io/docs/reference/built-in-functions/).
   {: .lab-note .important .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** El archivo prod contiene `include "root"`, `terraform.source`, `remote_state` local y `inputs.name = "lab13-prod-${get_env("GOOGLE_CLOUD_PROJECT")}"`.
   {: .lab-note .output .compact}
-
-### Tarea 3.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
-
+- {% include step_label.html %} Comprueba en **VS Code** la estructura: raíz `root.hcl`, cuatro archivos `.tf` dentro del módulo y tres unidades `terragrunt.hcl`.
   ```bash
-  CODIGO_DEL_PASO_3
+  find modules/bucket -maxdepth 1 -name '*.tf' | sort
+  find live -name 'terragrunt.hcl' | sort
   ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** Se encuentran cuatro archivos HCL Terraform y tres configuraciones de entorno, sin duplicar el módulo.
   {: .lab-note .output .compact}
-
+- {% include step_label.html %} Desde Git Bash, verifica que el proyecto activo siga siendo correcto y que ninguno de los tres nombres de bucket esté ocupado en tu proyecto.
+  ```bash
+  test -n "$GOOGLE_CLOUD_PROJECT" && echo "Proyecto: $GOOGLE_CLOUD_PROJECT"
+  for env in dev test prod; do
+    name="lab13-${env}-${GOOGLE_CLOUD_PROJECT}"
+    if gcloud storage buckets describe "gs://${name}" --format='value(name)' >/dev/null 2>&1; then
+      echo "Ya existe: $name - detente y revisa"
+    else
+      echo "No encontrado: $name"
+    fi
+  done
+  ```
+  > **Nota:** Que un bucket no aparezca en tu proyecto no garantiza que el nombre esté disponible globalmente. Si `apply` informa un conflicto, consulta con el instructor antes de modificar nombres.
+  {: .lab-note .info .compact}
+  > **Salida esperada:** Los tres nombres propuestos están disponibles o se identifica explícitamente algún nombre existente antes del despliegue.
+  {: .lab-note .output .compact}
 {% capture r3 %}{{ results[2] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r3 %}
-
-{% include support-prompt.html task="tarea3" %}
-
 ---
-
-<!--
-======================================================================
-GUÍA DE USO DE LA PLANTILLA DEL LABORATORIO
-======================================================================
-
-Este archivo es una plantilla base. Las 3 tareas incluidas sirven únicamente
-como referencia de estructura. La práctica final puede tener más o menos
-tareas, subtareas y pasos según lo requiera el contenido.
-
----------------------------------------------------------------------
-1. FRONT MATTER
----------------------------------------------------------------------
-
-Completa los campos de la cabecera YAML sin cambiar sus nombres:
-
-- title:
-    Nombre completo de la práctica.
-
-- duration:
-    Duración total estimada de la práctica en minutos.
-
-- objective:
-    Objetivo principal de aprendizaje de la práctica.
-
-- prerequisites:
-    Requisitos previos necesarios para realizarla.
-    Agrega o elimina elementos según corresponda.
-
-- introduction:
-    Introducción breve de la práctica. Se recomienda un solo párrafo.
-
-- final_result:
-    Resultado final esperado al terminar toda la práctica.
-    Se recomienda describirlo en un solo párrafo.
-
-- notes:
-    Consideraciones generales que apliquen a toda la práctica.
-
-- references:
-    Documentación oficial o referencias técnicas relevantes.
-    Mantén la estructura:
-
-      - text: DESCRIPCION
-        url: URL
-
-- permalink, images_base, slug y lab_number:
-    Son generados automáticamente. No deben modificarse salvo que cambie
-    deliberadamente la estructura del sitio.
-
-- prev y next:
-    Son generados automáticamente por este script para navegación entre labs.
-
----------------------------------------------------------------------
-2. ESTRUCTURA GENERAL DE UNA TAREA
----------------------------------------------------------------------
-
-Cada tarea debe seguir esta estructura:
-
-  ## ICONO Tarea N. NOMBRE DE LA TAREA — ## min
-
-  DESCRIPCION_DE_LA_TAREA.
-
-  ### Tarea N.1. NOMBRE_DE_LA_SUBTAREA
-
-  DESCRIPCION_DE_LA_SUBTAREA.
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-La descripción de la tarea debe explicar qué se realizará y para qué.
-Como referencia, se recomiendan aproximadamente 200-250 caracteres.
-
-La descripción de cada subtarea debe indicar claramente el objetivo de esa
-sección. Como referencia, se recomiendan aproximadamente 120-150 caracteres.
-
----------------------------------------------------------------------
-3. TAREAS
----------------------------------------------------------------------
-
-Las tareas principales se numeran de forma consecutiva:
-
-  Tarea 1
-  Tarea 2
-  Tarea 3
-  Tarea 4
-  ...
-
-La plantilla incluye solamente 3 tareas como ejemplo.
-
-Si la práctica necesita más tareas:
-
-1) Duplica COMPLETA una sección de tarea existente.
-2) Cambia el encabezado de la tarea.
-3) Cambia la numeración de todas sus subtareas.
-4) Cambia el resultado asociado results[N].
-5) Cambia el identificador de support-prompt.html.
-
-Ejemplo para una Tarea 4:
-
-  ## 🔧 Tarea 4. NOMBRE DE LA TAREA — ## min
-
-Al finalizar debe contener:
-
-  {% capture r4 %}{{ results[3] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r4 %}
-
-  {% include support-prompt.html task="tarea4" %}
-
-IMPORTANTE:
-El arreglo results utiliza índice base 0:
-
-  Tarea 1 -> results[0]
-  Tarea 2 -> results[1]
-  Tarea 3 -> results[2]
-  Tarea 4 -> results[3]
-  Tarea 5 -> results[4]
-  Tarea 6 -> results[5]
-  Tarea N -> results[N-1]
-
----------------------------------------------------------------------
-4. SUBTAREAS
----------------------------------------------------------------------
-
-Cada tarea puede contener tantas subtareas como sea necesario.
-La numeración debe conservar la relación con la tarea principal.
-
-Ejemplo para la Tarea 4:
-
-  ### Tarea 4.1. PRIMERA SUBTAREA
-  ### Tarea 4.2. SEGUNDA SUBTAREA
-  ### Tarea 4.3. TERCERA SUBTAREA
-  ### Tarea 4.4. CUARTA SUBTAREA
-
-No existe un límite fijo de subtareas.
-
----------------------------------------------------------------------
-5. PASOS
----------------------------------------------------------------------
-
-Cada acción que debe realizar el participante debe escribirse como un paso
-independiente utilizando:
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-No combines varias acciones importantes dentro de un único paso cuando puedan
-realizarse o validarse por separado.
-
-Cada paso debe contener, cuando corresponda:
-
-- Una descripción clara de la acción.
-- Una Nota, Importante o Advertencia.
-- Una imagen de referencia.
-- Un bloque de código o comando.
-- Una salida esperada o criterio de validación.
-
----------------------------------------------------------------------
-6. NOTAS, IMPORTANTES Y ADVERTENCIAS
----------------------------------------------------------------------
-
-Usa los bloques obligatoriamente aportando informacion util en cada paso.
-Nota, Advertencia, Importante, Siempre ponerla debajo del texto del paso.
-Salida esperada, siempr ponerla al finalizar el paso y antes del siguiente paso.
-
-Nota informativa:
-
-  > **Nota:** TEXTO.
-  {: .lab-note .info .compact}
-
-Consideración importante:
-
-  > **Importante:** TEXTO.
-  {: .lab-note .important .compact}
-
-Advertencia:
-
-  > **Advertencia:** TEXTO.
-  {: .lab-note .warning .compact}
-
-Salida esperada:
-
-  > **Salida esperada:** TEXTO.
-  {: .lab-note .output .compact}
-
-No es obligatorio incluir los tres tipos de nota en todos los pasos.
-Utiliza solamente el que corresponda al contexto.
-
----------------------------------------------------------------------
-7. BLOQUES DE CÓDIGO
----------------------------------------------------------------------
-
-Cada comando o fragmento que el participante deba ejecutar debe tener su
-propio bloque de código.
-
-Ejemplo Bash:
-
+## 🚀 Tarea 4. Desplegar y validar los tres entornos — 8 min
+Inicializarás y planificarás cada unidad Terragrunt antes de aplicar; después comprobarás que cada estado administra un solo bucket y que los tres existen en GCP.
+### Tarea 4.1. Inicializar, planificar y desplegar dev
+Verificar primero la unidad de desarrollo y leer su plan completo antes de crear recursos.
+- {% include step_label.html %} En **Git Bash**, entra desde `lab13` a `live/dev` e inicializa el módulo Terraform a través de Terragrunt.
   ```bash
-  COMANDO
+  cd live/dev
+  terragrunt run init
   ```
-
-Cambia el identificador del lenguaje cuando corresponda, por ejemplo:
-
-  ```yaml
-  ```json
-  ```sql
-  ```powershell
-  ```python
-
-Evita colocar varios pasos independientes dentro de un único bloque de código
-si deben ejecutarse y validarse por separado.
-
----------------------------------------------------------------------
-8. SALIDA ESPERADA
----------------------------------------------------------------------
-
-Después de un comando o acción importante debe existir una forma clara de
-validar que el paso fue realizado correctamente.
-
-Utiliza:
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_VALIDACION.
+  > **Salida esperada:** Terragrunt prepara el módulo y Terraform termina con `Terraform has been successfully initialized!`.
   {: .lab-note .output .compact}
-
-La salida esperada no necesita reproducir siempre todo el texto del comando.
-Puede describir el estado, recurso, valor o comportamiento que debe observarse.
-
----------------------------------------------------------------------
-9. IMÁGENES
----------------------------------------------------------------------
-
-La carpeta de imágenes de esta práctica se encuentra en:
-
-  labs/labN/img/
-
-Para insertar una imagen mediante el mecanismo de la plantilla utiliza:
-
-  {% include step_image.html %}
-
-Conserva este include solamente en los pasos que realmente tengan una imagen.
-Si el paso no requiere imagen, elimínalo.
-
-No es necesario agregar una imagen a cada paso.
-
----------------------------------------------------------------------
-10. RESULTADO DE CADA TAREA
----------------------------------------------------------------------
-
-Cada tarea debe terminar con un resultado esperado asociado a
-_data/task-results.yml.
-
-La asignación de results debe realizarse una sola vez antes del primer uso:
-
-  {% assign results = site.data.task-results[page.slug].results %}
-
-En esta plantilla se realiza en la Tarea 1.
-No es necesario repetir el assign en las tareas siguientes.
-
-Después utiliza el índice correspondiente:
-
-  {% capture r1 %}{{ results[0] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r1 %}
-
-Para la Tarea 2:
-
-  {% capture r2 %}{{ results[1] }}{% endcapture %}
-
-Para la Tarea 3:
-
-  {% capture r3 %}{{ results[2] }}{% endcapture %}
-
-Y así sucesivamente.
-
----------------------------------------------------------------------
-11. PROMPT DE SOPORTE
----------------------------------------------------------------------
-
-Después del resultado de cada tarea debe incluirse el prompt de soporte
-correspondiente:
-
-  {% include support-prompt.html task="tarea1" %}
-
-La numeración debe coincidir exactamente con la tarea:
-
-  Tarea 1 -> task="tarea1"
-  Tarea 2 -> task="tarea2"
-  Tarea 3 -> task="tarea3"
-  Tarea 4 -> task="tarea4"
-  ...
-
----------------------------------------------------------------------
-12. SEPARACIÓN ENTRE TAREAS
----------------------------------------------------------------------
-
-Separa cada tarea principal utilizando:
-
-  ---
-
-No utilices este separador entre pasos o subtareas de la misma tarea.
-
----------------------------------------------------------------------
-13. ICONOS DE LAS TAREAS
----------------------------------------------------------------------
-
-El icono del encabezado es visual y puede cambiarse de acuerdo con el tema de
-la tarea. Ejemplos utilizados en esta plantilla:
-
-  🔎  ☁️  🚀
-
-La numeración y el texto "Tarea N." son más importantes que el icono.
-
----------------------------------------------------------------------
-14. QUÉ SE PUEDE ELIMINAR
----------------------------------------------------------------------
-
-Si un elemento no aplica a la práctica puede eliminarse, por ejemplo:
-
-- Prerequisitos adicionales.
-- Notas generales.
-- Referencias adicionales.
-- Una Nota/Importante/Advertencia de un paso.
-- {% include step_image.html %} cuando no existe imagen.
-- Subtareas que no sean necesarias.
-- Tareas de ejemplo que no formen parte de la práctica real.
-
-No elimines los elementos estructurales necesarios para el funcionamiento del
-layout, resultados o navegación sin revisar primero su dependencia.
-
----------------------------------------------------------------------
-15. VALIDACIÓN FINAL DEL ARCHIVO
----------------------------------------------------------------------
-
-Antes de considerar terminado el laboratorio verifica:
-
-- El título y duración son correctos.
-- El objetivo describe claramente el aprendizaje esperado.
-- La introducción está completa.
-- Todas las tareas están numeradas consecutivamente.
-- Todas las subtareas corresponden al número de su tarea.
-- Cada acción del participante está separada como paso cuando corresponde.
-- Los comandos tienen bloques de código adecuados.
-- Los pasos importantes tienen una salida esperada o criterio de validación.
-- Los índices results[N] corresponden a cada número de tarea.
-- Cada tarea utiliza support-prompt.html con su número correcto.
-- Las imágenes utilizadas existen en la carpeta img de la práctica.
-- El resultado final describe lo que el participante habrá conseguido.
-- No permanecen textos de marcador como CAMBIAR_AQUI, DESCRIPCION_, NOMBRE_DE_,
-  CODIGO_, PREREQUISITO_, RESULTADO_ o ## min en la versión final.
-
-======================================================================
-FIN DE LA GUÍA DE USO DE LA PLANTILLA
-======================================================================
--->
+- {% include step_label.html %} En `live/dev`, ejecuta `plan` y confirma que aparece **un solo bucket** `lab13-dev-PROJECT_ID`.
+  ```bash
+  terragrunt run plan
+  ```
+  > **Importante:** Si el plan muestra recursos inesperados o el Project ID no coincide, no continúes con `apply`.
+  {: .lab-note .important .compact}
+  > **Salida esperada:** El plan propone `1 to add, 0 to change, 0 to destroy` para `google_storage_bucket.bucket`.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} Aplica el plan de `dev` desde la misma carpeta y confirma después de revisar los cambios.
+  ```bash
+  terragrunt run apply
+  terragrunt run output bucket_name
+  ```
+  > **Salida esperada:** Se crea el bucket de dev y el output muestra `lab13-dev-PROJECT_ID`.
+  {: .lab-note .output .compact}
+### Tarea 4.2. Planificar y desplegar test y prod
+Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y nombres separados.
+- {% include step_label.html %} Regresa a `live/`, entra a `test` y ejecuta `init`, `plan` y `apply` secuencialmente, después de revisar el plan.
+  ```bash
+  cd ../test
+  terragrunt run init
+  terragrunt run plan
+  terragrunt run apply
+  terragrunt run output bucket_name
+  ```
+  > **Salida esperada:** Se crea `lab13-test-PROJECT_ID`, sin cambiar ni destruir el bucket de dev.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} Desde `live/test`, cambia a `prod` y repite inicialización, plan y aplicación con verificación previa.
+  ```bash
+  cd ../prod
+  terragrunt run init
+  terragrunt run plan
+  terragrunt run apply
+  terragrunt run output bucket_name
+  ```
+  > **Importante:** No utilices `-auto-approve` al aprender el flujo de Terragrunt; revisa siempre la operación antes de aceptarla.
+  {: .lab-note .important .compact}
+  > **Salida esperada:** Se crea `lab13-prod-PROJECT_ID`; la configuración de producción es solo una simulación dentro del proyecto del curso.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} En Git Bash, desde `live/prod`, consulta los tres nombres directamente con Cloud Storage sin listar indiscriminadamente todos los recursos de capacitación.
+  ```bash
+  for env in dev test prod; do
+    gcloud storage buckets describe "gs://lab13-${env}-${GOOGLE_CLOUD_PROJECT}" \
+      --format='value(name)'
+  done
+  ```
+  > **Salida esperada:** Las consultas confirman tres buckets diferentes correspondientes a dev, test y prod.
+  {: .lab-note .output .compact}
+### Tarea 4.3. Examinar outputs y estados independientes
+Verificar la diferencia entre reutilizar un módulo y compartir un estado, que debe permanecer aislado por entorno.
+- {% include step_label.html %} **Construcción dirigida 4/4:** regresa a `live` y muestra los tres archivos de estado. Explica por qué se mantienen separados pese a que el módulo es común.
+  ```bash
+  cd ..
+  find dev test prod -maxdepth 1 -name 'terraform.tfstate' -print
+  for env in dev test prod; do
+    printf '%s: ' "$env"
+    (cd "$env" && terragrunt run output -raw bucket_name)
+  done
+  ```
+  > **Importante:** El estado Terraform puede contener información sensible. Verifica su existencia y outputs, pero no lo subas a Git ni lo publiques.
+  {: .lab-note .important .compact}
+  > **Salida esperada:** Hay un estado en cada carpeta y cada output corresponde al bucket específico de su entorno.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} Comprueba desde las tres carpetas que cada unidad conoce exactamente un recurso Terraform y no tiene cambios pendientes.
+  ```bash
+  for env in dev test prod; do
+    echo "--- $env ---"
+    (cd "$env" && terragrunt run state list && terragrunt run plan -detailed-exitcode)
+  done
+  ```
+  > **Nota:** `terraform plan -detailed-exitcode` devuelve 0 sin cambios, 2 cuando hay cambios y 1 ante errores. Detente si alguno devuelve 1 o 2.
+  {: .lab-note .info .compact}
+  > **Salida esperada:** Cada estado contiene `google_storage_bucket.bucket` y cada plan informa `No changes`.
+  {: .lab-note .output .compact}
+{% capture r4 %}{{ results[3] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r4 %}
+---
+## 🧹 Tarea 5. Eliminar buckets y comprobar la limpieza — 4 min
+Destruirás los tres entornos de forma controlada, revisando individualmente los planes, y comprobarás que los buckets de esta práctica ya no existan.
+### Tarea 5.1. Destruir los tres entornos con planes revisados
+Retirar cada recurso desde su propio estado para evitar afectar infraestructura administrada por otras prácticas.
+- {% include step_label.html %} Desde `lab13/live`, revisa los tres planes de destrucción individualmente. Debe aparecer un bucket por entorno.
+  ```bash
+  for env in dev test prod; do
+    echo "--- Destroy plan: $env ---"
+    (cd "$env" && terragrunt run plan -destroy) || break
+  done
+  ```
+  > **Advertencia:** No utilices `terragrunt run --all destroy` para omitir la revisión: la ejecución múltiple puede aprobar automáticamente operaciones. Solo continúa si los tres planes son correctos.
+  {: .lab-note .warning .compact}
+  > **Salida esperada:** Cada plan indica `0 to add, 0 to change, 1 to destroy` y solo menciona su bucket `lab13-*`.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} Ejecuta `destroy` en cada entorno, uno a la vez, confirmando únicamente la eliminación del bucket que corresponda.
+  ```bash
+  (cd dev && terragrunt run destroy)
+  (cd test && terragrunt run destroy)
+  (cd prod && terragrunt run destroy)
+  ```
+  > **Importante:** Los buckets deben estar vacíos, dado que no cargamos objetos y usamos `force_destroy = false`. No borres buckets ajenos si alguna operación falla.
+  {: .lab-note .important .compact}
+  > **Salida esperada:** Cada comando finaliza con `Destroy complete! Resources: 1 destroyed.`
+  {: .lab-note .output .compact}
+### Tarea 5.2. Comprobar estados vacíos y ausencia de buckets
+Corroborar en Terraform y Google Cloud que solo quedaron archivos fuente del laboratorio, sin recursos activos.
+- {% include step_label.html %} En `lab13/live`, consulta los estados de los tres entornos. No debe haber recursos administrados después de la destrucción.
+  ```bash
+  for env in dev test prod; do
+    echo "--- Estado $env ---"
+    (cd "$env" && terragrunt run state list)
+  done
+  ```
+  > **Salida esperada:** Los tres listados están vacíos y no muestran `google_storage_bucket.bucket`.
+  {: .lab-note .output .compact}
+- {% include step_label.html %} Comprueba específicamente que ninguno de los tres buckets existe y conserva los archivos HCL sin borrar el módulo reutilizable.
+  ```bash
+  for env in dev test prod; do
+    name="lab13-${env}-${GOOGLE_CLOUD_PROJECT}"
+    if gcloud storage buckets describe "gs://${name}" >/dev/null 2>&1; then
+      echo "REVISAR: $name sigue existiendo"
+    else
+      echo "Sin bucket: $name"
+    fi
+  done
+  find ../modules/bucket -maxdepth 1 -name '*.tf' -print | sort
+  ```
+  > **Nota:** Una consulta fallida puede deberse también a permisos o conectividad; si hay dudas, consulta Cloud Storage Console antes de asumir que se eliminó.
+  {: .lab-note .info .compact}
+  > **Salida esperada:** Los tres buckets de la práctica ya no existen; los cuatro archivos fuente del módulo permanecen disponibles.
+  {: .lab-note .output .compact}
+{% capture r5 %}{{ results[4] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r5 %}

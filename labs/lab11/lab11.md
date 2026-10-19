@@ -1,563 +1,569 @@
 ---
 layout: lab
-title: "Práctica 11: CAMBIAR_AQUI_NOMBRE_DE_LA_PRACTICA"
+title: "Práctica 11: Generar doc automática con terraform-docs"
 permalink: /lab11/lab11/
 images_base: /labs/lab11/img
-duration: "## minutos"
+duration: "20 minutos"
 objective:
-  - OBJETIVO_DE_LA_PRACTICA
+  - "Generar y mantener documentación Markdown de un módulo Terraform para Google Cloud mediante terraform-docs y comprobar su actualización automática con pre-commit."
 prerequisites:
-  - PREREQUISITO_1
-  - PREREQUISITO_2
-  - PREREQUISITO_3
-  - PREREQUISITO_4
-  - PREREQUISITO_X
+  - "Prácticas 1 a 10 y carpeta terraform-gcp-intermediate en el Escritorio de Windows."
+  - "VS Code con terminal Git Bash, Terraform y Git instalados."
+  - "Acceso para instalar terraform-docs y Python con pip/pre-commit si aún no están disponibles."
 introduction:
-  - INTRODUCCION_DE_LA_PRACTICA_BREVE_RESUMEN_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  - "Construirás un pequeño módulo Terraform para un bucket GCS, generarás tablas de variables y outputs en README.md, personalizarás su actualización mediante marcadores e integrarás un hook local de pre-commit. El laboratorio analiza archivos: no crea recursos ni requiere credenciales GCP."
 slug: lab11
 lab_number: 11
 final_result: >
-  RESULTADO_FINAL_ESPERADO_DE_LA_PRACTICA_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  Módulo gcs-bucket documentado con terraform-docs; README.md combina texto manual y secciones generadas, verifica actualizaciones y se regenera al ejecutar pre-commit.
 notes:
-  - NOTAS_CONSIDERACIONES_ADICIONALES
-  - NOTAS_CONSIDERACIONES_ADICIONALES
+  - "Todos los comandos locales se ejecutan desde Git Bash integrado en VS Code, dentro de terraform-gcp-intermediate/lab11, salvo cuando se indique VS Code o una terminal de Windows con permisos."
+  - "El módulo gcs-bucket es demostrativo: no ejecutes terraform apply ni terraform destroy; la generación de documentación no requiere autenticación GCP ni genera costos."
+  - "Ejecuta git init exclusivamente dentro de lab11; no inicialices ni modifiques el repositorio Jekyll del curso."
+  - "La generación con terraform-docs conserva el texto manual situado fuera de BEGIN_TF_DOCS y END_TF_DOCS; revisa cualquier archivo actualizado por pre-commit antes de confirmar."
+  - "El tiempo de 20 minutos supone que Terraform, Git, Python y terraform-docs ya están instalados; las instalaciones pueden extender la duración."
 references:
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://developer.hashicorp.com/terraform
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://learn.microsoft.com/es-es/cli/azure/
+  - text: "terraform-docs: sitio oficial"
+    url: https://terraform-docs.io/
+  - text: "terraform-docs: opciones de output"
+    url: https://terraform-docs.io/user-guide/configuration/output/
+  - text: "terraform-docs: releases oficiales"
+    url: https://github.com/terraform-docs/terraform-docs/releases
+  - text: "pre-commit: documentación oficial"
+    url: https://pre-commit.com/
+  - text: "Terraform: módulos"
+    url: https://developer.hashicorp.com/terraform/language/modules
 prev: /lab10/lab10/
 next: /lab12/lab12/
 ---
 
 ---
 
-<!-- Aquí comienzan las instrucciones paso a paso de la práctica -->
+## 🔎 Tarea 1. Preparar el módulo Terraform — 5 min
 
-## 🔎 Tarea 1. NOMBRE DE LA TAREA — ## min
+Prepararás un directorio aislado para la práctica y crearás un módulo GCS sencillo cuyos metadatos serán la fuente de la documentación generada.
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+### Tarea 1.1. Crear lab11 y su estructura
 
-### Tarea 1.1. NOMBRE DE_LA_SUBTAREA
+Construir las rutas desde el directorio principal del curso y verificar que la terminal corresponda a Git Bash.
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+- {% include step_label.html %} En **VS Code**, abre el proyecto principal `terraform-gcp-intermediate` en el Escritorio de Windows y selecciona **Git Bash** como terminal integrada.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+  **Instrucciones:**
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  - Abre **File > Open Folder...** y selecciona la carpeta del curso, no `lab10`.
+  - Selecciona **Terminal > New Terminal**; en la lista de perfiles elige **Git Bash**.
+  - Confirma que en **Explorer** se muestran las carpetas de las prácticas anteriores.
+
+  > **Salida esperada:** El explorador presenta la raíz del curso y puedes introducir comandos Bash en la terminal.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Desde **Git Bash**, crea explícitamente `lab11/modules/gcs-bucket` y entra en `lab11`. Comprueba la ubicación antes de continuar para evitar crear archivos en otra práctica.
+
+  ```bash
+  DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
+  DESKTOP="$(cygpath -u "$DESKTOP_WIN")"
+  cd "$DESKTOP/terraform-gcp-intermediate"
+  mkdir -p lab11/modules/gcs-bucket
+  cd lab11
+  pwd
+  ```
+
+  > **Salida esperada:** La ruta de `pwd` termina en `/terraform-gcp-intermediate/lab11`, aunque el Escritorio esté redirigido a OneDrive.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En **Git Bash**, crea los archivos del módulo y los de automatización de la raíz. El README y el archivo de configuración se crearán posteriormente, cuando veas cómo funciona la generación.
+
+  ```bash
+  touch modules/gcs-bucket/providers.tf modules/gcs-bucket/main.tf
+  touch modules/gcs-bucket/variables.tf modules/gcs-bucket/outputs.tf
+  touch .gitignore
+  find modules -type f | sort
+  ```
+
+  > **Salida esperada:** Aparecen los cuatro archivos `.tf` en `modules/gcs-bucket/` y `.gitignore` en `lab11`.
+  {: .lab-note .output .compact}
+
+
+### Tarea 1.2. Definir el módulo GCS con entradas y salidas
+
+Agregar código Terraform real pero destinado únicamente a lectura y documentación; no se desplegará infraestructura.
+
+- {% include step_label.html %} En **VS Code**, abre `lab11/modules/gcs-bucket/providers.tf` e indica el proveedor necesario. No incluyas un bloque `provider "google"` con credenciales: el módulo debe poder reutilizarse desde distintos proyectos.
+
+  ```hcl
+  terraform {
+    required_version = ">= 1.5.0"
+    required_providers {
+      google = {
+        source  = "hashicorp/google"
+        version = ">= 5.0, < 8.0"
+      }
+    }
+  }
+  ```
+
+  > **Salida esperada:** El archivo declara los requisitos de Terraform y del proveedor Google sin fijar credenciales.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En `modules/gcs-bucket/variables.tf`, declara las cuatro entradas del módulo. Escribe las descripciones completas: `terraform-docs` utilizará exactamente estos textos para construir la tabla **Inputs**.
+
+  ```hcl
+  variable "bucket_name" {
+    description = "Nombre único globalmente del bucket de Cloud Storage"
+    type        = string
+  }
+  
+  variable "location" {
+    description = "Ubicación del bucket; por ejemplo US o us-central1"
+    type        = string
+    default     = "US"
+  }
+  
+  variable "uniform_bucket_level_access" {
+    description = "Gestionar accesos exclusivamente mediante IAM"
+    type        = bool
+    default     = true
+  }
+  
+  variable "labels" {
+    description = "Etiquetas para identificar los recursos del proyecto"
+    type        = map(string)
+    default     = {}
+  }
+  ```
+
+  > **Salida esperada:** `bucket_name` es obligatorio; `location`, `uniform_bucket_level_access` y `labels` tienen valores predeterminados.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En `modules/gcs-bucket/main.tf`, declara un bucket que consuma las variables anteriores. Aunque el recurso es válido para Terraform, en esta práctica **no ejecutes `apply`**; el objetivo es obtener documentación de su definición.
+
+  ```hcl
+  resource "google_storage_bucket" "this" {
+    name                        = var.bucket_name
+    location                    = var.location
+    uniform_bucket_level_access = var.uniform_bucket_level_access
+    labels                      = var.labels
+  
+    lifecycle_rule {
+      condition { age = 30 }
+      action { type = "Delete" }
+    }
+  }
+  ```
+
+  > **Nota:** La regla de ciclo de vida está declarada solo como ejemplo de documentación; ninguna política se aplica en Google Cloud.
   {: .lab-note .info .compact}
 
-  {% include step_image.html %}
-
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** El recurso `google_storage_bucket.this` usa las variables y aparece en el archivo `main.tf`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
+- {% include step_label.html %} En `modules/gcs-bucket/outputs.tf`, crea dos salidas documentadas. Ambas leerán propiedades del recurso una vez que un consumidor lo despliegue, pero aquí solo se incluirán en la tabla **Outputs**.
 
-  ```bash
-  CODIGO_DEL_PASO_2
+  ```hcl
+  output "bucket_name" {
+    description = "Nombre del bucket administrado por el módulo"
+    value       = google_storage_bucket.this.name
+  }
+  
+  output "bucket_self_link" {
+    description = "Identificador self_link del bucket administrado"
+    value       = google_storage_bucket.this.self_link
+  }
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** El módulo dispone de cuatro variables y dos outputs con descripciones que podrán extraerse automáticamente.
   {: .lab-note .output .compact}
 
-### Tarea 1.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_3
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
-  {: .lab-note .output .compact}
 
 {% assign results = site.data.task-results[page.slug].results %}
 {% capture r1 %}{{ results[0] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r1 %}
 
-{% include support-prompt.html task="tarea1" %}
-
 ---
 
-## ☁️ Tarea 2. NOMBRE DE LA TAREA — ## min
+## 📄 Tarea 2. Instalar y generar documentación — 4 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Verificarás la disponibilidad de terraform-docs y crearás la primera documentación en Markdown a partir de los archivos HCL.
 
-### Tarea 2.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 2.1. Comprobar instalación de terraform-docs
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Confirmar la herramienta en Windows y ofrecer una alternativa cuando no esté previamente instalada.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
-  {: .lab-note .info .compact}
+- {% include step_label.html %} En **Git Bash** desde `lab11`, comprueba la instalación de `terraform-docs` y de Terraform; evita reinstalar aplicaciones que ya funcionen.
 
   ```bash
-  CODIGO_DEL_PASO_1
+  terraform version
+  if command -v terraform-docs >/dev/null 2>&1; then
+    terraform-docs --version
+  else
+    echo "terraform-docs no se encuentra en PATH"
+  fi
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** Terraform muestra su versión; `terraform-docs` informa su versión o aparece el aviso de que falta instalarlo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
+- {% include step_label.html %} Si no tienes `terraform-docs`, utiliza el administrador de paquetes disponible o instala el ejecutable **Windows amd64** de la página oficial. Después abre una terminal Git Bash nueva para actualizar `PATH`.
+
+  **Instrucciones:**
+
+  - **Opción Chocolatey (administrador de Windows):** ejecuta `choco install terraform-docs -y` solo si ya tienes Chocolatey.
+  - **Opción Scoop (terminal de Windows):** ejecuta `scoop install terraform-docs` solo si ya tienes Scoop configurado.
+  - **Opción manual:** abre [GitHub Releases de terraform-docs](https://github.com/terraform-docs/terraform-docs/releases), descarga el archivo de Windows para tu arquitectura, extrae `terraform-docs.exe` y sitúalo en una carpeta incluida en `PATH`.
+  - Comprueba al final en **Git Bash** con `terraform-docs --version`; si no funciona, no continúes hasta corregir `PATH`.
+
+  > **Salida esperada:** `terraform-docs --version` muestra una versión y el ejecutable puede invocarse desde Git Bash.
+  {: .lab-note .output .compact}
+
+
+### Tarea 2.2. Generar y leer el README inicial
+
+Mostrar primero la salida de la herramienta sin configuración adicional para identificar las secciones que produce.
+
+- {% include step_label.html %} Ubícate en el módulo y pide a `terraform-docs` que muestre una tabla Markdown en la terminal. Esta primera ejecución permite confirmar que detecta el HCL sin crear aún un archivo.
 
   ```bash
-  CODIGO_DEL_PASO_2
+  cd modules/gcs-bucket
+  terraform-docs markdown table .
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** Se visualizan secciones como Requirements, Providers, Resources, Inputs y Outputs; aparecen las cuatro entradas y dos salidas.
   {: .lab-note .output .compact}
 
-### Tarea 2.2. NOMBRE_DE_LA_SUBTAREA
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+- {% include step_label.html %} Genera el primer `README.md` redirigiendo la salida de `terraform-docs`. Este método sobrescribe el archivo, por lo que solo lo usamos **en esta primera generación**, cuando todavía no contiene texto manual.
 
   ```bash
-  CODIGO_DEL_PASO_3
+  terraform-docs markdown table . > README.md
+  ls -lh README.md
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** Se crea `modules/gcs-bucket/README.md` con una tabla de variables y otra de outputs.
   {: .lab-note .output .compact}
 
+
+- {% include step_label.html %} Desde **VS Code**, abre `modules/gcs-bucket/README.md` y revisa la vista previa de Markdown para comprobar el resultado antes de personalizarlo.
+
+  **Instrucciones:**
+
+  - En **Explorer**, selecciona `modules > gcs-bucket > README.md`.
+  - Abre **Open Preview to the Side** desde el menú contextual o pulsa **Ctrl+K, V**.
+  - Busca `bucket_name` en **Inputs**, y `bucket_self_link` en **Outputs**.
+  - Distingue las descripciones escritas manualmente en HCL de las tablas generadas por la herramienta.
+
+  > **Salida esperada:** La vista previa muestra tablas Markdown legibles con requisitos, recursos, variables y salidas.
+  {: .lab-note .output .compact}
+
+{% assign results = site.data.task-results[page.slug].results %}
 {% capture r2 %}{{ results[1] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r2 %}
 
-{% include support-prompt.html task="tarea2" %}
-
 ---
 
-## 🚀 Tarea 3. NOMBRE DE LA TAREA — ## min
+## 📝 Tarea 3. Personalizar y actualizar el README — 4 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Configurarás una región administrada por terraform-docs dentro de un README con texto manual y demostrarás que los cambios en el código actualizan la documentación.
 
-### Tarea 3.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 3.1. Crear configuración para actualización controlada
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Usar el modo inject y marcadores delimitados para preservar el encabezado y las instrucciones redactadas por el participante.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Regresa desde el módulo a la raíz `lab11` y crea `.terraform-docs.yml` dentro de `modules/gcs-bucket`. Este archivo definirá el formato y dónde se insertará el contenido generado.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  ```bash
+  cd ../..
+  touch modules/gcs-bucket/.terraform-docs.yml
+  pwd
+  ```
+
+  > **Salida esperada:** La terminal vuelve a `lab11` y existe `modules/gcs-bucket/.terraform-docs.yml`.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} En `modules/gcs-bucket/.terraform-docs.yml`, configura la generación Markdown con modo `inject`. Introduce los marcadores **BEGIN_TF_DOCS** y **END_TF_DOCS** para delimitar el contenido automático.
+
+  {%raw%}
+  ```yaml
+  formatter: markdown table
+  
+  output:
+    file: README.md
+    mode: inject
+    template: |-
+      <!-- BEGIN_TF_DOCS -->
+      {{ .Content }}
+      <!-- END_TF_DOCS -->
+  ```
+  {%endraw%}
+
+  > **Nota:** Los marcadores se colocarán en `README.md`; el modo `inject` conserva el contenido fuera de la región marcada. El formato YAML debe mantenerse con espacios y con {%raw%}`{{ .Content }}`{%endraw%} dentro de `template`.
   {: .lab-note .info .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** La configuración define `markdown table` y el archivo de salida `README.md` en modo `inject`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
+- {% include step_label.html %} Reemplaza el contenido previo de `modules/gcs-bucket/README.md` con un encabezado manual, una explicación del uso y los marcadores. Solo el espacio entre esos marcadores podrá actualizarlo automáticamente terraform-docs.
 
-  ```bash
-  CODIGO_DEL_PASO_2
+  ```markdown
+  # Módulo GCS Bucket
+  
+  Este módulo describe un bucket de Cloud Storage con acceso uniforme.
+  
+  ## Uso previsto
+  
+  Consúmelo desde un root module y define `bucket_name` antes de aplicar.
+  Esta práctica solo genera documentación; no despliega recursos.
+  
+  <!-- BEGIN_TF_DOCS -->
+  <!-- END_TF_DOCS -->
+  
+  ## Nota del equipo
+  
+  Revisar nombres únicos de buckets y políticas IAM antes de producción.
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** El README incluye título, descripción, marcadores y una nota manual fuera de la zona generada.
   {: .lab-note .output .compact}
 
-### Tarea 3.2. NOMBRE_DE_LA_SUBTAREA
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+### Tarea 3.2. Verificar sincronización de variables y documentación
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+Generar la región automática y comprobar que una descripción HCL modificada se actualiza sin borrar el contenido del equipo.
 
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+- {% include step_label.html %} Desde la raíz `lab11`, ejecuta `terraform-docs` con su archivo de configuración explícito. Este comando llenará la región marcada del README sin sustituir las secciones manuales.
 
   ```bash
-  CODIGO_DEL_PASO_3
+  terraform-docs --config modules/gcs-bucket/.terraform-docs.yml modules/gcs-bucket
+  sed -n '1,75p' modules/gcs-bucket/README.md
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** Las tablas aparecen entre `BEGIN_TF_DOCS` y `END_TF_DOCS`; se preservan `Uso previsto` y `Nota del equipo`.
   {: .lab-note .output .compact}
 
+
+- {% include step_label.html %} En `modules/gcs-bucket/variables.tf`, cambia solo la descripción de `labels` para demostrar que el README se obtiene del código y no de una tabla editada manualmente.
+
+  **Instrucciones:**
+
+  - Localiza `variable "labels"` al final de `variables.tf`.
+  - Reemplaza su línea `description` por `description = "Etiquetas de inventario para clasificar el bucket"`.
+  - Guarda **Ctrl+S** y no edites a mano la tabla **Inputs** del README.
+
+  > **Salida esperada:** El código HCL contiene la nueva descripción, mientras que el README conserva temporalmente el texto anterior.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Vuelve a ejecutar la generación y busca la nueva descripción dentro del README. Confirma también que el encabezado, la explicación y la nota manual permanecen intactos.
+
+  ```bash
+  terraform-docs --config modules/gcs-bucket/.terraform-docs.yml modules/gcs-bucket
+  grep -n "Etiquetas de inventario" modules/gcs-bucket/README.md
+  grep -n "Nota del equipo" modules/gcs-bucket/README.md
+  ```
+
+  > **Salida esperada:** `grep` localiza la descripción actualizada y la nota del equipo: la documentación está sincronizada sin perder contenido manual.
+  {: .lab-note .output .compact}
+
+{% assign results = site.data.task-results[page.slug].results %}
 {% capture r3 %}{{ results[2] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r3 %}
 
-{% include support-prompt.html task="tarea3" %}
+---
+
+## ⚙️ Tarea 4. Automatizar con pre-commit — 5 min
+
+Prepararás un repositorio Git independiente y configurarás un hook local que regenere la documentación del módulo antes de confirmar los cambios.
+
+### Tarea 4.1. Verificar Python e inicializar Git
+
+Preparar el ejecutor de pre-commit sin afectar al repositorio Jekyll ni a otros laboratorios.
+
+- {% include step_label.html %} En Git Bash, comprueba `git` y Python. **pre-commit** necesita Python; elige el comando disponible en tu VM antes de instalar dependencias.
+
+  ```bash
+  git --version
+  if command -v py >/dev/null 2>&1; then
+    py --version
+  elif command -v python >/dev/null 2>&1; then
+    python --version
+  else
+    echo "Instala Python para Windows antes de continuar"
+  fi
+  ```
+
+  > **Salida esperada:** Se muestran las versiones de Git y Python; si falta Python, el paso indica claramente el requisito pendiente.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Instala `pre-commit` en el entorno Python de Windows cuando todavía no esté disponible. La opción `--user` evita alterar paquetes del sistema; el comando de verificación permite saber si la instalación terminó.
+
+  ```bash
+  if command -v py >/dev/null 2>&1; then
+    py -m pip install --user pre-commit
+    py -m pre_commit --version
+  else
+    python -m pip install --user pre-commit
+    python -m pre_commit --version
+  fi
+  ```
+
+  > **Nota:** Si Python no dispone de `pip`, solicita su habilitación en la VM. No instales paquetes con privilegios de administrador sin autorización.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** La salida muestra la versión de `pre-commit`; no es necesario que su ejecutable independiente esté en `PATH` porque lo invocaremos como módulo Python.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Inicializa Git **dentro de `lab11`** y añade un `.gitignore` para evitar que se versionen estados Terraform o archivos de caché. No ejecutes `git init` en la carpeta que reúne todos los laboratorios.
+
+  ```bash
+  git init
+  cat > .gitignore <<'EOF'
+  .terraform/
+  *.tfstate
+  *.tfstate.*
+  *.tfplan
+  crash.log
+  EOF
+  git status --short
+  ```
+
+  > **Salida esperada:** `lab11/.git` se ha creado y `.gitignore` contiene exclusiones para estado y caché de Terraform.
+  {: .lab-note .output .compact}
+
+
+### Tarea 4.2. Configurar e instalar el hook documental
+
+Hacer que Git invoque el mismo comando de generación usado manualmente y documentar cómo funciona cuando modifica archivos.
+
+- {% include step_label.html %} Crea `.pre-commit-config.yaml` en la raíz `lab11` y registra un hook local de sistema. El hook no requiere clonar repositorios externos ni ejecutar Terraform contra GCP.
+
+  ```yaml
+  repos:
+    - repo: local
+      hooks:
+        - id: terraform-docs-gcs-bucket
+          name: Actualizar README del modulo GCS
+          entry: terraform-docs --config modules/gcs-bucket/.terraform-docs.yml modules/gcs-bucket
+          language: system
+          pass_filenames: false
+          always_run: true
+          stages: [pre-commit]
+  ```
+
+  > **Salida esperada:** El hook está declarado con `stages: [pre-commit]`, utiliza la herramienta local y no depende de archivos concretos de la selección Git.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Instala el hook en `.git/hooks` mediante el Python disponible y comprueba que `pre-commit` detecta la configuración. La instalación se realiza dentro del repositorio `lab11`.
+
+  ```bash
+  if command -v py >/dev/null 2>&1; then
+    py -m pre_commit install
+  else
+    python -m pre_commit install
+  fi
+  ls -l .git/hooks/pre-commit
+  ```
+
+  > **Salida esperada:** Git dispone de un archivo `.git/hooks/pre-commit` ejecutable que llamará a la automatización.
+  {: .lab-note .output .compact}
+
+
+- {% include step_label.html %} Prepara los archivos rastreables e identifica qué se confirmará. Agrega solo el módulo, el README, `.gitignore` y la configuración del hook; revisa el listado antes de cualquier commit.
+
+  ```bash
+  git add .gitignore .pre-commit-config.yaml modules/gcs-bucket
+  git diff --cached --name-only
+  ```
+
+  > **Salida esperada:** Se enumeran archivos `.tf`, `.terraform-docs.yml`, `README.md` y archivos de Git; no hay `tfstate` ni credenciales.
+  {: .lab-note .output .compact}
+
+{% assign results = site.data.task-results[page.slug].results %}
+{% capture r4 %}{{ results[3] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r4 %}
 
 ---
 
-<!--
-======================================================================
-GUÍA DE USO DE LA PLANTILLA DEL LABORATORIO
-======================================================================
+## ✅ Tarea 5. Validar automatización y resultados — 2 min
 
-Este archivo es una plantilla base. Las 3 tareas incluidas sirven únicamente
-como referencia de estructura. La práctica final puede tener más o menos
-tareas, subtareas y pasos según lo requiera el contenido.
+Demostrarás que el hook ejecuta terraform-docs y deja el README listo para versionarse, incluyendo el comportamiento esperado cuando un hook modifica archivos.
 
----------------------------------------------------------------------
-1. FRONT MATTER
----------------------------------------------------------------------
+### Tarea 5.1. Ejecutar hook en archivos rastreados
 
-Completa los campos de la cabecera YAML sin cambiar sus nombres:
+Lanzar pre-commit de manera explícita antes de crear el commit y comprobar que los cambios son reproducibles.
 
-- title:
-    Nombre completo de la práctica.
-
-- duration:
-    Duración total estimada de la práctica en minutos.
-
-- objective:
-    Objetivo principal de aprendizaje de la práctica.
-
-- prerequisites:
-    Requisitos previos necesarios para realizarla.
-    Agrega o elimina elementos según corresponda.
-
-- introduction:
-    Introducción breve de la práctica. Se recomienda un solo párrafo.
-
-- final_result:
-    Resultado final esperado al terminar toda la práctica.
-    Se recomienda describirlo en un solo párrafo.
-
-- notes:
-    Consideraciones generales que apliquen a toda la práctica.
-
-- references:
-    Documentación oficial o referencias técnicas relevantes.
-    Mantén la estructura:
-
-      - text: DESCRIPCION
-        url: URL
-
-- permalink, images_base, slug y lab_number:
-    Son generados automáticamente. No deben modificarse salvo que cambie
-    deliberadamente la estructura del sitio.
-
-- prev y next:
-    Son generados automáticamente por este script para navegación entre labs.
-
----------------------------------------------------------------------
-2. ESTRUCTURA GENERAL DE UNA TAREA
----------------------------------------------------------------------
-
-Cada tarea debe seguir esta estructura:
-
-  ## ICONO Tarea N. NOMBRE DE LA TAREA — ## min
-
-  DESCRIPCION_DE_LA_TAREA.
-
-  ### Tarea N.1. NOMBRE_DE_LA_SUBTAREA
-
-  DESCRIPCION_DE_LA_SUBTAREA.
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-La descripción de la tarea debe explicar qué se realizará y para qué.
-Como referencia, se recomiendan aproximadamente 200-250 caracteres.
-
-La descripción de cada subtarea debe indicar claramente el objetivo de esa
-sección. Como referencia, se recomiendan aproximadamente 120-150 caracteres.
-
----------------------------------------------------------------------
-3. TAREAS
----------------------------------------------------------------------
-
-Las tareas principales se numeran de forma consecutiva:
-
-  Tarea 1
-  Tarea 2
-  Tarea 3
-  Tarea 4
-  ...
-
-La plantilla incluye solamente 3 tareas como ejemplo.
-
-Si la práctica necesita más tareas:
-
-1) Duplica COMPLETA una sección de tarea existente.
-2) Cambia el encabezado de la tarea.
-3) Cambia la numeración de todas sus subtareas.
-4) Cambia el resultado asociado results[N].
-5) Cambia el identificador de support-prompt.html.
-
-Ejemplo para una Tarea 4:
-
-  ## 🔧 Tarea 4. NOMBRE DE LA TAREA — ## min
-
-Al finalizar debe contener:
-
-  {% capture r4 %}{{ results[3] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r4 %}
-
-  {% include support-prompt.html task="tarea4" %}
-
-IMPORTANTE:
-El arreglo results utiliza índice base 0:
-
-  Tarea 1 -> results[0]
-  Tarea 2 -> results[1]
-  Tarea 3 -> results[2]
-  Tarea 4 -> results[3]
-  Tarea 5 -> results[4]
-  Tarea 6 -> results[5]
-  Tarea N -> results[N-1]
-
----------------------------------------------------------------------
-4. SUBTAREAS
----------------------------------------------------------------------
-
-Cada tarea puede contener tantas subtareas como sea necesario.
-La numeración debe conservar la relación con la tarea principal.
-
-Ejemplo para la Tarea 4:
-
-  ### Tarea 4.1. PRIMERA SUBTAREA
-  ### Tarea 4.2. SEGUNDA SUBTAREA
-  ### Tarea 4.3. TERCERA SUBTAREA
-  ### Tarea 4.4. CUARTA SUBTAREA
-
-No existe un límite fijo de subtareas.
-
----------------------------------------------------------------------
-5. PASOS
----------------------------------------------------------------------
-
-Cada acción que debe realizar el participante debe escribirse como un paso
-independiente utilizando:
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-No combines varias acciones importantes dentro de un único paso cuando puedan
-realizarse o validarse por separado.
-
-Cada paso debe contener, cuando corresponda:
-
-- Una descripción clara de la acción.
-- Una Nota, Importante o Advertencia.
-- Una imagen de referencia.
-- Un bloque de código o comando.
-- Una salida esperada o criterio de validación.
-
----------------------------------------------------------------------
-6. NOTAS, IMPORTANTES Y ADVERTENCIAS
----------------------------------------------------------------------
-
-Usa los bloques obligatoriamente aportando informacion util en cada paso.
-Nota, Advertencia, Importante, Siempre ponerla debajo del texto del paso.
-Salida esperada, siempr ponerla al finalizar el paso y antes del siguiente paso.
-
-Nota informativa:
-
-  > **Nota:** TEXTO.
-  {: .lab-note .info .compact}
-
-Consideración importante:
-
-  > **Importante:** TEXTO.
-  {: .lab-note .important .compact}
-
-Advertencia:
-
-  > **Advertencia:** TEXTO.
-  {: .lab-note .warning .compact}
-
-Salida esperada:
-
-  > **Salida esperada:** TEXTO.
-  {: .lab-note .output .compact}
-
-No es obligatorio incluir los tres tipos de nota en todos los pasos.
-Utiliza solamente el que corresponda al contexto.
-
----------------------------------------------------------------------
-7. BLOQUES DE CÓDIGO
----------------------------------------------------------------------
-
-Cada comando o fragmento que el participante deba ejecutar debe tener su
-propio bloque de código.
-
-Ejemplo Bash:
+- {% include step_label.html %} Ejecuta todos los hooks desde Git Bash, usando el módulo Python que acabas de instalar. El hook puede modificar el README si detecta cambios en variables u outputs; si ocurre, prepara nuevamente el archivo.
 
   ```bash
-  COMANDO
+  if command -v py >/dev/null 2>&1; then
+    py -m pre_commit run --all-files
+  else
+    python -m pre_commit run --all-files
+  fi
   ```
 
-Cambia el identificador del lenguaje cuando corresponda, por ejemplo:
+  > **Nota:** El primer intento puede señalar que `README.md` fue modificado por el hook. En ese caso revisa `git diff`, ejecuta `git add modules/gcs-bucket/README.md` y repite el comando.
+  {: .lab-note .info .compact}
 
-  ```yaml
-  ```json
-  ```sql
-  ```powershell
-  ```python
-
-Evita colocar varios pasos independientes dentro de un único bloque de código
-si deben ejecutarse y validarse por separado.
-
----------------------------------------------------------------------
-8. SALIDA ESPERADA
----------------------------------------------------------------------
-
-Después de un comando o acción importante debe existir una forma clara de
-validar que el paso fue realizado correctamente.
-
-Utiliza:
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_VALIDACION.
+  > **Salida esperada:** El hook finaliza con `Passed`, o modifica README y permite repetir el análisis tras agregar el archivo actualizado.
   {: .lab-note .output .compact}
 
-La salida esperada no necesita reproducir siempre todo el texto del comando.
-Puede describir el estado, recurso, valor o comportamiento que debe observarse.
 
----------------------------------------------------------------------
-9. IMÁGENES
----------------------------------------------------------------------
+- {% include step_label.html %} Confirma que el README conserva el contenido del equipo y que la descripción nueva de `labels` aparece en la región automática. Después, vuelve a agregar el README si el hook lo cambió.
 
-La carpeta de imágenes de esta práctica se encuentra en:
+  ```bash
+  grep -n "Etiquetas de inventario" modules/gcs-bucket/README.md
+  grep -n "Nota del equipo" modules/gcs-bucket/README.md
+  git add modules/gcs-bucket/README.md
+  git status --short
+  ```
 
-  labs/labN/img/
+  > **Salida esperada:** Ambas frases aparecen; `git status` muestra los archivos preparados, sin archivos `.tfstate`.
+  {: .lab-note .output .compact}
 
-Para insertar una imagen mediante el mecanismo de la plantilla utiliza:
 
-  {% include step_image.html %}
+### Tarea 5.2. Crear commit y verificar salida documental
 
-Conserva este include solamente en los pasos que realmente tengan una imagen.
-Si el paso no requiere imagen, elimínalo.
+Comprobar la ejecución automática al confirmar cambios y dejar evidencia local de que la documentación está actualizada.
 
-No es necesario agregar una imagen a cada paso.
+- {% include step_label.html %} Configura el nombre y correo **solo para este repositorio** si Git aún no los tiene, y crea un commit de prueba. Si el hook genera cambios y bloquea el commit, inspecciona, agrega el README y repite el comando.
 
----------------------------------------------------------------------
-10. RESULTADO DE CADA TAREA
----------------------------------------------------------------------
+  **Instrucciones:**
 
-Cada tarea debe terminar con un resultado esperado asociado a
-_data/task-results.yml.
+  - Si `git config user.name` o `git config user.email` no muestran valor, establece los datos de tu cuenta únicamente dentro de `lab11` con `git config user.name "Tu Nombre"` y `git config user.email "tu-correo@example.com"`.
+  - En Git Bash ejecuta los comandos siguientes y observa la salida del hook antes del mensaje final de Git.
+  - Si aparece `files were modified by this hook`, utiliza `git add modules/gcs-bucket/README.md` y ejecuta el commit otra vez.
 
-La asignación de results debe realizarse una sola vez antes del primer uso:
+  ```bash
+  git add .gitignore .pre-commit-config.yaml modules/gcs-bucket
+  git commit -m "Documentar modulo GCS con terraform-docs"
+  ```
 
-  {% assign results = site.data.task-results[page.slug].results %}
+  > **Salida esperada:** El hook se ejecuta y, cuando ya no hay modificaciones pendientes, Git crea el commit local de documentación.
+  {: .lab-note .output .compact}
 
-En esta plantilla se realiza en la Tarea 1.
-No es necesario repetir el assign en las tareas siguientes.
 
-Después utiliza el índice correspondiente:
+- {% include step_label.html %} Comprueba el commit y la estructura definitiva. No se ha iniciado sesión en Google Cloud ni creado buckets: el resultado es un módulo **documentado y automatizado**, listo para utilizarse en un proyecto posterior.
 
-  {% capture r1 %}{{ results[0] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r1 %}
+  ```bash
+  git log -1 --oneline
+  git status --short
+  find modules/gcs-bucket -maxdepth 1 -type f | sort
+  ```
 
-Para la Tarea 2:
+  > **Salida esperada:** Aparece un commit reciente, `git status --short` queda vacío y están presentes README, `.terraform-docs.yml` y los cuatro archivos HCL.
+  {: .lab-note .output .compact}
 
-  {% capture r2 %}{{ results[1] }}{% endcapture %}
-
-Para la Tarea 3:
-
-  {% capture r3 %}{{ results[2] }}{% endcapture %}
-
-Y así sucesivamente.
-
----------------------------------------------------------------------
-11. PROMPT DE SOPORTE
----------------------------------------------------------------------
-
-Después del resultado de cada tarea debe incluirse el prompt de soporte
-correspondiente:
-
-  {% include support-prompt.html task="tarea1" %}
-
-La numeración debe coincidir exactamente con la tarea:
-
-  Tarea 1 -> task="tarea1"
-  Tarea 2 -> task="tarea2"
-  Tarea 3 -> task="tarea3"
-  Tarea 4 -> task="tarea4"
-  ...
-
----------------------------------------------------------------------
-12. SEPARACIÓN ENTRE TAREAS
----------------------------------------------------------------------
-
-Separa cada tarea principal utilizando:
-
-  ---
-
-No utilices este separador entre pasos o subtareas de la misma tarea.
-
----------------------------------------------------------------------
-13. ICONOS DE LAS TAREAS
----------------------------------------------------------------------
-
-El icono del encabezado es visual y puede cambiarse de acuerdo con el tema de
-la tarea. Ejemplos utilizados en esta plantilla:
-
-  🔎  ☁️  🚀
-
-La numeración y el texto "Tarea N." son más importantes que el icono.
-
----------------------------------------------------------------------
-14. QUÉ SE PUEDE ELIMINAR
----------------------------------------------------------------------
-
-Si un elemento no aplica a la práctica puede eliminarse, por ejemplo:
-
-- Prerequisitos adicionales.
-- Notas generales.
-- Referencias adicionales.
-- Una Nota/Importante/Advertencia de un paso.
-- {% include step_image.html %} cuando no existe imagen.
-- Subtareas que no sean necesarias.
-- Tareas de ejemplo que no formen parte de la práctica real.
-
-No elimines los elementos estructurales necesarios para el funcionamiento del
-layout, resultados o navegación sin revisar primero su dependencia.
-
----------------------------------------------------------------------
-15. VALIDACIÓN FINAL DEL ARCHIVO
----------------------------------------------------------------------
-
-Antes de considerar terminado el laboratorio verifica:
-
-- El título y duración son correctos.
-- El objetivo describe claramente el aprendizaje esperado.
-- La introducción está completa.
-- Todas las tareas están numeradas consecutivamente.
-- Todas las subtareas corresponden al número de su tarea.
-- Cada acción del participante está separada como paso cuando corresponde.
-- Los comandos tienen bloques de código adecuados.
-- Los pasos importantes tienen una salida esperada o criterio de validación.
-- Los índices results[N] corresponden a cada número de tarea.
-- Cada tarea utiliza support-prompt.html con su número correcto.
-- Las imágenes utilizadas existen en la carpeta img de la práctica.
-- El resultado final describe lo que el participante habrá conseguido.
-- No permanecen textos de marcador como CAMBIAR_AQUI, DESCRIPCION_, NOMBRE_DE_,
-  CODIGO_, PREREQUISITO_, RESULTADO_ o ## min en la versión final.
-
-======================================================================
-FIN DE LA GUÍA DE USO DE LA PLANTILLA
-======================================================================
--->
+{% assign results = site.data.task-results[page.slug].results %}
+{% capture r5 %}{{ results[4] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r5 %}

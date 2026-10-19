@@ -1,563 +1,539 @@
 ---
 layout: lab
-title: "Práctica 12: CAMBIAR_AQUI_NOMBRE_DE_LA_PRACTICA"
+title: "Práctica 12: Estimar costos con Infracost"
 permalink: /lab12/lab12/
 images_base: /labs/lab12/img
-duration: "## minutos"
+duration: "25 minutos"
 objective:
-  - OBJETIVO_DE_LA_PRACTICA
+  - "Estimar el costo mensual de recursos Compute Engine y Cloud Storage definidos con Terraform mediante Infracost, conservar una línea base y comparar modificaciones sin desplegar infraestructura."
 prerequisites:
-  - PREREQUISITO_1
-  - PREREQUISITO_2
-  - PREREQUISITO_3
-  - PREREQUISITO_4
-  - PREREQUISITO_X
+  - "Prácticas 1 a 11 completadas; carpeta terraform-gcp-intermediate creada en el Escritorio de Windows."
+  - "VM Windows con VS Code, Git Bash, Terraform y Google Cloud CLI; conexión a Internet para Infracost y proveedores."
+  - "Cuenta gratuita de Infracost preparada; para obtener un plan de Terraform con Google Provider, proyecto GCP y ADC con permisos de lectura habilitados."
 introduction:
-  - INTRODUCCION_DE_LA_PRACTICA_BREVE_RESUMEN_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  - "Definirás una VPC, una VM Debian y un bucket GCS sin ejecutarlos. Calcularás el costo mensual estimado con Infracost, generarás el plan JSON de Terraform como evidencia complementaria y guardarás la estimación inicial. Después cambiarás tipo de máquina y clase de almacenamiento para observar la diferencia de costos antes de decidir un despliegue."
 slug: lab12
 lab_number: 12
 final_result: >
-  RESULTADO_FINAL_ESPERADO_DE_LA_PRACTICA_EN_UN_SOLO_PARRAFO_RECOMENDADO
+  Proyecto lab12 con configuración Terraform de GCP, estimación de costos en tabla y JSON, plan JSON opcional de contraste y comparativa Infracost entre la línea base y la configuración modificada; sin recursos desplegados ni cargos por infraestructura del laboratorio.
 notes:
-  - NOTAS_CONSIDERACIONES_ADICIONALES
-  - NOTAS_CONSIDERACIONES_ADICIONALES
+  - "Ejecuta comandos desde Git Bash integrado en VS Code dentro de terraform-gcp-intermediate/lab12, salvo indicación contraria."
+  - "No ejecutes terraform apply ni terraform destroy; un plan y una estimación no crean infraestructura GCP."
+  - "Infracost requiere iniciar sesión; la cuenta gratuita debe estar preparada para cumplir los 25 minutos de clase."
+  - "Los importes son estimaciones sujetas a tarifas, regiones, descuentos y consumo. GCS depende de GB, operaciones y recuperación; sin datos de uso no se representa necesariamente todo el costo."
+  - "Guarda infracost-base.json ANTES de modificar el código; si lo regeneras después, perderás la referencia para diff."
+  - "No publiques planes JSON, identificadores sensibles ni credenciales. El plan JSON puede incluir valores de configuración que requieren revisión."
 references:
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://developer.hashicorp.com/terraform
-  - text: DESCRIPCION_DEL_LINK_DE_REFERENCIA
-    url: https://learn.microsoft.com/es-es/cli/azure/
+  - text: "Infracost: documentación oficial"
+    url: https://www.infracost.io/docs/
+  - text: "Infracost: CLI"
+    url: https://www.infracost.io/docs/features/cli_commands/
+  - text: "Infracost: archivos de uso"
+    url: https://www.infracost.io/docs/features/usage_based_resources/
+  - text: "Infracost: versiones para Windows"
+    url: https://github.com/infracost/infracost/releases
+  - text: "Terraform: comando show -json"
+    url: https://developer.hashicorp.com/terraform/cli/commands/show
+  - text: "Google Cloud: precios"
+    url: https://cloud.google.com/pricing
 prev: /lab11/lab11/
 next: /lab13/lab13/
 ---
 
 ---
 
-<!-- Aquí comienzan las instrucciones paso a paso de la práctica -->
+## 🔎 Tarea 1. Preparar el proyecto Terraform para estimación — 6 min
 
-## 🔎 Tarea 1. NOMBRE DE LA TAREA — ## min
+Crearás `lab12` sin alterar las prácticas anteriores y definirás una VM, una VPC y un bucket de ejemplo. Los recursos permanecerán únicamente en el código.
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+### Tarea 1.1. Preparar directorios y herramientas
 
-### Tarea 1.1. NOMBRE DE_LA_SUBTAREA
+Abrir la raíz del curso, crear una carpeta independiente y verificar las herramientas disponibles en Git Bash.
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+- {% include step_label.html %} En **VS Code**, abre **File > Open Folder...** y selecciona la carpeta `terraform-gcp-intermediate` del Escritorio; abre **Terminal > New Terminal** y elige **Git Bash**.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+  > **Salida esperada:** El Explorer muestra `lab1` a `lab11` y la terminal muestra un prompt Bash.
+  {: .lab-note .output .compact}
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+- {% include step_label.html %} En **Git Bash**, identifica la ubicación real del Escritorio de Windows y crea exclusivamente `lab12`.
+
+  ```bash
+  DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '
+  ')"
+  DESKTOP="$(cygpath -u "$DESKTOP_WIN")"
+  mkdir -p "$DESKTOP/terraform-gcp-intermediate/lab12/reports"
+  cd "$DESKTOP/terraform-gcp-intermediate/lab12"
+  pwd
+  ```
+
+  > **Salida esperada:** La ruta termina en `/terraform-gcp-intermediate/lab12` y existe la carpeta `reports`, incluso si el Escritorio usa OneDrive.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Crea los archivos de Terraform y un `.gitignore` que excluya estado, planes y reportes de la publicación accidental.
+
+  ```bash
+  touch providers.tf variables.tf main.tf terraform.tfvars .gitignore
+  cat > .gitignore <<'EOF'
+  .terraform/
+  *.tfstate
+  *.tfstate.*
+  *.tfplan
+  tfplan.json
+  *.tfvars
+  reports/
+  infracost-base.json
+  infracost-nuevo.json
+  EOF
+  terraform version
+  gcloud version | head -n 3
+  ```
+
+  > **Salida esperada:** Existen los archivos y las herramientas muestran versiones; `.gitignore` protege los artefactos locales.
+  {: .lab-note .output .compact}
+
+### Tarea 1.2. Escribir infraestructura representativa
+
+Declarar un ejemplo que combine cómputo y almacenamiento. Conservaremos el código legible en archivos separados, con la infraestructura propia del laboratorio.
+
+- {% include step_label.html %} En **VS Code**, abre `lab12/providers.tf` y declara Terraform y el Google Provider. No incluyas claves JSON.
+
+  ```hcl
+  terraform {
+    required_version = ">= 1.5.0"
+    required_providers {
+      google = {
+        source  = "hashicorp/google"
+        version = ">= 5.0, < 8.0"
+      }
+    }
+  }
+  
+  provider "google" {
+    project = var.project_id
+    region  = var.region
+    zone    = var.zone
+  }
+  ```
+
+  > **Salida esperada:** La configuración del proveedor depende de variables y no contiene credenciales.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `variables.tf`, define proyecto, región, zona, tipo de máquina y clase de almacenamiento. Estas dos últimas entradas se compararán después.
+
+  ```hcl
+  variable "project_id" {
+    description = "ID del proyecto GCP usado para validar el plan"
+    type        = string
+  }
+  variable "region" {
+    description = "Región de recursos de ejemplo"
+    type        = string
+    default     = "us-central1"
+  }
+  variable "zone" {
+    description = "Zona de la VM de ejemplo"
+    type        = string
+    default     = "us-central1-a"
+  }
+  variable "machine_type" {
+    description = "Tipo de VM para estimación"
+    type        = string
+    default     = "e2-medium"
+  }
+  variable "storage_class" {
+    description = "Clase de almacenamiento GCS"
+    type        = string
+    default     = "STANDARD"
+  }
+  ```
+
+  > **Salida esperada:** Existen cinco variables, con `machine_type = "e2-medium"` y `storage_class = "STANDARD"` como valores iniciales.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} En `main.tf`, agrega la VPC de ejemplo y la VM. **Construcción dirigida 1/4:** conecta `machine_type` con `var.machine_type` y fija un disco `pd-standard` de 20 GB.
+
+  ```hcl
+  resource "google_compute_network" "vpc" {
+    name                    = "lab12-infracost-vpc"
+    auto_create_subnetworks = true
+  }
+  
+  resource "google_compute_instance" "vm" {
+    name         = "lab12-infracost-vm"
+    machine_type = var.machine_type
+    zone         = var.zone
+    tags         = ["demo", "costos"]
+  
+    boot_disk {
+      initialize_params {
+        image = "projects/debian-cloud/global/images/family/debian-12"
+        size  = 20
+        type  = "pd-standard"
+      }
+    }
+  
+    network_interface {
+      network = google_compute_network.vpc.id
+      access_config {}
+    }
+  
+    labels = { env = "dev" }
+  }
+  ```
+
+  > **Nota:** La red es exclusiva de `lab12` y no depende de que exista la VPC `default`. La IP externa y el disco pueden representar cargos adicionales.
   {: .lab-note .info .compact}
 
-  {% include step_image.html %}
-
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** El recurso Compute Engine usa `e2-medium`, disco de 20 GB e IP externa, vinculado a la VPC de ejemplo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} **Debajo de la VM**, añade el bucket GCS y prepara `terraform.tfvars` con el proyecto real. El bucket no se creará.
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_2
+  ```hcl
+  resource "google_storage_bucket" "bucket" {
+    name                        = "lab12-infracost-ejemplo-no-deploy"
+    location                    = var.region
+    storage_class               = var.storage_class
+    uniform_bucket_level_access = true
+    force_destroy               = false
+    labels                      = { env = "dev" }
+  
+    lifecycle_rule {
+      condition { age = 30 }
+      action { type = "Delete" }
+    }
+  }
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
-  {: .lab-note .output .compact}
+  > **Nota:** En `terraform.tfvars` escribe `project_id = "TU_PROJECT_ID"` y sustituye el marcador por tu ID obtenido con `gcloud config get-value project`. El nombre del bucket es ilustrativo; no necesitas reservarlo.
+  {: .lab-note .info .compact}
 
-### Tarea 1.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
-
-  ```bash
-  CODIGO_DEL_PASO_3
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Salida esperada:** El código contiene una VPC, una VM y un bucket con clase `STANDARD`, sin ejecutar `apply`.
   {: .lab-note .output .compact}
 
 {% assign results = site.data.task-results[page.slug].results %}
 {% capture r1 %}{{ results[0] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r1 %}
 
-{% include support-prompt.html task="tarea1" %}
-
 ---
 
-## ☁️ Tarea 2. NOMBRE DE LA TAREA — ## min
+## 🔎 Tarea 2. Instalar y autenticar Infracost — 5 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Comprobarás que Infracost CLI esté disponible en Windows y vincularás una cuenta del servicio, necesaria para consultar estimaciones.
 
-### Tarea 2.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 2.1. Comprobar o instalar la CLI
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Evitar instalaciones innecesarias y utilizar una opción aprobada para la VM Windows.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} En **Git Bash**, comprueba si Infracost ya está en `PATH` antes de instalarlo.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  ```bash
+  if command -v infracost >/dev/null 2>&1; then
+    infracost --version
+  else
+    echo "Infracost no disponible en PATH"
+  fi
+  ```
+
+  > **Salida esperada:** Infracost muestra una versión o queda confirmado que debes instalarlo.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Si falta Infracost, instala la herramienta con Chocolatey en una terminal administrativa o utiliza el ejecutable oficial Windows amd64.
+
+  **Instrucciones:**
+
+  - Si Chocolatey está disponible y tienes autorización, ejecuta `choco install infracost -y` desde una terminal de Windows con privilegios adecuados.
+  - Alternativamente, abre [Infracost Releases](https://github.com/infracost/infracost/releases), descarga la distribución Windows amd64, extrae `infracost.exe` y colócalo en una carpeta de herramientas del usuario.
+  - Regresa a Git Bash y verifica `infracost --version`; si se descargó a una carpeta no incluida en `PATH`, agrega esa ruta antes de continuar.
+
+  > **Nota:** No instales extensiones de VS Code como requisito: son opcionales.
   {: .lab-note .info .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** `infracost --version` responde correctamente desde Git Bash.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+### Tarea 2.2. Acceder y verificar la cuenta
 
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
+Abrir la autenticación de Infracost sin copiar claves privadas a Terraform.
 
-  ```bash
-  CODIGO_DEL_PASO_2
-  ```
+- {% include step_label.html %} En el navegador, accede a [Infracost Dashboard](https://dashboard.infracost.io/) y entra o registra una cuenta utilizando el método permitido por el curso.
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Salida esperada:** La cuenta de Infracost está disponible; no usaste enlaces de inicio de sesión con tokens temporales.
   {: .lab-note .output .compact}
 
-### Tarea 2.2. NOMBRE_DE_LA_SUBTAREA
-
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
-
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+- {% include step_label.html %} En **Git Bash**, ejecuta la autenticación interactiva de la CLI y finaliza el procedimiento abierto en el navegador.
 
   ```bash
-  CODIGO_DEL_PASO_3
+  infracost auth login
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Nota:** No copies tokens de autenticación a `.tf` o al repositorio.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Infracost informa que la CLI quedó autenticada.
   {: .lab-note .output .compact}
 
+- {% include step_label.html %} Valida que la autenticación esté vigente y anota únicamente el estado de la sesión, sin revelar credenciales.
+
+  ```bash
+  infracost auth whoami
+  infracost --version
+  ```
+
+  > **Salida esperada:** Se identifica la cuenta conectada y la versión de la CLI.
+  {: .lab-note .output .compact}
+
+{% assign results = site.data.task-results[page.slug].results %}
 {% capture r2 %}{{ results[1] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r2 %}
 
-{% include support-prompt.html task="tarea2" %}
-
 ---
 
-## 🚀 Tarea 3. NOMBRE DE LA TAREA — ## min
+## 🔎 Tarea 3. Generar el costo inicial y guardar la línea base — 5 min
 
-<!-- DESCRIPCION DE LA TAREA: RECOMENDADO 200-250 CARACTERES -->
-DESCRIPCION_DE_LA_TAREA.
+Inicializarás el proyecto, obtendrás evidencia de un plan Terraform y generarás la estimación inicial que posteriormente se utilizará como referencia.
 
-### Tarea 3.1. NOMBRE_DE_LA_SUBTAREA
+### Tarea 3.1. Inicializar Terraform y exportar el plan JSON
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Comprobar la sintaxis HCL y guardar un plan solo de lectura, sin aprovisionar recursos.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_1. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
+- {% include step_label.html %} Desde `lab12`, normaliza el formato e inicializa el proveedor Google.
 
-  > **Nota:** NOTA_GENERAL_DEL_PASO.
+  ```bash
+  terraform fmt -recursive
+  terraform init
+  terraform validate
+  ```
+
+  > **Salida esperada:** Terraform finaliza la inicialización y `validate` muestra `Success! The configuration is valid.`
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Comprueba el proyecto y las credenciales ADC **solo para la generación del plan Terraform**. Si faltan, autentica la cuenta autorizada.
+
+  ```bash
+  PROJECT_ID="$(gcloud config get-value project)"
+  echo "Proyecto configurado: $PROJECT_ID"
+  gcloud auth application-default print-access-token >/dev/null && echo "ADC disponible"
+  ```
+
+  > **Nota:** Si falla ADC, ejecuta `gcloud auth application-default login`. El análisis directo de Infracost sobre HCL no exige esa autenticación; `terraform plan` sí puede necesitarla.
   {: .lab-note .info .compact}
 
-  ```bash
-  CODIGO_DEL_PASO_1
-  ```
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_1.
+  > **Salida esperada:** El proyecto activo coincide con `terraform.tfvars` y, cuando hay permisos, se muestra `ADC disponible`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_2. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Importante:** CONSIDERACION_IMPORTANTE_DEL_PASO.
-  {: .lab-note .important .compact}
+- {% include step_label.html %} Genera un plan guardado y conviértelo a JSON. **No ejecutes `terraform apply`**.
 
   ```bash
-  CODIGO_DEL_PASO_2
+  terraform plan -out=lab12.tfplan
+  terraform show -json lab12.tfplan > tfplan.json
+  ls -lh lab12.tfplan tfplan.json
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_2.
+  > **Nota:** Si las políticas GCP impiden obtener el plan, registra el error y continúa con las estimaciones desde HCL: `infracost breakdown --path .`. No inventes un plan válido.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Se crean `lab12.tfplan` y `tfplan.json`, con la VM, VPC y bucket propuestos para alta.
   {: .lab-note .output .compact}
 
-### Tarea 3.2. NOMBRE_DE_LA_SUBTAREA
+### Tarea 3.2. Obtener y conservar la estimación original
 
-<!-- DESCRIPCION DE LA SUBTAREA: RECOMENDADO 120-150 CARACTERES -->
-DESCRIPCION_DE_LA_SUBTAREA.
+Usar Infracost para examinar la VM y GCS y guardar una línea base consistente anterior a cualquier modificación.
 
-- {% include step_label.html %} DESCRIPCION_DEL_PASO_3. <!-- DESCRIPCION DEL PASO: RECOMENDADO 120 CARACTERES -->
-
-  > **Advertencia:** ADVERTENCIA_DEL_PASO.
-  {: .lab-note .warning .compact}
+- {% include step_label.html %} Ejecuta el reporte de costos en tabla desde HCL y, si obtuviste el plan JSON, úsalo adicionalmente para contrastar valores.
 
   ```bash
-  CODIGO_DEL_PASO_3
+  infracost breakdown --path . --format table
+  # Ejecutar SOLO si se generó tfplan.json correctamente:
+  # infracost breakdown --path tfplan.json --format table
   ```
 
-  > **Salida esperada:** DESCRIPCION_DE_LA_SALIDA_ESPERADA_DEL_PASO_3.
+  > **Nota:** El archivo de plan debe consumirse como JSON, no como el binario `.tfplan`. Algunos rubros variables de GCS necesitan supuestos de uso.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Aparece un desglose mensual estimado de los recursos cubiertos por Infracost; los valores no tienen que ser idénticos a los de otro participante.
   {: .lab-note .output .compact}
 
+- {% include step_label.html %} **Antes de cambiar el HCL**, genera la línea base JSON que utilizará `infracost diff`.
+
+  ```bash
+  infracost breakdown --path . --format json --out-file infracost-base.json
+  ls -lh infracost-base.json
+  ```
+
+  > **Salida esperada:** Existe `infracost-base.json` y representa `e2-medium` con GCS `STANDARD`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} **Construcción dirigida 2/4.** Identifica en el reporte inicial qué recurso concentra el costo fijo estimado y qué conceptos de GCS dependen del consumo.
+
+  **Instrucciones:**
+
+  - Revisa la fila de `google_compute_instance.vm` y el total mensual estimado.
+  - Distingue cómputo, disco e IP externa si aparecen desglosados.
+  - Comprueba si el bucket muestra costo cuantificado o componentes cuyo uso no se conoce.
+  - Anota brevemente la observación; no supongas importes exactos.
+
+  > **Salida esperada:** Identificas los conceptos principales de la línea base y sabes qué datos de uso faltan para un presupuesto exhaustivo.
+  {: .lab-note .output .compact}
+
+{% assign results = site.data.task-results[page.slug].results %}
 {% capture r3 %}{{ results[2] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r3 %}
 
-{% include support-prompt.html task="tarea3" %}
+---
+
+## 🔎 Tarea 4. Modificar infraestructura y comparar estimaciones — 6 min
+
+Actualizarás dos atributos que impactan la estimación y compararás los resultados contra la línea base guardada, sin modificar infraestructura real.
+
+### Tarea 4.1. Modificar VM y clase de almacenamiento
+
+Editar el código HCL original en la ubicación correcta, conservando el resto del proyecto.
+
+- {% include step_label.html %} En **VS Code**, abre `lab12/variables.tf` y ubica `variable "machine_type"`. **Construcción dirigida 3/4:** cambia únicamente su valor predeterminado a `e2-standard-2`.
+
+  ```hcl
+  variable "machine_type" {
+    description = "Tipo de VM para estimación"
+    type        = string
+    default     = "e2-standard-2"
+  }
+  ```
+
+  > **Salida esperada:** La VM sigue usando `var.machine_type` en `main.tf`, pero ahora apunta a `e2-standard-2`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Debajo de `machine_type`, localiza `variable "storage_class"` y cambia su valor por `NEARLINE`.
+
+  ```hcl
+  variable "storage_class" {
+    description = "Clase de almacenamiento GCS"
+    type        = string
+    default     = "NEARLINE"
+  }
+  ```
+
+  > **Salida esperada:** El bucket continúa usando `var.storage_class` y la nueva clase es `NEARLINE`.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Valida el formato y confirma en Git Bash que los dos valores modificados aparecen solo en las definiciones esperadas.
+
+  ```bash
+  terraform fmt -recursive
+  terraform validate
+  grep -nE 'e2-standard-2|NEARLINE' variables.tf
+  ```
+
+  > **Salida esperada:** Terraform valida correctamente y `grep` muestra ambos valores en `variables.tf`.
+  {: .lab-note .output .compact}
+
+### Tarea 4.2. Calcular diferencia frente a la línea base
+
+Generar la nueva estimación y obtener el cambio mensual mediante `infracost diff`.
+
+- {% include step_label.html %} Ejecuta una nueva estimación JSON sin sobrescribir `infracost-base.json`.
+
+  ```bash
+  infracost breakdown --path . --format json --out-file infracost-nuevo.json
+  ls -lh infracost-base.json infracost-nuevo.json
+  ```
+
+  > **Salida esperada:** Existen dos reportes diferentes: original y modificado.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} **Construcción dirigida 4/4.** Compara la configuración actual con la línea base mediante el comando documentado por Infracost.
+
+  ```bash
+  infracost diff --path . --compare-to infracost-base.json --format table
+  ```
+
+  > **Nota:** El cambio de clase del bucket puede necesitar cantidades de almacenamiento y operaciones para obtener una diferencia monetaria representativa.
+  {: .lab-note .info .compact}
+
+  > **Salida esperada:** Se presenta el cambio de costo estimado frente a la configuración inicial, especialmente el impacto del tipo de VM.
+  {: .lab-note .output .compact}
+
+- {% include step_label.html %} Interpreta el resultado en lugar de asumir que todas las modificaciones generan incrementos o ahorros.
+
+  **Instrucciones:**
+
+  - Localiza el costo anterior y el nuevo costo mensual cuando estén disponibles.
+  - Determina si el cambio de VM incrementa el costo estimado y cuál es su contribución.
+  - Verifica si GCS aparece con estimación completa, parcial o sin datos de uso.
+  - Relaciona la comparación con una revisión de Pull Request antes de un futuro `apply`.
+
+  > **Salida esperada:** Puedes explicar la variación del costo mensual y reconocer rubros no cuantificados por falta de consumo.
+  {: .lab-note .output .compact}
+
+{% assign results = site.data.task-results[page.slug].results %}
+{% capture r4 %}{{ results[3] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r4 %}
 
 ---
 
-<!--
-======================================================================
-GUÍA DE USO DE LA PLANTILLA DEL LABORATORIO
-======================================================================
+## 🔎 Tarea 5. Exportar y verificar reportes de costos — 3 min
 
-Este archivo es una plantilla base. Las 3 tareas incluidas sirven únicamente
-como referencia de estructura. La práctica final puede tener más o menos
-tareas, subtareas y pasos según lo requiera el contenido.
+Reunirás los artefactos del laboratorio y comprobarás que las estimaciones se generaron sin crear ningún recurso en GCP.
 
----------------------------------------------------------------------
-1. FRONT MATTER
----------------------------------------------------------------------
+### Tarea 5.1. Guardar reportes legibles para revisión
 
-Completa los campos de la cabecera YAML sin cambiar sus nombres:
+Conservar una salida de comparación y los JSON para utilizarlos como evidencia técnica.
 
-- title:
-    Nombre completo de la práctica.
-
-- duration:
-    Duración total estimada de la práctica en minutos.
-
-- objective:
-    Objetivo principal de aprendizaje de la práctica.
-
-- prerequisites:
-    Requisitos previos necesarios para realizarla.
-    Agrega o elimina elementos según corresponda.
-
-- introduction:
-    Introducción breve de la práctica. Se recomienda un solo párrafo.
-
-- final_result:
-    Resultado final esperado al terminar toda la práctica.
-    Se recomienda describirlo en un solo párrafo.
-
-- notes:
-    Consideraciones generales que apliquen a toda la práctica.
-
-- references:
-    Documentación oficial o referencias técnicas relevantes.
-    Mantén la estructura:
-
-      - text: DESCRIPCION
-        url: URL
-
-- permalink, images_base, slug y lab_number:
-    Son generados automáticamente. No deben modificarse salvo que cambie
-    deliberadamente la estructura del sitio.
-
-- prev y next:
-    Son generados automáticamente por este script para navegación entre labs.
-
----------------------------------------------------------------------
-2. ESTRUCTURA GENERAL DE UNA TAREA
----------------------------------------------------------------------
-
-Cada tarea debe seguir esta estructura:
-
-  ## ICONO Tarea N. NOMBRE DE LA TAREA — ## min
-
-  DESCRIPCION_DE_LA_TAREA.
-
-  ### Tarea N.1. NOMBRE_DE_LA_SUBTAREA
-
-  DESCRIPCION_DE_LA_SUBTAREA.
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-La descripción de la tarea debe explicar qué se realizará y para qué.
-Como referencia, se recomiendan aproximadamente 200-250 caracteres.
-
-La descripción de cada subtarea debe indicar claramente el objetivo de esa
-sección. Como referencia, se recomiendan aproximadamente 120-150 caracteres.
-
----------------------------------------------------------------------
-3. TAREAS
----------------------------------------------------------------------
-
-Las tareas principales se numeran de forma consecutiva:
-
-  Tarea 1
-  Tarea 2
-  Tarea 3
-  Tarea 4
-  ...
-
-La plantilla incluye solamente 3 tareas como ejemplo.
-
-Si la práctica necesita más tareas:
-
-1) Duplica COMPLETA una sección de tarea existente.
-2) Cambia el encabezado de la tarea.
-3) Cambia la numeración de todas sus subtareas.
-4) Cambia el resultado asociado results[N].
-5) Cambia el identificador de support-prompt.html.
-
-Ejemplo para una Tarea 4:
-
-  ## 🔧 Tarea 4. NOMBRE DE LA TAREA — ## min
-
-Al finalizar debe contener:
-
-  {% capture r4 %}{{ results[3] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r4 %}
-
-  {% include support-prompt.html task="tarea4" %}
-
-IMPORTANTE:
-El arreglo results utiliza índice base 0:
-
-  Tarea 1 -> results[0]
-  Tarea 2 -> results[1]
-  Tarea 3 -> results[2]
-  Tarea 4 -> results[3]
-  Tarea 5 -> results[4]
-  Tarea 6 -> results[5]
-  Tarea N -> results[N-1]
-
----------------------------------------------------------------------
-4. SUBTAREAS
----------------------------------------------------------------------
-
-Cada tarea puede contener tantas subtareas como sea necesario.
-La numeración debe conservar la relación con la tarea principal.
-
-Ejemplo para la Tarea 4:
-
-  ### Tarea 4.1. PRIMERA SUBTAREA
-  ### Tarea 4.2. SEGUNDA SUBTAREA
-  ### Tarea 4.3. TERCERA SUBTAREA
-  ### Tarea 4.4. CUARTA SUBTAREA
-
-No existe un límite fijo de subtareas.
-
----------------------------------------------------------------------
-5. PASOS
----------------------------------------------------------------------
-
-Cada acción que debe realizar el participante debe escribirse como un paso
-independiente utilizando:
-
-  - {% include step_label.html %} DESCRIPCION_DEL_PASO.
-
-No combines varias acciones importantes dentro de un único paso cuando puedan
-realizarse o validarse por separado.
-
-Cada paso debe contener, cuando corresponda:
-
-- Una descripción clara de la acción.
-- Una Nota, Importante o Advertencia.
-- Una imagen de referencia.
-- Un bloque de código o comando.
-- Una salida esperada o criterio de validación.
-
----------------------------------------------------------------------
-6. NOTAS, IMPORTANTES Y ADVERTENCIAS
----------------------------------------------------------------------
-
-Usa los bloques obligatoriamente aportando informacion util en cada paso.
-Nota, Advertencia, Importante, Siempre ponerla debajo del texto del paso.
-Salida esperada, siempr ponerla al finalizar el paso y antes del siguiente paso.
-
-Nota informativa:
-
-  > **Nota:** TEXTO.
-  {: .lab-note .info .compact}
-
-Consideración importante:
-
-  > **Importante:** TEXTO.
-  {: .lab-note .important .compact}
-
-Advertencia:
-
-  > **Advertencia:** TEXTO.
-  {: .lab-note .warning .compact}
-
-Salida esperada:
-
-  > **Salida esperada:** TEXTO.
-  {: .lab-note .output .compact}
-
-No es obligatorio incluir los tres tipos de nota en todos los pasos.
-Utiliza solamente el que corresponda al contexto.
-
----------------------------------------------------------------------
-7. BLOQUES DE CÓDIGO
----------------------------------------------------------------------
-
-Cada comando o fragmento que el participante deba ejecutar debe tener su
-propio bloque de código.
-
-Ejemplo Bash:
+- {% include step_label.html %} Exporta el detalle de la nueva estimación a un archivo de texto y guarda la comparación de costos.
 
   ```bash
-  COMANDO
+  infracost breakdown --path . --format table > reports/costo-nuevo.txt
+  infracost diff --path . --compare-to infracost-base.json --format table > reports/diferencia.txt
+  ls -lh reports
   ```
 
-Cambia el identificador del lenguaje cuando corresponda, por ejemplo:
-
-  ```yaml
-  ```json
-  ```sql
-  ```powershell
-  ```python
-
-Evita colocar varios pasos independientes dentro de un único bloque de código
-si deben ejecutarse y validarse por separado.
-
----------------------------------------------------------------------
-8. SALIDA ESPERADA
----------------------------------------------------------------------
-
-Después de un comando o acción importante debe existir una forma clara de
-validar que el paso fue realizado correctamente.
-
-Utiliza:
-
-  > **Salida esperada:** DESCRIPCION_DE_LA_VALIDACION.
+  > **Salida esperada:** `reports/costo-nuevo.txt` y `reports/diferencia.txt` existen y contienen reportes legibles.
   {: .lab-note .output .compact}
 
-La salida esperada no necesita reproducir siempre todo el texto del comando.
-Puede describir el estado, recurso, valor o comportamiento que debe observarse.
+- {% include step_label.html %} Comprueba los archivos de la línea base y de la nueva estimación sin imprimir llaves o tokens.
 
----------------------------------------------------------------------
-9. IMÁGENES
----------------------------------------------------------------------
+  ```bash
+  ls -lh infracost-base.json infracost-nuevo.json reports/*.txt
+  sed -n '1,28p' reports/diferencia.txt
+  ```
 
-La carpeta de imágenes de esta práctica se encuentra en:
+  > **Salida esperada:** Puedes leer el resumen de cambios y existen ambos JSON con estimaciones.
+  {: .lab-note .output .compact}
 
-  labs/labN/img/
+### Tarea 5.2. Validar que no hubo despliegue
 
-Para insertar una imagen mediante el mecanismo de la plantilla utiliza:
+Confirmar que solo se ejecutaron planes y estimaciones y cerrar la actividad sin destruir infraestructura ajena.
 
-  {% include step_image.html %}
+- {% include step_label.html %} Confirma que no ejecutaste `apply` ni creaste estado con recursos administrados. Verifica desde Git Bash el contenido del directorio.
 
-Conserva este include solamente en los pasos que realmente tengan una imagen.
-Si el paso no requiere imagen, elimínalo.
+  ```bash
+  pwd
+  ls -la main.tf variables.tf providers.tf reports
+  if [ -f terraform.tfstate ]; then
+    echo "Existe un archivo de estado local; revísalo antes de finalizar"
+  else
+    echo "No existe estado local de recursos aplicados en lab12"
+  fi
+  ```
 
-No es necesario agregar una imagen a cada paso.
+  > **Nota:** La ausencia de `terraform.tfstate` es un indicio local, no una auditoría completa de recursos de GCP. No ejecutes `terraform destroy` porque no se aplicó esta configuración.
+  {: .lab-note .info .compact}
 
----------------------------------------------------------------------
-10. RESULTADO DE CADA TAREA
----------------------------------------------------------------------
+  > **Salida esperada:** Se muestran archivos HCL y reportes; no hay despliegue realizado por esta práctica.
+  {: .lab-note .output .compact}
 
-Cada tarea debe terminar con un resultado esperado asociado a
-_data/task-results.yml.
+- {% include step_label.html %} Revisa en **VS Code** los archivos finales y anota cuál cambio requiere aprobación presupuestaria antes de aplicar infraestructura.
 
-La asignación de results debe realizarse una sola vez antes del primer uso:
+  **Instrucciones:**
 
-  {% assign results = site.data.task-results[page.slug].results %}
+  - Comprueba que `infracost-base.json` no fue sobrescrito después de editar variables.
+  - Conserva `reports/diferencia.txt` como evidencia de la variación mensual estimada.
+  - Explica qué información adicional se necesita para estimar con precisión almacenamiento GCS.
+  - No compartas archivos JSON de planes o autenticación en repositorios públicos sin revisarlos.
 
-En esta plantilla se realiza en la Tarea 1.
-No es necesario repetir el assign en las tareas siguientes.
+  > **Salida esperada:** Queda documentada la comparación de costos para revisión; no se han desplegado recursos GCP.
+  {: .lab-note .output .compact}
 
-Después utiliza el índice correspondiente:
-
-  {% capture r1 %}{{ results[0] }}{% endcapture %}
-  {% include task-result.html title="Tarea finalizada" content=r1 %}
-
-Para la Tarea 2:
-
-  {% capture r2 %}{{ results[1] }}{% endcapture %}
-
-Para la Tarea 3:
-
-  {% capture r3 %}{{ results[2] }}{% endcapture %}
-
-Y así sucesivamente.
-
----------------------------------------------------------------------
-11. PROMPT DE SOPORTE
----------------------------------------------------------------------
-
-Después del resultado de cada tarea debe incluirse el prompt de soporte
-correspondiente:
-
-  {% include support-prompt.html task="tarea1" %}
-
-La numeración debe coincidir exactamente con la tarea:
-
-  Tarea 1 -> task="tarea1"
-  Tarea 2 -> task="tarea2"
-  Tarea 3 -> task="tarea3"
-  Tarea 4 -> task="tarea4"
-  ...
-
----------------------------------------------------------------------
-12. SEPARACIÓN ENTRE TAREAS
----------------------------------------------------------------------
-
-Separa cada tarea principal utilizando:
-
-  ---
-
-No utilices este separador entre pasos o subtareas de la misma tarea.
-
----------------------------------------------------------------------
-13. ICONOS DE LAS TAREAS
----------------------------------------------------------------------
-
-El icono del encabezado es visual y puede cambiarse de acuerdo con el tema de
-la tarea. Ejemplos utilizados en esta plantilla:
-
-  🔎  ☁️  🚀
-
-La numeración y el texto "Tarea N." son más importantes que el icono.
-
----------------------------------------------------------------------
-14. QUÉ SE PUEDE ELIMINAR
----------------------------------------------------------------------
-
-Si un elemento no aplica a la práctica puede eliminarse, por ejemplo:
-
-- Prerequisitos adicionales.
-- Notas generales.
-- Referencias adicionales.
-- Una Nota/Importante/Advertencia de un paso.
-- {% include step_image.html %} cuando no existe imagen.
-- Subtareas que no sean necesarias.
-- Tareas de ejemplo que no formen parte de la práctica real.
-
-No elimines los elementos estructurales necesarios para el funcionamiento del
-layout, resultados o navegación sin revisar primero su dependencia.
-
----------------------------------------------------------------------
-15. VALIDACIÓN FINAL DEL ARCHIVO
----------------------------------------------------------------------
-
-Antes de considerar terminado el laboratorio verifica:
-
-- El título y duración son correctos.
-- El objetivo describe claramente el aprendizaje esperado.
-- La introducción está completa.
-- Todas las tareas están numeradas consecutivamente.
-- Todas las subtareas corresponden al número de su tarea.
-- Cada acción del participante está separada como paso cuando corresponde.
-- Los comandos tienen bloques de código adecuados.
-- Los pasos importantes tienen una salida esperada o criterio de validación.
-- Los índices results[N] corresponden a cada número de tarea.
-- Cada tarea utiliza support-prompt.html con su número correcto.
-- Las imágenes utilizadas existen en la carpeta img de la práctica.
-- El resultado final describe lo que el participante habrá conseguido.
-- No permanecen textos de marcador como CAMBIAR_AQUI, DESCRIPCION_, NOMBRE_DE_,
-  CODIGO_, PREREQUISITO_, RESULTADO_ o ## min en la versión final.
-
-======================================================================
-FIN DE LA GUÍA DE USO DE LA PLANTILLA
-======================================================================
--->
+{% assign results = site.data.task-results[page.slug].results %}
+{% capture r5 %}{{ results[4] }}{% endcapture %}
+{% include task-result.html title="Tarea finalizada" content=r5 %}
