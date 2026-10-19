@@ -38,3 +38,70 @@ lab5:
     - "**Resultado esperado:** Terraform despliega correctamente cuatro recursos en DEV y cinco en PROD mediante Workspaces independientes. Se comprueba que existen tres VMs activas, una instancia deshabilitada no se crea y la VM API funciona sin IP pública."
     - "**Resultado esperado:** Los estados independientes de DEV y PROD contienen únicamente sus recursos correspondientes. Terraform destruye los nueve recursos desplegados, elimina ambos Workspaces y conserva los archivos de configuración."
 
+
+lab6:
+  results:
+    - "**Resultado esperado:** El directorio lab6 contiene los archivos Terraform necesarios, las herramientas están disponibles y se confirma que las credenciales y la API Compute Engine corresponden al proyecto de Google Cloud asignado."
+    - "**Resultado esperado:** Las variables de Terraform incluyen validaciones para nombres, regiones, tipos de subred y rangos CIDR. El mapa subnets define frontend y backend con direcciones IP diferentes y clasificaciones lógicas public y private."
+    - "**Resultado esperado:** La configuración crea una VPC personalizada y utiliza for_each para definir dos subredes dinámicas. Una expresión de filtrado genera exclusivamente la regla de firewall HTTP para frontend, con rangos de origen y destino restringidos."
+    - "**Resultado esperado:** Terraform rechaza correctamente una región no permitida, un tipo de subred inválido y un CIDR incorrecto. Después de restaurar los valores válidos, despliega cuatro recursos: una VPC, dos subredes y una regla de firewall, verificados mediante Terraform y gcloud."
+    - "**Resultado esperado:** Terraform destruye los cuatro recursos de lab6 sin afectar otras prácticas. El estado local queda vacío y las consultas de Google Cloud confirman que la VPC y la regla de firewall fueron eliminadas."
+
+lab7:
+  results:
+    - "**Resultado esperado:** Se crea el repositorio público lab7-terraform-gcp, clonado dentro de lab7, con Git configurado, archivos Terraform, directorio de GitHub Actions y exclusiones para impedir la publicación de estados y credenciales."
+    - "**Resultado esperado:** Google Cloud dispone de una Service Account con permisos limitados, un Workload Identity Pool y un proveedor OIDC restringido al repositorio autorizado. El bucket GCS tiene versionado habilitado y GitHub contiene las cuatro variables necesarias para el pipeline."
+    - "**Resultado esperado:** La configuración Terraform define una VPC de prueba, variables y outputs, además de un backend remoto GCS. Los comandos init, fmt, validate y plan se ejecutan correctamente y proponen crear únicamente la VPC del laboratorio."
+    - "**Resultado esperado:** GitHub Actions contiene los jobs plan y apply, configurados con autenticación OIDC. El primero ejecuta validaciones y terraform plan para Pull Requests del repositorio, mientras que el segundo ejecuta terraform apply únicamente después de un push a main."
+    - "**Resultado esperado:** El primer Pull Request supera las validaciones de GitHub Actions y muestra un plan de una VPC. Después del merge, el job apply despliega lab7-cicd-vpc y se comprueba su existencia en Google Cloud junto con el estado remoto en GCS."
+    - "**Resultado esperado:** Un segundo Pull Request propone exclusivamente la destrucción de lab7-cicd-vpc. Tras el merge, GitHub Actions elimina la red, se confirma su ausencia en Google Cloud y el backend GCS permanece disponible para auditoría."
+
+lab8:
+  results:
+    - "**Resultado esperado:** El directorio lab8 contiene los archivos Terraform, el archivo de variables y el programa auxiliar Python. Se comprueba la disponibilidad de Terraform, gcloud, Python 3, las credenciales ADC y las APIs de Compute Engine, Cloud SQL, Secret Manager e IAM."
+    - "**Resultado esperado:** El secreto lab8-db-password existe en Secret Manager sin versiones de contenido iniciales. Se identifican los permisos mínimos para la VM y se configura un archivo tfvars con únicamente identificadores no sensibles, sin contraseñas ni tokens."
+    - "**Resultado esperado:** Terraform despliega una VPC, subred, firewall IAP, Service Account, permisos IAM, Cloud SQL MySQL, base de datos y VM. El programa bootstrap_secret.py configura el usuario MySQL y guarda su contraseña en Secret Manager fuera del estado Terraform, sin imprimirla."
+    - "**Resultado esperado:** La conexión SSH mediante IAP permite acceder a lab8-vm. Dentro de Debian se instala MySQL Client y Cloud SQL Auth Proxy, que utiliza la identidad de la VM y queda escuchando localmente en 127.0.0.1:3306."
+    - "**Resultado esperado:** La VM obtiene la contraseña desde Secret Manager mediante su token temporal, establece conexión a MySQL mediante Auth Proxy y ejecuta consultas SQL correctamente. Se comprueba que no quedan archivos temporales de credenciales y que los outputs y recursos administrados por Terraform no contienen la contraseña."
+    - "**Resultado esperado:** Terraform destruye la infraestructura de lab8 y deja su estado sin recursos administrados. El secreto creado fuera de Terraform se elimina explícitamente y Google Cloud confirma la ausencia de la VM, la instancia Cloud SQL y el secreto del laboratorio."
+
+lab9:
+  results:
+    - "**Resultado esperado:** El directorio lab9 contiene un proyecto Terraform monolítico con Google Provider, variables y cuatro recursos declarados directamente en el módulo raíz: VPC, subred, firewall SSH restringido a IAP y VM Debian, además de outputs y exclusiones Git."
+    - "**Resultado esperado:** Terraform inicializa, valida y despliega los cuatro recursos monolíticos. El estado local registra sus direcciones originales sin prefijos module y el archivo state-before.txt conserva la referencia para comparar la refactorización."
+    - "**Resultado esperado:** Se crean los módulos reutilizables Network y Compute con variables, recursos y outputs independientes. Network contiene VPC, subred y firewall, mientras que Compute define la VM utilizando la subred exportada, conservando las características de la infraestructura original."
+    - "**Resultado esperado:** El módulo raíz utiliza exclusivamente module.network y module.compute. Cuatro moved blocks trasladan las direcciones originales del estado hacia los módulos y Terraform confirma mediante plan que no se requieren creaciones, modificaciones ni destrucciones físicas."
+    - "**Resultado esperado:** El estado actualizado contiene cuatro recursos bajo los módulos Network y Compute. Terraform confirma que no existen cambios pendientes, Google Cloud conserva la misma VPC y VM, y el README documenta estructura, variables, outputs, refactorización y seguridad."
+    - "**Resultado esperado:** Terraform destruye correctamente los cuatro recursos desde el módulo raíz refactorizado. El estado local queda vacío y las consultas de Google Cloud confirman que no existen la VPC, la VM ni el firewall del laboratorio."
+
+lab10:
+  results:
+    - "**Resultado esperado:** El directorio lab10 contiene los archivos Terraform, la carpeta reports y un .gitignore configurado. Terraform y tfsec están disponibles desde Git Bash, sin necesidad de autenticar Google Cloud."
+    - "**Resultado esperado:** La configuración Terraform contiene una VPC, una regla de firewall que permite SSH desde 0.0.0.0/0 y un bucket GCS con UBLA deshabilitado y lectura pública mediante allUsers. Los recursos son ejemplos inseguros que no se despliegan."
+    - "**Resultado esperado:** tfsec analiza el código Terraform e identifica los hallazgos de seguridad disponibles para su versión. Se genera reports/antes.sarif y se documentan los riesgos relacionados con SSH abierto, controles del bucket y permisos públicos."
+    - "**Resultado esperado:** La regla SSH restringe el origen a 35.235.240.0/20, el bucket tiene Uniform bucket-level access habilitado y Public Access Prevention enforced, y se elimina la asignación IAM allUsers. Un segundo escaneo permite comprobar los hallazgos corregidos."
+    - "**Resultado esperado:** Los archivos reports/antes.sarif y reports/despues.sarif contienen los resultados de los escaneos inicial y final. Se comprueba su estructura SARIF, se comparan las alertas y se conserva el código corregido sin crear recursos en Google Cloud."
+
+lab11:
+  results:
+    - "**Resultado esperado:** El directorio lab11 contiene el módulo reutilizable gcs-bucket con providers.tf, variables.tf, main.tf y outputs.tf. El módulo define un bucket GCS con cuatro variables de entrada y dos outputs documentados, sin desplegar infraestructura."
+    - "**Resultado esperado:** terraform-docs está disponible desde Git Bash y genera un README.md en formato Markdown con las secciones Requirements, Providers, Resources, Inputs y Outputs, incluyendo las variables y salidas definidas en el módulo."
+    - "**Resultado esperado:** El archivo .terraform-docs.yml configura la generación de documentación mediante modo inject. El README conserva las secciones manuales fuera de BEGIN_TF_DOCS y END_TF_DOCS, y refleja automáticamente los cambios realizados en las descripciones de variables."
+    - "**Resultado esperado:** El directorio lab11 dispone de un repositorio Git independiente y un archivo .pre-commit-config.yaml con un hook local que ejecuta terraform-docs. El hook queda instalado y los archivos Terraform, README y configuraciones están preparados para versionarse."
+    - "**Resultado esperado:** El hook pre-commit actualiza o valida correctamente README.md, conserva el contenido manual y refleja los cambios de variables. Git registra un commit local con la documentación sincronizada, sin generar recursos ni costos en Google Cloud."
+
+lab12:
+  results:
+    - "**Resultado esperado:** El directorio lab12 contiene una configuración Terraform de ejemplo con VPC, VM e2-medium y bucket GCS STANDARD. Los archivos y la carpeta reports están preparados para estimar costos sin desplegar infraestructura."
+    - "**Resultado esperado:** Infracost CLI está instalada y autenticada con una cuenta válida. Los comandos infracost --version y infracost auth whoami confirman la disponibilidad de la herramienta y la sesión del usuario."
+    - "**Resultado esperado:** Terraform valida la configuración y, cuando los permisos lo permiten, genera un plan JSON de referencia. Infracost produce el desglose mensual inicial y guarda infracost-base.json con la estimación correspondiente a e2-medium y almacenamiento STANDARD."
+    - "**Resultado esperado:** La configuración modifica el tipo de VM a e2-standard-2 y la clase de almacenamiento a NEARLINE. Infracost genera infracost-nuevo.json y compara la nueva estimación con infracost-base.json, mostrando las variaciones de costo y los conceptos no cuantificados."
+    - "**Resultado esperado:** Los reportes costo-nuevo.txt y diferencia.txt contienen la estimación actualizada y su comparación con la línea base. Se conservan los archivos JSON y se confirma que la práctica no ejecutó terraform apply ni creó recursos en Google Cloud."
+
+lab13:
+  results:
+    - "**Resultado esperado:** El directorio lab13 contiene un módulo Terraform reutilizable para Cloud Storage y las carpetas live/dev, live/test y live/prod. Terraform, Terragrunt y gcloud están disponibles, y el módulo define un bucket seguro con variables y output bucket_name."
+    - "**Resultado esperado:** El archivo root.hcl centraliza project_id y location para los tres entornos. Se establece una estrategia de backend local que mantiene un archivo terraform.tfstate independiente dentro del directorio de cada unidad Terragrunt."
+    - "**Resultado esperado:** Los entornos dev, test y prod contienen sus respectivos archivos terragrunt.hcl, heredan la configuración compartida de root.hcl y consumen el mismo módulo Terraform, utilizando nombres de bucket diferentes y estados independientes."
+    - "**Resultado esperado:** Terragrunt inicializa, planifica y despliega correctamente tres buckets GCS, uno por entorno. Google Cloud confirma su existencia y cada unidad mantiene su propio estado con un único recurso administrado, outputs correctos y planes sin cambios pendientes."
+    - "**Resultado esperado:** Terragrunt destruye los tres buckets mediante operaciones independientes y controladas. Los estados de dev, test y prod quedan vacíos, Google Cloud confirma la ausencia de los buckets y se conservan los archivos del módulo reutilizable."

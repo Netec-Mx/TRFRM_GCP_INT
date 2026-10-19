@@ -3,7 +3,7 @@ layout: lab
 title: "Práctica 9: Refactorizar un proyecto real monolítico en modular y validado"
 permalink: /lab9/lab9/
 images_base: /labs/lab9/img
-duration: "65 minutos"
+duration: "40 minutos"
 objective:
   - "Refactorizar infraestructura desplegada desde un root monolítico hacia módulos reutilizables de Network y Compute, conservando el estado mediante moved blocks y comprobando que no haya reemplazos de recursos."
 prerequisites:

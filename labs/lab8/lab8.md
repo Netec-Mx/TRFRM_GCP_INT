@@ -3,7 +3,7 @@ layout: lab
 title: "Práctica 8: Usar secretos desde Google Cloud Secret Manager y validar que no se expongan"
 permalink: /lab8/lab8/
 images_base: /labs/lab8/img
-duration: "70 minutos"
+duration: "45 minutos"
 objective:
   - "Crear y consumir un secreto desde Google Cloud Secret Manager sin incluir su valor en archivos Terraform ni en el estado, y comprobar una conexión a Cloud SQL MySQL mediante Cloud SQL Auth Proxy desde Compute Engine."
 prerequisites:
