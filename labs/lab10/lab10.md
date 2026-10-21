@@ -68,7 +68,11 @@ Preparar los archivos Terraform y la carpeta de reportes desde la raíz del curs
   DESKTOP="$(cygpath -u "$DESKTOP_WIN")"
   mkdir -p "$DESKTOP/terraform-gcp-intermediate/lab10/reports"
   cd "$DESKTOP/terraform-gcp-intermediate/lab10"
+  ```
+  ```bash
   touch providers.tf variables.tf main.tf
+  ```
+  ```bash
   cat > .gitignore <<'EOF'
   .terraform/
   *.tfstate
@@ -89,6 +93,8 @@ Preparar los archivos Terraform y la carpeta de reportes desde la raíz del curs
 
   ```bash
   terraform version
+  ```
+  ```bash
   if command -v tfsec >/dev/null 2>&1; then
     tfsec --version
   else
@@ -144,6 +150,8 @@ Utilizar el paquete de Windows cuando Chocolatey esté disponible o recuperar el
     export PATH="$(cygpath -u "$USERPROFILE")/tools/tfsec:$PATH"
   fi
   command -v tfsec
+  ```
+  ```bash
   tfsec --version
   ```
 
@@ -313,6 +321,8 @@ Comprobar el formato de Terraform y ejecutar tfsec desde el directorio correcto.
 
   ```bash
   tfsec .
+  ```
+  ```bash
   tfsec . --format sarif --out reports/antes.sarif --soft-fail
   ```
 
@@ -378,7 +388,7 @@ Endurecer el código sin cambiar su intención didáctica y comparar los hallazg
 
 Modificar los atributos inseguros y retirar la asignación pública sin introducir recursos innecesarios.
 
-- {% include step_label.html %} En `main.tf`, identifica `google_compute_firewall.ssh` y cambia **solo** el rango de origen a la red utilizada por IAP TCP forwarding. **Construcción dirigida:** localiza `source_ranges` y utiliza el CIDR documentado por Google Cloud.
+- {% include step_label.html %} En `main.tf`, identifica `google_compute_firewall.ssh` y cambia **solo** el rango de origen a la red utilizada por IAP TCP forwarding. Localiza `source_ranges` y utiliza el CIDR documentado por Google Cloud.
 
   **Acciones o requisitos:**
 
@@ -470,7 +480,6 @@ Exportar resultados de los dos estados del código y verificar el formato de sal
 - {% include step_label.html %} En **Git Bash**, exporta el **estado corregido** a `reports/despues.sarif`. La opción `--soft-fail` solo se utiliza para que la exportación no se detenga ante hallazgos que deban revisarse.
 
   ```bash
-  mkdir -p reports
   tfsec . --format sarif --out reports/despues.sarif --soft-fail
   ls -lh reports/despues.sarif
   ```
@@ -483,7 +492,7 @@ Exportar resultados de los dos estados del código y verificar el formato de sal
 
   ```bash
   ls -lh reports/antes.sarif reports/despues.sarif
-  powershell.exe -NoProfile -Command '$a = Get-Content "reports/antes.sarif" -Raw | ConvertFrom-Json; $b = Get-Content "reports/despues.sarif" -Raw | ConvertFrom-Json; "Antes: $(@($a.runs[0].results).Count) hallazgos"; "Después: $(@($b.runs[0].results).Count) hallazgos"
+  powershell.exe -NoProfile -Command '$a = Get-Content "reports/antes.sarif" -Raw | ConvertFrom-Json; $b = Get-Content "reports/despues.sarif" -Raw | ConvertFrom-Json; "Antes: $(@($a.runs[0].results).Count) hallazgos"; "Después: $(@($b.runs[0].results).Count) hallazgos"'
   ```
 
   > **Nota:** El conteo es un indicador, no la única prueba de seguridad: revisa también qué reglas se resolvieron. Los valores pueden variar con la versión de tfsec.

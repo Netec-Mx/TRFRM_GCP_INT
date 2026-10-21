@@ -1,6 +1,6 @@
 ---
 layout: lab
-title: "Práctica 2: Crear y usar módulos reutilizables en Terraform"
+title: "Práctica 2: Crear y usar módulos de red y máquinas virtuales."
 permalink: /lab2/lab2/
 images_base: /labs/lab2/img
 duration: "55 minutos"

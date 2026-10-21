@@ -150,7 +150,7 @@ Declarar un ejemplo que combine cómputo y almacenamiento. Conservaremos el cód
   > **Salida esperada:** Existen cinco variables, con `machine_type = "e2-medium"` y `storage_class = "STANDARD"` como valores iniciales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `main.tf`, agrega la VPC de ejemplo y la VM. **Construcción dirigida 1/4:** conecta `machine_type` con `var.machine_type` y fija un disco `pd-standard` de 20 GB.
+- {% include step_label.html %} En `main.tf`, agrega la VPC de ejemplo y la VM. Conecta `machine_type` con `var.machine_type` y fija un disco `pd-standard` de 20 GB.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -343,9 +343,7 @@ Usar Infracost para examinar la VM y GCS y guardar una línea base consistente a
 - {% include step_label.html %} Ejecuta el reporte de costos en tabla desde HCL y, si obtuviste el plan JSON, úsalo adicionalmente para contrastar valores.
 
   ```bash
-  infracost breakdown --path . --format table
-  # Ejecutar SOLO si se generó tfplan.json correctamente:
-  # infracost breakdown --path tfplan.json --format table
+  infracost scan tfplan.json
   ```
 
   > **Nota:** El archivo de plan debe consumirse como JSON, no como el binario `.tfplan`. Algunos rubros variables de GCS necesitan supuestos de uso.
@@ -357,14 +355,14 @@ Usar Infracost para examinar la VM y GCS y guardar una línea base consistente a
 - {% include step_label.html %} **Antes de cambiar el HCL**, genera la línea base JSON que utilizará `infracost diff`.
 
   ```bash
-  infracost breakdown --path . --format json --out-file infracost-base.json
+  infracost scan --json tfplan.json > infracost-base.json
   ls -lh infracost-base.json
   ```
 
   > **Salida esperada:** Existe `infracost-base.json` y representa `e2-medium` con GCS `STANDARD`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Construcción dirigida 2/4.** Identifica en el reporte inicial qué recurso concentra el costo fijo estimado y qué conceptos de GCS dependen del consumo.
+- {% include step_label.html %} Identifica en el reporte inicial qué recurso concentra el costo fijo estimado y qué conceptos de GCS dependen del consumo.
 
   **Instrucciones:**
 
@@ -390,7 +388,7 @@ Actualizarás dos atributos que impactan la estimación y compararás los result
 
 Editar el código HCL original en la ubicación correcta, conservando el resto del proyecto.
 
-- {% include step_label.html %} En **VS Code**, abre `lab12/variables.tf` y ubica `variable "machine_type"`. **Construcción dirigida 3/4:** cambia únicamente su valor predeterminado a `e2-standard-2`.
+- {% include step_label.html %} En **VS Code**, abre `lab12/variables.tf` y ubica `variable "machine_type"`. Cambia únicamente su valor predeterminado a `e2-standard-2`.
 
   ```hcl
   variable "machine_type" {
@@ -427,6 +425,16 @@ Editar el código HCL original en la ubicación correcta, conservando el resto d
   > **Salida esperada:** Terraform valida correctamente y `grep` muestra ambos valores en `variables.tf`.
   {: .lab-note .output .compact}
 
+- {% include step_label.html %} Regenera el plan de Terraform para empaquetar las modificaciones de las variables antes de consultar a Infracost.
+
+  ```bash
+  terraform plan -out=lab12.tfplan
+  terraform show -json lab12.tfplan > tfplan.json
+  ```
+
+  > **Salida esperada:** Se actualizan los archivos `lab12.tfplan` y `tfplan.json` reflejando el cambio al tipo de VM `e2-standard-2` y la clase `NEARLINE`.
+  {: .lab-note .output .compact}
+
 ### Tarea 4.2. Calcular diferencia frente a la línea base
 
 Generar la nueva estimación y obtener el cambio mensual mediante `infracost diff`.
@@ -434,17 +442,17 @@ Generar la nueva estimación y obtener el cambio mensual mediante `infracost dif
 - {% include step_label.html %} Ejecuta una nueva estimación JSON sin sobrescribir `infracost-base.json`.
 
   ```bash
-  infracost breakdown --path . --format json --out-file infracost-nuevo.json
+  infracost scan --json tfplan.json > infracost-nuevo.json
   ls -lh infracost-base.json infracost-nuevo.json
   ```
 
   > **Salida esperada:** Existen dos reportes diferentes: original y modificado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Construcción dirigida 4/4.** Compara la configuración actual con la línea base mediante el comando documentado por Infracost.
+- {% include step_label.html %} Compara la configuración actual con la línea base mediante el comando documentado por Infracost.
 
   ```bash
-  infracost diff --path . --compare-to infracost-base.json --format table
+  infracost diff tfplan.json --compare-to infracost-base.json
   ```
 
   > **Nota:** El cambio de clase del bucket puede necesitar cantidades de almacenamiento y operaciones para obtener una diferencia monetaria representativa.
@@ -482,8 +490,8 @@ Conservar una salida de comparación y los JSON para utilizarlos como evidencia 
 - {% include step_label.html %} Exporta el detalle de la nueva estimación a un archivo de texto y guarda la comparación de costos.
 
   ```bash
-  infracost breakdown --path . --format table > reports/costo-nuevo.txt
-  infracost diff --path . --compare-to infracost-base.json --format table > reports/diferencia.txt
+  infracost scan tfplan.json > reports/costo-nuevo.txt
+  infracost diff tfplan.json --compare-to infracost-base.json > reports/diferencia.txt
   ls -lh reports
   ```
 

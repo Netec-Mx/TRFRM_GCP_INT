@@ -217,7 +217,11 @@ Confirmar la herramienta en Windows y ofrecer una alternativa cuando no esté pr
   - **Opción Chocolatey (administrador de Windows):** ejecuta `choco install terraform-docs -y` solo si ya tienes Chocolatey.
   - **Opción Scoop (terminal de Windows):** ejecuta `scoop install terraform-docs` solo si ya tienes Scoop configurado.
   - **Opción manual:** abre [GitHub Releases de terraform-docs](https://github.com/terraform-docs/terraform-docs/releases), descarga el archivo de Windows para tu arquitectura, extrae `terraform-docs.exe` y sitúalo en una carpeta incluida en `PATH`.
-  - Comprueba al final en **Git Bash** con `terraform-docs --version`; si no funciona, no continúes hasta corregir `PATH`.
+  - Comprueba al final en **Git Bash** el siguiente comando; si no funciona, no continúes hasta corregir `PATH`.
+
+    ```bash
+    terraform-docs --version
+    ```
 
   > **Salida esperada:** `terraform-docs --version` muestra una versión y el ejecutable puede invocarse desde Git Bash.
   {: .lab-note .output .compact}
@@ -426,6 +430,8 @@ Preparar el ejecutor de pre-commit sin afectar al repositorio Jekyll ni a otros 
 
   ```bash
   git init
+  ```
+  ```bash
   cat > .gitignore <<'EOF'
   .terraform/
   *.tfstate
@@ -433,6 +439,8 @@ Preparar el ejecutor de pre-commit sin afectar al repositorio Jekyll ni a otros 
   *.tfplan
   crash.log
   EOF
+  ```
+  ```bash
   git status --short
   ```
 
@@ -524,6 +532,8 @@ Lanzar pre-commit de manera explícita antes de crear el commit y comprobar que 
   ```bash
   grep -n "Etiquetas de inventario" modules/gcs-bucket/README.md
   grep -n "Nota del equipo" modules/gcs-bucket/README.md
+  ```
+  ```bash
   git add modules/gcs-bucket/README.md
   git status --short
   ```

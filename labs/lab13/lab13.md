@@ -78,13 +78,15 @@ Trabajar exclusivamente desde el directorio central del curso, con Git Bash, Ter
   terraform version
   terragrunt --version
   gcloud version | head -n 3
+  ```
+  ```bash
   export GOOGLE_CLOUD_PROJECT="$(gcloud config get-value project)"
   printf 'Proyecto: %s\n' "$GOOGLE_CLOUD_PROJECT"
   gcloud auth list --filter='status:ACTIVE' --format='value(account)'
   gcloud auth application-default print-access-token >/dev/null && echo 'ADC disponible' 
   ```
 
-  > **Importante:** Si falta Terragrunt, consulta [Releases oficiales](https://github.com/gruntwork-io/terragrunt/releases), descarga el ejecutable Windows amd64 aprobado por tu instructor y verifica `terragrunt --version`. Si ADC falla, ejecuta `gcloud auth application-default login`.
+  > **Importante:** Si falta Terragrunt puedes instalarlo con Chocolately `choco install terragrunt` ó consulta [Releases oficiales](https://github.com/gruntwork-io/terragrunt/releases), descarga el ejecutable Windows amd64 aprobado por tu instructor y verifica `terragrunt --version`. Si ADC falla, ejecuta `gcloud auth application-default login`.
   {: .lab-note .important .compact}
 
   > **Salida esperada:** Terraform, Terragrunt y gcloud responden; aparece el Project ID y `ADC disponible`.
@@ -99,6 +101,8 @@ Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `
   ```bash
   touch modules/bucket/providers.tf modules/bucket/variables.tf \
         modules/bucket/main.tf modules/bucket/outputs.tf
+  ```
+  ```bash
   cat > .gitignore <<'EOF'
   .terragrunt-cache/
   .terraform/
@@ -173,7 +177,7 @@ Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `
   > **Salida esperada:** El bucket consume las variables del módulo, tiene UBLA y prevención de acceso público habilitados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Construcción dirigida 1/4:** en `modules/bucket/outputs.tf`, crea un output llamado `bucket_name` cuyo valor sea `google_storage_bucket.bucket.name`.
+- {% include step_label.html %} En `modules/bucket/outputs.tf`, crea un output llamado `bucket_name` cuyo valor sea `google_storage_bucket.bucket.name`.
 
   > **Importante:** Coloca el bloque `output` como declaración independiente en `outputs.tf`, no dentro de otro bloque. Debe devolver el nombre real del recurso.
   {: .lab-note .important .compact}
@@ -215,13 +219,14 @@ Definir los valores comunes una sola vez y explicar la diferencia entre las entr
   }
 
   ```
-  > **Importante:** El Project ID de Google Cloud debe estar configurado en la sesión Git Bash con `export GOOGLE_CLOUD_PROJECT="$(gcloud config get-value project)"`.
 
+  > **Importante:** El Project ID de Google Cloud debe estar configurado en la sesión Git Bash con `export GOOGLE_CLOUD_PROJECT="$(gcloud config get-value project)"`.
   {: .lab-note .important .compact}
+
   > **Salida esperada:** `root.hcl` define `project_id` desde `GOOGLE_CLOUD_PROJECT` y `location = "us-central1"`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Construcción dirigida 2/4:** identifica cuál variable del módulo se comparte (`project_id`, `location`) y cuál debe cambiar por entorno (`name`).
+- {% include step_label.html %} Identifica cuál variable del módulo se comparte (`project_id`, `location`) y cuál debe cambiar por entorno (`name`).
 
   > **Nota:** Usa [Terragrunt Includes](https://terragrunt.gruntwork.io/docs/features/includes/) para revisar cómo se heredan los valores `inputs`.
   {: .lab-note .info .compact}
@@ -300,6 +305,10 @@ Escribir configuraciones que difieren solo en el nombre del bucket y almacenan s
     config = {
       path = "${get_terragrunt_dir()}/terraform.tfstate"
     }
+    generate = {
+      path      = "backend.tf"
+      if_exists = "overwrite_terragrunt"
+    }
   }
   
   inputs = {
@@ -326,6 +335,10 @@ Escribir configuraciones que difieren solo en el nombre del bucket y almacenan s
     config = {
       path = "${get_terragrunt_dir()}/terraform.tfstate"
     }
+    generate = {
+      path      = "backend.tf"
+      if_exists = "overwrite_terragrunt"
+    }
   }
   
   inputs = {
@@ -350,7 +363,7 @@ Escribir configuraciones que difieren solo en el nombre del bucket y almacenan s
 
 Definir el tercer entorno y verificar la separación de los estados antes del primer despliegue.
 
-- {% include step_label.html %} **Construcción dirigida 3/4:** en `live/prod/terragrunt.hcl`, reproduce el esquema de `dev`, sustituyendo únicamente `lab13-dev-` por `lab13-prod-` en `inputs.name`.
+- {% include step_label.html %} En `live/prod/terragrunt.hcl`, reproduce el esquema de `dev`, sustituyendo únicamente `lab13-dev-` por `lab13-prod-` en `inputs.name`.
 
   > **Importante:** El `source` debe seguir apuntando a `get_parent_terragrunt_dir("root")/modules/bucket`, no a un directorio dentro de otro entorno. Consulta las [funciones de Terragrunt](https://terragrunt.gruntwork.io/docs/reference/built-in-functions/).
   {: .lab-note .important .compact}
@@ -406,7 +419,7 @@ Verificar primero la unidad de desarrollo y leer su plan completo antes de crear
 
   ```bash
   cd live/dev
-  terragrunt run init
+  terragrunt init
   ```
 
   > **Salida esperada:** Terragrunt prepara el módulo y Terraform termina con `Terraform has been successfully initialized!`.
@@ -415,7 +428,7 @@ Verificar primero la unidad de desarrollo y leer su plan completo antes de crear
 - {% include step_label.html %} En `live/dev`, ejecuta `plan` y confirma que aparece **un solo bucket** `lab13-dev-PROJECT_ID`.
 
   ```bash
-  terragrunt run plan
+  terragrunt plan
   ```
 
   > **Importante:** Si el plan muestra recursos inesperados o el Project ID no coincide, no continúes con `apply`.
@@ -427,8 +440,8 @@ Verificar primero la unidad de desarrollo y leer su plan completo antes de crear
 - {% include step_label.html %} Aplica el plan de `dev` desde la misma carpeta y confirma después de revisar los cambios.
 
   ```bash
-  terragrunt run apply
-  terragrunt run output bucket_name
+  terragrunt apply
+  terragrunt output bucket_name
   ```
 
   > **Salida esperada:** Se crea el bucket de dev y el output muestra `lab13-dev-PROJECT_ID`.
@@ -442,10 +455,12 @@ Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y no
 
   ```bash
   cd ../test
-  terragrunt run init
-  terragrunt run plan
-  terragrunt run apply
-  terragrunt run output bucket_name
+  terragrunt init
+  ```
+  ```bash
+  terragrunt plan
+  terragrunt apply
+  terragrunt output bucket_name
   ```
 
   > **Salida esperada:** Se crea `lab13-test-PROJECT_ID`, sin cambiar ni destruir el bucket de dev.
@@ -455,10 +470,12 @@ Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y no
 
   ```bash
   cd ../prod
-  terragrunt run init
-  terragrunt run plan
-  terragrunt run apply
-  terragrunt run output bucket_name
+  terragrunt init
+  ```
+  ```bash
+  terragrunt plan
+  terragrunt apply
+  terragrunt output bucket_name
   ```
 
   > **Importante:** No utilices `-auto-approve` al aprender el flujo de Terragrunt; revisa siempre la operación antes de aceptarla.
@@ -483,14 +500,14 @@ Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y no
 
 Verificar la diferencia entre reutilizar un módulo y compartir un estado, que debe permanecer aislado por entorno.
 
-- {% include step_label.html %} **Construcción dirigida 4/4:** regresa a `live` y muestra los tres archivos de estado. Explica por qué se mantienen separados pese a que el módulo es común.
+- {% include step_label.html %} Regresa a `live` y muestra los tres archivos de estado. Explica por qué se mantienen separados pese a que el módulo es común.
 
   ```bash
   cd ..
   find dev test prod -maxdepth 1 -name 'terraform.tfstate' -print
   for env in dev test prod; do
     printf '%s: ' "$env"
-    (cd "$env" && terragrunt run output -raw bucket_name)
+    (cd "$env" && terragrunt output -raw bucket_name)
   done
   ```
 
@@ -505,7 +522,7 @@ Verificar la diferencia entre reutilizar un módulo y compartir un estado, que d
   ```bash
   for env in dev test prod; do
     echo "--- $env ---"
-    (cd "$env" && terragrunt run state list && terragrunt run plan -detailed-exitcode)
+    (cd "$env" && terragrunt state list && terragrunt plan -detailed-exitcode)
   done
   ```
 
@@ -534,11 +551,11 @@ Retirar cada recurso desde su propio estado para evitar afectar infraestructura 
   ```bash
   for env in dev test prod; do
     echo "--- Destroy plan: $env ---"
-    (cd "$env" && terragrunt run plan -destroy) || break
+    (cd "$env" && terragrunt plan -destroy) || break
   done
   ```
 
-  > **Advertencia:** No utilices `terragrunt run --all destroy` para omitir la revisión: la ejecución múltiple puede aprobar automáticamente operaciones. Solo continúa si los tres planes son correctos.
+  > **Advertencia:** No utilices `terragrunt --all destroy` para omitir la revisión: la ejecución múltiple puede aprobar automáticamente operaciones. Solo continúa si los tres planes son correctos.
   {: .lab-note .warning .compact}
 
   > **Salida esperada:** Cada plan indica `0 to add, 0 to change, 1 to destroy` y solo menciona su bucket `lab13-*`.
@@ -547,9 +564,9 @@ Retirar cada recurso desde su propio estado para evitar afectar infraestructura 
 - {% include step_label.html %} Ejecuta `destroy` en cada entorno, uno a la vez, confirmando únicamente la eliminación del bucket que corresponda.
 
   ```bash
-  (cd dev && terragrunt run destroy)
-  (cd test && terragrunt run destroy)
-  (cd prod && terragrunt run destroy)
+  (cd dev && terragrunt destroy)
+  (cd test && terragrunt destroy)
+  (cd prod && terragrunt destroy)
   ```
 
   > **Importante:** Los buckets deben estar vacíos, dado que no cargamos objetos y usamos `force_destroy = false`. No borres buckets ajenos si alguna operación falla.
@@ -567,7 +584,7 @@ Corroborar en Terraform y Google Cloud que solo quedaron archivos fuente del lab
   ```bash
   for env in dev test prod; do
     echo "--- Estado $env ---"
-    (cd "$env" && terragrunt run state list)
+    (cd "$env" && terragrunt state list)
   done
   ```
 

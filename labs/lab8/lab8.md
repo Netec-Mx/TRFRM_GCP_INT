@@ -419,7 +419,7 @@ Crear la configuración HCL con referencias explícitas y recursos cuyo estado n
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En el mismo archivo `main.tf`, agrega el bloque `google_service_account.vm` como **construcción dirigida**.
+- {% include step_label.html %} En el mismo archivo `main.tf`, agrega el bloque `google_service_account.vm`.
 
   **Requisitos de construcción:**
 
@@ -594,7 +594,7 @@ Desplegar VM sin claves JSON y ejecutar un programa que genere una contraseña e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Despliega los recursos y verifica que Cloud SQL haya finalizado su aprovisionamiento.
+- {% include step_label.html %} Despliega los recursos y verifica que Cloud SQL haya finalizado su aprovisionamiento. **La creación tarda aproximadamente 13 minutos**
 
   ```bash
   terraform apply -var-file="env/dev.tfvars"
@@ -911,6 +911,8 @@ Comprobar desde la computadora del participante que el estado Terraform y la con
 
   ```bash
   exit
+  ```
+  ```bash
   gcloud secrets versions list lab8-db-password \
     --project="$PROJECT_ID" --format="table(name,state,createTime)"
   ```
@@ -927,6 +929,8 @@ Comprobar desde la computadora del participante que el estado Terraform y la con
   ```bash
   terraform state list
   terraform output
+  ```
+  ```bash
   if grep -RniE 'random_password|secret_data[[:space:]]*=|password[[:space:]]*=' \
     --include='*.tf' --include='*.tfvars' .; then
     echo 'Revisar coincidencias antes de publicar'

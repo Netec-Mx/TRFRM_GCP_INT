@@ -469,7 +469,7 @@ Extraer VPC, subred y firewall respetando los atributos originales, añadiendo e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/network/outputs.tf`, crea un output `network_name` y deja preparado uno llamado `subnet_self_link` mediante construcción dirigida.
+- {% include step_label.html %} En `modules/network/outputs.tf`, crea un output `network_name` y deja preparado uno llamado `subnet_self_link` mediante.
 
   **Acciones o requisitos:**
 
@@ -626,7 +626,7 @@ Dejar en el root solo la orquestación; no inicializar otro directorio ni cambia
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba la relación entre los módulos como construcción dirigida: `Compute` debe recibir el output real de `Network`, no una ruta escrita a mano.
+- {% include step_label.html %} Comprueba la relación entre los módulos como: `Compute` debe recibir el output real de `Network`, no una ruta escrita a mano.
 
   **Acciones o requisitos:**
 
@@ -700,7 +700,7 @@ Relacionar cada recurso monolítico con la nueva dirección exacta de su módulo
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Debajo de esos bloques, crea mediante construcción dirigida el movimiento del firewall que ahora usa `count`.
+- {% include step_label.html %} Debajo de esos bloques, crea mediante el movimiento del firewall que ahora usa `count`.
 
   **Acciones o requisitos:**
 
@@ -824,7 +824,7 @@ Distinguir cambio de direcciones Terraform de cambios reales de infraestructura.
 Dejar instrucciones para que otro instructor o participante reproduzca la configuración sin adivinar directorios.
 
 
-- {% include step_label.html %} En `lab9/README.md`, crea una descripción concreta del proyecto, la estructura de módulos y sus comandos básicos.
+- {% include step_label.html %} Crea el archivo `lab9/README.md`, coloca una descripción concreta del proyecto, la estructura de módulos y sus comandos básicos.
 
   ```markdown
   # Lab 9 — Refactorización Terraform

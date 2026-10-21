@@ -5,79 +5,79 @@ terrgcpint:
   labs:
 
     - id: lab1
-      title: "Práctica 1: Validar y desplegar una configuración básica de Terraform en Google Cloud"
+      title: "Validar y desplegar una configuración básica de Terraform en Google Cloud"
       url: "/lab1/lab1/"
       duration: "25 min"
       desc: "Crea y valida una VPC, una subred y una VM en Google Cloud mediante el flujo esencial de Terraform."
 
     - id: lab2
-      title: "Práctica 2: Crear y usar módulos reutilizables en Terraform"
+      title: "Crear y usar módulos reutilizables en Terraform"
       url: "/lab2/lab2/"
       duration: "55 min"
       desc: "Construye módulos reutilizables de red y cómputo, intégralos desde el módulo raíz y valida el acceso a la VM."
 
     - id: lab3
-      title: "Práctica 3: Migrar el estado local a Google Cloud Storage (GCS) con locking"
+      title: "Migrar el estado local a Google Cloud Storage (GCS) con locking"
       url: "/lab3/lab3/"
       duration: "45 min"
       desc: "Migra el estado local de Terraform a GCS, habilita versionado y comprueba el bloqueo de operaciones concurrentes."
 
     - id: lab4
-      title: "Práctica 4: Crear y gestionar entornos dev, test, prod con Workspaces"
+      title: "Crear y gestionar entornos dev, test, prod con Workspaces"
       url: "/lab4/lab4/"
       duration: "35 min"
       desc: "Administra entornos dev, test y prod con Terraform Workspaces y valida el aislamiento de recursos y estados."
 
     - id: lab5
-      title: "Práctica 5: Crear archivos .tfvars por entorno y outputs condicionales"
+      title: "Crear archivos .tfvars por entorno y outputs condicionales"
       url: "/lab5/lab5/"
       duration: "35 min"
       desc: "Configura variables complejas y archivos .tfvars para DEV y PROD, creando máquinas virtuales y outputs condicionales."
 
     - id: lab6
-      title: "Práctica 6: Crear múltiples subredes y validar valores de entrada"
+      title: "Crear múltiples subredes y validar valores de entrada"
       url: "/lab6/lab6/"
       duration: "55 min"
       desc: "Implementa subredes dinámicas con for_each, valida variables de entrada y configura reglas de firewall condicionales."
 
     - id: lab7
-      title: "Práctica 7: Crear pipeline que haga plan en pull requests y apply en merges"
+      title: "Crear pipeline que haga plan en pull requests y apply en merges"
       url: "/lab7/lab7/"
       duration: "65 min"
       desc: "Automatiza Terraform con GitHub Actions, ejecuta plan en Pull Requests y apply tras merges, usando OIDC y GCS."
 
     - id: lab8
-      title: "Práctica 8: Usar secretos desde Google Cloud Secret Manager y validar que no se expongan"
+      title: "Usar secretos desde Google Cloud Secret Manager y validar que no se expongan"
       url: "/lab8/lab8/"
       duration: "45 min"
       desc: "Integra Secret Manager con Compute Engine y Cloud SQL, utilizando IAM y Auth Proxy sin exponer contraseñas."
 
     - id: lab9
-      title: "Práctica 9: Refactorizar un proyecto real monolítico en modular y validado"
+      title: "Refactorizar un proyecto real monolítico en modular y validado"
       url: "/lab9/lab9/"
       duration: "40 min"
       desc: "Transforma una infraestructura monolítica en módulos Network y Compute, conservando recursos mediante moved blocks."
 
     - id: lab10
-      title: "Práctica 10: Escanear código con tfsec"
+      title: "Escanear código con tfsec"
       url: "/lab10/lab10/"
       duration: "20 min"
       desc: "Analiza configuraciones Terraform con tfsec, corrige riesgos de seguridad en GCP y compara reportes SARIF."
 
     - id: lab11
-      title: "Práctica 11: Generar doc automática con terraform-docs"
+      title: "Generar doc automática con terraform-docs"
       url: "/lab11/lab11/"
       duration: "20 min"
       desc: "Genera documentación Markdown de módulos Terraform y automatiza su actualización mediante hooks de pre-commit."
 
     - id: lab12
-      title: "Práctica 12: Estimar costos con Infracost"
+      title: "Estimar costos con Infracost"
       url: "/lab12/lab12/"
       duration: "25 min"
       desc: "Estima costos de Compute Engine y Cloud Storage con Infracost y compara cambios antes de desplegar infraestructura."
 
     - id: lab13
-      title: "Práctica 13: Crear un wrapper básico con Terragrunt"
+      title: "Crear un wrapper básico con Terragrunt"
       url: "/lab13/lab13/"
       duration: "30 min"
       desc: "Administra entornos dev, test y prod con Terragrunt, reutilizando módulos Terraform y estados independientes."
