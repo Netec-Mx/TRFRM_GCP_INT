@@ -27,10 +27,10 @@ exclude:
 logo: /assets/img/neteclogo.png
 favicon: /assets/img/favicon.ico
 
-# =====================================================================
-# CONFIGURACIÓN LOCAL (DESCOMENTAR SI TRABAJAS EN MÚLTIPLES LABS A LA VEZ)
-# =====================================================================
-# port: 4001             # Puerto predeterminado: 4000. Rango sugerido: 4001 al 4999
-# livereload_port: 35730 # Puerto predeterminado: 35729. Rango sugerido: 35730 al 35799
-# API pública de Lab Control; activar tras validar acceso y CORS.
-labcontrol_api_url: ""
+# ============================================================
+# LAB CONTROL - Sincronización de progreso
+# ============================================================
+# API pública de Lab Control.
+# No incluir credenciales ni tokens en este archivo.
+
+labcontrol_api_url: "https://labcontrol.superwebapp.com/api"
