@@ -721,7 +721,7 @@ async function main() {
         `${lab.labId}.json`;
 
       const contentRelativePath =
-        `/labcontrol/${courseId}/content/${contentFileName}`;
+        `content/${contentFileName}`;
 
       const contentArtifact = {
         version:

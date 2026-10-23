@@ -368,7 +368,7 @@ await test(
         catalog.labs[0]
           .content
           .path ===
-          '/labcontrol/terraform-aws-essentials/content/l001.json',
+          'content/l001.json',
         'La ruta del snapshot de contenido es incorrecta.',
       );
 
