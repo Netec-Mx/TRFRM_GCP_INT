@@ -1,7 +1,7 @@
 <div class="lab-nav-wrap">
   <nav class="lab-nav top">
-    {% if page.prev %}<a class="btn" href="{{ page.prev | relative_url }}">⬅ Atrás</a>{% endif %}
-    <a class="btn" href="{{ '/' | relative_url }}">Lista General</a>
-    {% if page.next %}<a class="btn" href="{{ page.next | relative_url }}">Siguiente ➡</a>{% endif %}
+    <span class="lab-nav-slot lab-nav-prev">{% if page.prev %}<a class="btn" href="{{ page.prev | relative_url }}">⬅ Atrás</a>{% endif %}</span>
+    <span class="lab-nav-slot lab-nav-index"><a class="btn" href="{{ '/' | relative_url }}">Lista General</a></span>
+    <span class="lab-nav-slot lab-nav-next">{% if page.next %}<a class="btn" href="{{ page.next | relative_url }}">Siguiente ➡</a>{% endif %}</span>
   </nav>
 </div>
