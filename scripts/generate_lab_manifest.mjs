@@ -871,6 +871,16 @@ async function main() {
     of files
   ) {
     try {
+      if (argument === '--all') {
+        const source = await readFile(labFile, 'utf8');
+        const metadata = parseSimpleFrontMatter(source);
+
+        if (!parseBoolean(metadata.tracking)) {
+          console.log(`Lab omitido (tracking deshabilitado): ${labFile}`);
+          continue;
+        }
+      }
+
       const result =
         await writeManifest(
           rootDir,
