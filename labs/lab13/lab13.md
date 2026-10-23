@@ -1,7 +1,7 @@
 ---
 course_id: terrgcpint
 lab_id: l013
-tracking: false
+tracking: true
 position: 13
 layout: lab
 title: "Práctica 13: Crear un wrapper básico con Terragrunt"
