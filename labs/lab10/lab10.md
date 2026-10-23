@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l010
+tracking: true
+position: 10
 layout: lab
 title: "Práctica 10: Escanear código con tfsec"
 permalink: /lab10/lab10/
@@ -43,13 +47,15 @@ next: /lab11/lab11/
 
 ## 🔎 Tarea 1. Preparar el proyecto y verificar tfsec — 5 min
 
+{% assign tracking_task_id = "t001" %}
+
 Crear la carpeta exclusiva de esta práctica y comprobar que el ejecutable de análisis estático esté disponible para Windows sin modificar las prácticas anteriores.
 
 ### Tarea 1.1. Crear directorio lab10 y archivos
 
 Preparar los archivos Terraform y la carpeta de reportes desde la raíz del curso para aislar los ejemplos inseguros.
 
-- {% include step_label.html %} En **VS Code**, abre la carpeta principal del curso y selecciona la terminal **Git Bash**. No abras ni modifiques los archivos de `lab9`.
+- {% include step_label.html id="s001" %} En **VS Code**, abre la carpeta principal del curso y selecciona la terminal **Git Bash**. No abras ni modifiques los archivos de `lab9`.
 
   **Acciones en VS Code:**
 
@@ -61,7 +67,7 @@ Preparar los archivos Terraform y la carpeta de reportes desde la raíz del curs
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash**, crea explícitamente `lab10`, entra en la carpeta y genera los archivos vacíos. La carpeta `reports` almacenará los resultados SARIF de ambos escaneos. El comando detecta la ruta real del Escritorio de Windows, incluso si está redirigido.
+- {% include step_label.html id="s002" %} En **Git Bash**, crea explícitamente `lab10`, entra en la carpeta y genera los archivos vacíos. La carpeta `reports` almacenará los resultados SARIF de ambos escaneos. El comando detecta la ruta real del Escritorio de Windows, incluso si está redirigido.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
@@ -89,7 +95,7 @@ Preparar los archivos Terraform y la carpeta de reportes desde la raíz del curs
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash**, identifica la versión de Terraform y comprueba si `tfsec` ya está disponible. No ejecutes comandos de autenticación GCP: esta práctica inspecciona archivos locales.
+- {% include step_label.html id="s003" %} En **Git Bash**, identifica la versión de Terraform y comprueba si `tfsec` ya está disponible. No ejecutes comandos de autenticación GCP: esta práctica inspecciona archivos locales.
 
   ```bash
   terraform version
@@ -110,7 +116,7 @@ Preparar los archivos Terraform y la carpeta de reportes desde la raíz del curs
 
 Utilizar el paquete de Windows cuando Chocolatey esté disponible o recuperar el ejecutable oficial sin instalar extensiones obligatorias.
 
-- {% include step_label.html %} Si **tfsec no está instalado**, revisa si Chocolatey existe en Windows. Solo si está disponible y tienes permisos administrativos, puedes instalar el paquete desde una **terminal con privilegios de administrador**, reiniciando después Git Bash.
+- {% include step_label.html id="s004" %} Si **tfsec no está instalado**, revisa si Chocolatey existe en Windows. Solo si está disponible y tienes permisos administrativos, puedes instalar el paquete desde una **terminal con privilegios de administrador**, reiniciando después Git Bash.
 
   ```bash
   if command -v choco >/dev/null 2>&1; then
@@ -127,7 +133,7 @@ Utilizar el paquete de Windows cuando Chocolatey esté disponible o recuperar el
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Si no cuentas con Chocolatey, descarga el ejecutable oficial de Windows desde la página de versiones y cópialo a una carpeta de herramientas del usuario.
+- {% include step_label.html id="s005" %} Si no cuentas con Chocolatey, descarga el ejecutable oficial de Windows desde la página de versiones y cópialo a una carpeta de herramientas del usuario.
 
   **Acciones o requisitos:**
 
@@ -143,7 +149,7 @@ Utilizar el paquete de Windows cuando Chocolatey esté disponible o recuperar el
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash**, agrega temporalmente al `PATH` la ubicación del ejecutable descargado y verifica que se ejecute. Si lo instalaste con Chocolatey, bastará con comprobar la versión.
+- {% include step_label.html id="s006" %} En **Git Bash**, agrega temporalmente al `PATH` la ubicación del ejecutable descargado y verifica que se ejecute. Si lo instalaste con Chocolatey, bastará con comprobar la versión.
 
   ```bash
   if ! command -v tfsec >/dev/null 2>&1; then
@@ -170,13 +176,15 @@ Utilizar el paquete de Windows cuando Chocolatey esté disponible o recuperar el
 
 ## 🔎 Tarea 2. Crear configuraciones Terraform inseguras de ejemplo — 4 min
 
+{% assign tracking_task_id = "t002" %}
+
 Escribir recursos mínimos de Google Cloud con dos tipos de riesgos: SSH accesible desde Internet y bucket con controles de acceso insuficientes. Ningún recurso se despliega.
 
 ### Tarea 2.1. Configurar Terraform y variables
 
 Separar el Provider de las entradas para distinguir la sintaxis HCL del análisis de seguridad.
 
-- {% include step_label.html %} En el panel **Explorer**, abre `lab10/providers.tf` y agrega el Provider de Google. El archivo declara la dependencia, pero no se conectará a Google Cloud durante el escaneo.
+- {% include step_label.html id="s007" %} En el panel **Explorer**, abre `lab10/providers.tf` y agrega el Provider de Google. El archivo declara la dependencia, pero no se conectará a Google Cloud durante el escaneo.
 
   ```hcl
   terraform {
@@ -199,7 +207,7 @@ Separar el Provider de las entradas para distinguir la sintaxis HCL del análisi
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Abre `lab10/variables.tf` y declara un ID de proyecto ficticio para analizar únicamente el código. No necesitas usar el proyecto real de tu cuenta.
+- {% include step_label.html id="s008" %} Abre `lab10/variables.tf` y declara un ID de proyecto ficticio para analizar únicamente el código. No necesitas usar el proyecto real de tu cuenta.
 
   ```hcl
   variable "project_id" {
@@ -223,7 +231,7 @@ Separar el Provider de las entradas para distinguir la sintaxis HCL del análisi
 
 Crear recursos intencionalmente inseguros para que tfsec muestre hallazgos identificables y posteriormente corregibles.
 
-- {% include step_label.html %} En `lab10/main.tf`, declara una VPC y un Firewall que permite SSH desde cualquier dirección IPv4. **No despliegues** esta configuración: solo se utilizará como caso de análisis.
+- {% include step_label.html id="s009" %} En `lab10/main.tf`, declara una VPC y un Firewall que permite SSH desde cualquier dirección IPv4. **No despliegues** esta configuración: solo se utilizará como caso de análisis.
 
   ```hcl
   # INSEGURO A PROPÓSITO: no aplicar a GCP.
@@ -254,7 +262,7 @@ Crear recursos intencionalmente inseguros para que tfsec muestre hallazgos ident
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Debajo del Firewall, añade un bucket sin **Uniform bucket-level access (UBLA)**. Este control no significa por sí solo que el bucket sea público, pero permite reproducir una recomendación de seguridad sobre el uso de ACL.
+- {% include step_label.html id="s010" %} Debajo del Firewall, añade un bucket sin **Uniform bucket-level access (UBLA)**. Este control no significa por sí solo que el bucket sea público, pero permite reproducir una recomendación de seguridad sobre el uso de ACL.
 
   ```hcl
   # INSEGURO A PROPÓSITO: UBLA deshabilitado.
@@ -274,7 +282,7 @@ Crear recursos intencionalmente inseguros para que tfsec muestre hallazgos ident
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Para mostrar una segunda vulnerabilidad independiente, añade una asignación IAM que concede lectura pública de objetos. **No la apliques**. Se eliminará por completo durante la corrección.
+- {% include step_label.html id="s011" %} Para mostrar una segunda vulnerabilidad independiente, añade una asignación IAM que concede lectura pública de objetos. **No la apliques**. Se eliminará por completo durante la corrección.
 
   ```hcl
   # INSEGURO A PROPÓSITO: lectura pública anónima.
@@ -296,13 +304,15 @@ Crear recursos intencionalmente inseguros para que tfsec muestre hallazgos ident
 
 ## 🔎 Tarea 3. Ejecutar tfsec e interpretar los hallazgos — 4 min
 
+{% assign tracking_task_id = "t003" %}
+
 Realizar un escaneo inicial sin despliegue y registrar los problemas detectados con su recurso, regla y severidad. El resultado servirá como referencia para la corrección.
 
 ### Tarea 3.1. Lanzar el primer análisis estático
 
 Comprobar el formato de Terraform y ejecutar tfsec desde el directorio correcto.
 
-- {% include step_label.html %} En **Git Bash**, confirma la carpeta de trabajo y ejecuta el formato automático. Esto organiza la presentación del HCL, pero **no corrige** configuraciones inseguras.
+- {% include step_label.html id="s012" %} En **Git Bash**, confirma la carpeta de trabajo y ejecuta el formato automático. Esto organiza la presentación del HCL, pero **no corrige** configuraciones inseguras.
 
   ```bash
   pwd
@@ -317,7 +327,7 @@ Comprobar el formato de Terraform y ejecutar tfsec desde el directorio correcto.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Ejecuta el primer escaneo desde `lab10`. Si tfsec detecta hallazgos puede terminar con código distinto de cero; eso es el comportamiento esperado al identificar riesgos.
+- {% include step_label.html id="s013" %} Ejecuta el primer escaneo desde `lab10`. Si tfsec detecta hallazgos puede terminar con código distinto de cero; eso es el comportamiento esperado al identificar riesgos.
 
   ```bash
   tfsec .
@@ -337,7 +347,7 @@ Comprobar el formato de Terraform y ejecutar tfsec desde el directorio correcto.
 
 Distinguir recomendaciones de acceso a red, IAM público y controles de almacenamiento en lugar de contar únicamente incidencias.
 
-- {% include step_label.html %} Revisa los hallazgos impresos por tfsec y localiza el recurso `google_compute_firewall.ssh`. Identifica el fragmento `source_ranges` y explica por qué permitir SSH desde todas las direcciones aumenta el riesgo.
+- {% include step_label.html id="s014" %} Revisa los hallazgos impresos por tfsec y localiza el recurso `google_compute_firewall.ssh`. Identifica el fragmento `source_ranges` y explica por qué permitir SSH desde todas las direcciones aumenta el riesgo.
 
   **Acciones o requisitos:**
 
@@ -349,7 +359,7 @@ Distinguir recomendaciones de acceso a red, IAM público y controles de almacena
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Localiza los hallazgos de `google_storage_bucket.demo` y `google_storage_bucket_iam_member.public_read`. No confundas **UBLA desactivado** con **permiso de lectura concedido a `allUsers`**: son riesgos relacionados, pero diferentes.
+- {% include step_label.html id="s015" %} Localiza los hallazgos de `google_storage_bucket.demo` y `google_storage_bucket_iam_member.public_read`. No confundas **UBLA desactivado** con **permiso de lectura concedido a `allUsers`**: son riesgos relacionados, pero diferentes.
 
   **Acciones o requisitos:**
 
@@ -361,7 +371,7 @@ Distinguir recomendaciones de acceso a red, IAM público y controles de almacena
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Registra un pequeño resumen del análisis inicial antes de editar. Usa la siguiente tabla como guía y completa las celdas con lo observado en **tu** ejecución.
+- {% include step_label.html id="s016" %} Registra un pequeño resumen del análisis inicial antes de editar. Usa la siguiente tabla como guía y completa las celdas con lo observado en **tu** ejecución.
 
   **Acciones o requisitos:**
 
@@ -382,13 +392,15 @@ Distinguir recomendaciones de acceso a red, IAM público y controles de almacena
 
 ## 🔎 Tarea 4. Corregir los riesgos y repetir el escaneo — 4 min
 
+{% assign tracking_task_id = "t004" %}
+
 Endurecer el código sin cambiar su intención didáctica y comparar los hallazgos antes y después. No se utilizarán exclusiones para ocultar vulnerabilidades.
 
 ### Tarea 4.1. Corregir red y acceso al almacenamiento
 
 Modificar los atributos inseguros y retirar la asignación pública sin introducir recursos innecesarios.
 
-- {% include step_label.html %} En `main.tf`, identifica `google_compute_firewall.ssh` y cambia **solo** el rango de origen a la red utilizada por IAP TCP forwarding. Localiza `source_ranges` y utiliza el CIDR documentado por Google Cloud.
+- {% include step_label.html id="s017" %} En `main.tf`, identifica `google_compute_firewall.ssh` y cambia **solo** el rango de origen a la red utilizada por IAP TCP forwarding. Localiza `source_ranges` y utiliza el CIDR documentado por Google Cloud.
 
   **Acciones o requisitos:**
 
@@ -404,7 +416,7 @@ Modificar los atributos inseguros y retirar la asignación pública sin introduc
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Dentro de `google_storage_bucket.demo`, habilita UBLA y exige prevención de acceso público mediante atributos explícitos. Conserva el nombre del recurso `demo` para comparar el mismo objeto lógico.
+- {% include step_label.html id="s018" %} Dentro de `google_storage_bucket.demo`, habilita UBLA y exige prevención de acceso público mediante atributos explícitos. Conserva el nombre del recurso `demo` para comparar el mismo objeto lógico.
 
   ```hcl
   resource "google_storage_bucket" "demo" {
@@ -423,7 +435,7 @@ Modificar los atributos inseguros y retirar la asignación pública sin introduc
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Elimina **por completo** el recurso `google_storage_bucket_iam_member.public_read` del final de `main.tf`. Verifica que no permanezcan referencias a `allUsers` ni recursos IAM públicos activos.
+- {% include step_label.html id="s019" %} Elimina **por completo** el recurso `google_storage_bucket_iam_member.public_read` del final de `main.tf`. Verifica que no permanezcan referencias a `allUsers` ni recursos IAM públicos activos.
 
   **Acciones o requisitos:**
 
@@ -439,7 +451,7 @@ Modificar los atributos inseguros y retirar la asignación pública sin introduc
 
 Confirmar las correcciones y distinguir los hallazgos eliminados de recomendaciones adicionales.
 
-- {% include step_label.html %} Ejecuta `terraform fmt` para estandarizar el archivo corregido y repite el escaneo con `tfsec`. Revisa el reporte real en lugar de asumir que no habrá ninguna alerta.
+- {% include step_label.html id="s020" %} Ejecuta `terraform fmt` para estandarizar el archivo corregido y repite el escaneo con `tfsec`. Revisa el reporte real en lugar de asumir que no habrá ninguna alerta.
 
   ```bash
   terraform fmt
@@ -451,7 +463,7 @@ Confirmar las correcciones y distinguir los hallazgos eliminados de recomendacio
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Compara el primer y segundo escaneo y explica por qué corregir es preferible a ignorar reglas. Si tfsec sigue mostrando un hallazgo diferente, revisa su contenido antes de tomar una decisión.
+- {% include step_label.html id="s021" %} Compara el primer y segundo escaneo y explica por qué corregir es preferible a ignorar reglas. Si tfsec sigue mostrando un hallazgo diferente, revisa su contenido antes de tomar una decisión.
 
   **Acciones o requisitos:**
 
@@ -471,13 +483,15 @@ Confirmar las correcciones y distinguir los hallazgos eliminados de recomendacio
 
 ## 🔎 Tarea 5. Exportar reportes SARIF y verificar resultados — 3 min
 
+{% assign tracking_task_id = "t005" %}
+
 Conservar los reportes SARIF inicial y final generados sobre la misma carpeta en momentos distintos, compararlos y verificar su formato sin desplegar recursos.
 
 ### Tarea 5.1. Generar archivos SARIF y comprobar su contenido
 
 Exportar resultados de los dos estados del código y verificar el formato de salida compatible con herramientas CI/CD.
 
-- {% include step_label.html %} En **Git Bash**, exporta el **estado corregido** a `reports/despues.sarif`. La opción `--soft-fail` solo se utiliza para que la exportación no se detenga ante hallazgos que deban revisarse.
+- {% include step_label.html id="s022" %} En **Git Bash**, exporta el **estado corregido** a `reports/despues.sarif`. La opción `--soft-fail` solo se utiliza para que la exportación no se detenga ante hallazgos que deban revisarse.
 
   ```bash
   tfsec . --format sarif --out reports/despues.sarif --soft-fail
@@ -488,7 +502,7 @@ Exportar resultados de los dos estados del código y verificar el formato de sal
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Compara los reportes **antes** y **después**. El primer SARIF se generó en la Tarea 3 antes de editar los archivos, de modo que no es necesario reconstruir ni reintroducir el código inseguro.
+- {% include step_label.html id="s023" %} Compara los reportes **antes** y **después**. El primer SARIF se generó en la Tarea 3 antes de editar los archivos, de modo que no es necesario reconstruir ni reintroducir el código inseguro.
 
   ```bash
   ls -lh reports/antes.sarif reports/despues.sarif
@@ -502,7 +516,7 @@ Exportar resultados de los dos estados del código y verificar el formato de sal
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Verifica que los reportes tengan el formato **SARIF 2.1.0** y comprueba que el proyecto no tenga recursos creados. Este archivo podrá utilizarse en una práctica posterior de integración CI/CD.
+- {% include step_label.html id="s024" %} Verifica que los reportes tengan el formato **SARIF 2.1.0** y comprueba que el proyecto no tenga recursos creados. Este archivo podrá utilizarse en una práctica posterior de integración CI/CD.
 
   ```bash
   powershell.exe -NoProfile -Command '$a = Get-Content "reports/antes.sarif" -Raw | ConvertFrom-Json; $b = Get-Content "reports/despues.sarif" -Raw | ConvertFrom-Json; "SARIF antes: $($a.version)"; "SARIF después: $($b.version)"'

@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l005
+tracking: true
+position: 5
 layout: lab
 title: "Práctica 5: Crear archivos .tfvars por entorno y outputs condicionales"
 permalink: /lab5/lab5/
@@ -44,13 +48,15 @@ next: /lab6/lab6/
 
 ## 🔎 Tarea 1. Preparar el proyecto y comprobar el entorno — 4 min
 
+{% assign tracking_task_id = "t001" %}
+
 Crearás `lab5` dentro del directorio central, prepararás archivos por entorno y confirmarás herramientas, proyecto de GCP y autenticación antes de definir recursos.
 
 ### Tarea 1.1. Crear la carpeta lab5 y sus archivos
 
 Organizar la configuración compartida y los dos archivos de parámetros en un proyecto aislado de los demás laboratorios.
 
-- {% include step_label.html %} En **VS Code**, abre **File > Open Folder** y selecciona `terraform-gcp-intermediate` en el Escritorio.
+- {% include step_label.html id="s001" %} En **VS Code**, abre **File > Open Folder** y selecciona `terraform-gcp-intermediate` en el Escritorio.
 
   > **Nota:** No reutilices `lab4`; Workspaces y estados de esta práctica deben permanecer independientes.
   {: .lab-note .info .compact}
@@ -58,12 +64,12 @@ Organizar la configuración compartida y los dos archivos de parámetros en un p
   > **Salida esperada:** El explorador muestra las carpetas de prácticas anteriores.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, selecciona **Terminal > New Terminal** y comprueba que el perfil activo sea **Git Bash**.
+- {% include step_label.html id="s002" %} En **VS Code**, selecciona **Terminal > New Terminal** y comprueba que el perfil activo sea **Git Bash**.
 
   > **Salida esperada:** La terminal muestra un prompt terminado en `$`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, crea la estructura y entra al directorio `lab5`.
+- {% include step_label.html id="s003" %} En **Git Bash**, crea la estructura y entra al directorio `lab5`.
 
   ```bash
   cd "$(cygpath -u "$USERPROFILE")/Desktop/terraform-gcp-intermediate"
@@ -79,7 +85,7 @@ Organizar la configuración compartida y los dos archivos de parámetros en un p
 
 Comprobar que Terraform y gcloud responden y que el proyecto de capacitación está listo para desplegar Compute Engine.
 
-- {% include step_label.html %} En **Git Bash**, comprueba que Terraform y Google Cloud CLI estén disponibles.
+- {% include step_label.html id="s004" %} En **Git Bash**, comprueba que Terraform y Google Cloud CLI estén disponibles.
 
   ```bash
   terraform version
@@ -89,7 +95,7 @@ Comprobar que Terraform y gcloud responden y que el proyecto de capacitación es
   > **Salida esperada:** Ambos comandos muestran su versión sin errores de comando desconocido.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta la cuenta y el proyecto activos antes de crear infraestructura.
+- {% include step_label.html id="s005" %} Consulta la cuenta y el proyecto activos antes de crear infraestructura.
 
   > **Nota:** Si la cuenta o el proyecto no son los asignados, corrígelos antes de continuar; no repitas ADC innecesariamente.
   {: .lab-note .info .compact}
@@ -102,7 +108,7 @@ Comprobar que Terraform y gcloud responden y que el proyecto de capacitación es
   > **Salida esperada:** Aparecen tu cuenta de curso y el Project ID esperado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Verifica desde **Git Bash** que Compute Engine API esté habilitada.
+- {% include step_label.html id="s006" %} Verifica desde **Git Bash** que Compute Engine API esté habilitada.
 
   ```bash
   gcloud services list --enabled --filter="config.name=compute.googleapis.com" --format="value(config.name)"
@@ -120,13 +126,15 @@ Comprobar que Terraform y gcloud responden y que el proyecto de capacitación es
 
 ## 🧩 Tarea 2. Definir variables complejas y recursos condicionales — 10 min
 
+{% assign tracking_task_id = "t002" %}
+
 Declararás variables `list(object)` y `map`, una variable sensible demostrativa y recursos de red/cómputo. Las VMs se filtrarán por `enabled` y recibirán IP externa solamente cuando se solicite.
 
 ### Tarea 2.1. Declarar proveedor y variables tipadas
 
 Configurar Google Provider y parámetros comunes, incluyendo objetos de VM y valores demostrativos sensibles.
 
-- {% include step_label.html %} En **VS Code**, abre `lab5/providers.tf` y agrega la definición de Terraform y Google Provider.
+- {% include step_label.html id="s007" %} En **VS Code**, abre `lab5/providers.tf` y agrega la definición de Terraform y Google Provider.
 
   > **Nota:** Terraform generará `.terraform.lock.hcl` durante `init` para registrar las versiones concretas usadas.
   {: .lab-note .info .compact}
@@ -151,7 +159,7 @@ Configurar Google Provider y parámetros comunes, incluyendo objetos de VM y val
   > **Salida esperada:** El archivo `providers.tf` contiene `required_providers` y `provider "google"`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab5/variables.tf`, declara los parámetros del proyecto y las características de red.
+- {% include step_label.html id="s008" %} En `lab5/variables.tf`, declara los parámetros del proyecto y las características de red.
 
   ```hcl
   variable "project_id" { type = string }
@@ -170,7 +178,7 @@ Configurar Google Provider y parámetros comunes, incluyendo objetos de VM y val
   > **Salida esperada:** Cinco variables quedan disponibles para la configuración del proveedor y la red.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de `subnet_cidr`, crea en `variables.tf` la variable compleja `vm_config` siguiendo estos requisitos.
+- {% include step_label.html id="s009" %} Debajo de `subnet_cidr`, crea en `variables.tf` la variable compleja `vm_config` siguiendo estos requisitos.
 
   > **Importante:** Inserta el bloque al nivel raíz del archivo; no lo coloques dentro de otra variable.
   {: .lab-note .important .compact}
@@ -185,7 +193,7 @@ Configurar Google Provider y parámetros comunes, incluyendo objetos de VM y val
   > **Salida esperada:** `vm_config` acepta listas de objetos con seis atributos tipados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de `vm_config`, agrega una variable de ejemplo marcada como sensible; no almacenes contraseñas reales.
+- {% include step_label.html id="s010" %} Debajo de `vm_config`, agrega una variable de ejemplo marcada como sensible; no almacenes contraseñas reales.
 
   > **Advertencia:** `sensitive` oculta el valor en salidas habituales, pero no lo cifra ni lo elimina del estado.
   {: .lab-note .warning .compact}
@@ -208,7 +216,7 @@ Configurar Google Provider y parámetros comunes, incluyendo objetos de VM y val
 
 Desplegar una VPC y subred por entorno, más una regla de firewall limitada al rango de IAP para SSH.
 
-- {% include step_label.html %} En `lab5/main.tf`, declara una VPC personalizada bajo el nombre configurado en `network_name`.
+- {% include step_label.html id="s011" %} En `lab5/main.tf`, declara una VPC personalizada bajo el nombre configurado en `network_name`.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -220,7 +228,7 @@ Desplegar una VPC y subred por entorno, más una regla de firewall limitada al r
   > **Salida esperada:** El recurso `google_compute_network.vpc` define una VPC sin subredes automáticas.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo del cierre de la VPC, agrega la subred asociada con su CIDR y región.
+- {% include step_label.html id="s012" %} Debajo del cierre de la VPC, agrega la subred asociada con su CIDR y región.
 
   ```hcl
   resource "google_compute_subnetwork" "subnet" {
@@ -234,7 +242,7 @@ Desplegar una VPC y subred por entorno, más una regla de firewall limitada al r
   > **Salida esperada:** La subred referencia la VPC y usa el CIDR del entorno seleccionado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de la subred, crea una regla de firewall SSH restringida a las direcciones de IAP.
+- {% include step_label.html id="s013" %} Debajo de la subred, crea una regla de firewall SSH restringida a las direcciones de IAP.
 
   > **Nota:** La regla no abre SSH a todo Internet; acceder mediante IAP exigiría permisos IAM adicionales.
   {: .lab-note .info .compact}
@@ -256,7 +264,7 @@ Desplegar una VPC y subred por entorno, más una regla de firewall limitada al r
   > **Salida esperada:** El puerto 22 solo admite tráfico desde `35.235.240.0/20` hacia VMs con tag `lab5-ssh`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, confirma que los tres recursos de red cierren sus bloques correctamente.
+- {% include step_label.html id="s014" %} En **VS Code**, confirma que los tres recursos de red cierren sus bloques correctamente.
 
   > **Nota:** La subred y el firewall deben quedar al nivel raíz de `main.tf`, no anidados dentro de `google_compute_network`.
   {: .lab-note .info .compact}
@@ -268,7 +276,7 @@ Desplegar una VPC y subred por entorno, más una regla de firewall limitada al r
 
 Definir instancias Compute Engine que omiten elementos deshabilitados y asignan IP pública solo cuando `create_eip` es verdadero.
 
-- {% include step_label.html %} Debajo del firewall, inicia el recurso de Compute Engine y prepara el mapa de instancias habilitadas.
+- {% include step_label.html id="s015" %} Debajo del firewall, inicia el recurso de Compute Engine y prepara el mapa de instancias habilitadas.
 
   > **Importante:** Esta es la estructura inicial: los siguientes pasos agregarán bloques **dentro** del recurso, antes de su última llave `}`.
   {: .lab-note .important .compact}
@@ -290,7 +298,7 @@ Definir instancias Compute Engine que omiten elementos deshabilitados y asignan 
   > **Salida esperada:** `for_each` solo incluye los objetos cuyo atributo `enabled` vale `true`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `main.tf`, identifica el filtro de `for_each` y verifica que excluya las VMs deshabilitadas.
+- {% include step_label.html id="s016" %} En `main.tf`, identifica el filtro de `for_each` y verifica que excluya las VMs deshabilitadas.
 
   **Comprueba estos elementos:**
     - El mapa usa `vm.name` como clave.
@@ -301,7 +309,7 @@ Definir instancias Compute Engine que omiten elementos deshabilitados y asignan 
   > **Salida esperada:** La VM marcada como `enabled = false` en DEV no aparecerá en el plan.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Dentro de `google_compute_instance.vm`, debajo de `tags`, agrega el disco de arranque.
+- {% include step_label.html id="s017" %} Dentro de `google_compute_instance.vm`, debajo de `tags`, agrega el disco de arranque.
 
   ```hcl
   boot_disk {
@@ -316,7 +324,7 @@ Definir instancias Compute Engine que omiten elementos deshabilitados y asignan 
   > **Salida esperada:** Cada VM utiliza Debian 12 con un disco de arranque estándar de 10 GB.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo del disco y dentro del mismo recurso, agrega la interfaz de red y la IP externa condicional.
+- {% include step_label.html id="s018" %} Debajo del disco y dentro del mismo recurso, agrega la interfaz de red y la IP externa condicional.
 
   > **Nota:** `dynamic` crea `access_config` solo para las VMs con `create_eip = true`.
   {: .lab-note .info .compact}
@@ -334,7 +342,7 @@ Definir instancias Compute Engine que omiten elementos deshabilitados y asignan 
   > **Salida esperada:** Una VM con `create_eip = false` tendrá interfaz interna, pero ninguna IP externa.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Guarda `main.tf` y comprueba que `boot_disk` y `network_interface` estén dentro del recurso VM.
+- {% include step_label.html id="s019" %} Guarda `main.tf` y comprueba que `boot_disk` y `network_interface` estén dentro del recurso VM.
 
   > **Importante:** La llave final de `google_compute_instance.vm` debe aparecer **después** de los dos bloques; no crees un segundo recurso VM.
   {: .lab-note .important .compact}
@@ -349,13 +357,15 @@ Definir instancias Compute Engine que omiten elementos deshabilitados y asignan 
 
 ## 🗂️ Tarea 3. Configurar .tfvars por entorno y outputs — 6 min
 
+{% assign tracking_task_id = "t003" %}
+
 Crearás archivos de parámetros para DEV y PROD, y salidas que muestran exclusivamente las VMs desplegadas y sus IP públicas. El ejemplo sensible quedará oculto en la salida convencional.
 
 ### Tarea 3.1. Crear dev.tfvars y prod.tfvars
 
 Definir los valores por entorno y una lista de VMs que demuestre filtrado de recursos y creación condicional de IP pública.
 
-- {% include step_label.html %} En **Git Bash**, captura el Project ID para utilizarlo al completar los archivos `.tfvars`.
+- {% include step_label.html id="s020" %} En **Git Bash**, captura el Project ID para utilizarlo al completar los archivos `.tfvars`.
 
   ```bash
   PROJECT_ID="$(gcloud config get-value project)"
@@ -365,7 +375,7 @@ Definir los valores por entorno y una lista de VMs que demuestre filtrado de rec
   > **Salida esperada:** Se muestra el identificador del proyecto del curso.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab5/env/dev.tfvars`, escribe el archivo DEV y reemplaza `TU_PROJECT_ID` por el valor anterior.
+- {% include step_label.html id="s021" %} En `lab5/env/dev.tfvars`, escribe el archivo DEV y reemplaza `TU_PROJECT_ID` por el valor anterior.
 
   > **Advertencia:** El valor de demostración no debe coincidir con ninguna contraseña real.
   {: .lab-note .warning .compact}
@@ -397,7 +407,7 @@ Definir los valores por entorno y una lista de VMs que demuestre filtrado de rec
   > **Salida esperada:** DEV define dos objetos, pero solo `lab5-vm-dev` está habilitada.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab5/env/prod.tfvars`, define el entorno PROD con la VM principal y los parámetros de red.
+- {% include step_label.html id="s022" %} En `lab5/env/prod.tfvars`, define el entorno PROD con la VM principal y los parámetros de red.
 
   ```hcl
   project_id   = "TU_PROJECT_ID"
@@ -421,7 +431,7 @@ Definir los valores por entorno y una lista de VMs que demuestre filtrado de rec
   > **Salida esperada:** PROD define la VM `lab5-vm-web` y sus parámetros de red.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `env/prod.tfvars`, agrega un segundo objeto a `vm_config`, **después** del objeto web y antes de `]`.
+- {% include step_label.html id="s023" %} En `env/prod.tfvars`, agrega un segundo objeto a `vm_config`, **después** del objeto web y antes de `]`.
 
   > **Importante:** No sustituyas `lab5-vm-web`; el resultado debe contener **dos** objetos en `vm_config`.
   {: .lab-note .important .compact}
@@ -440,7 +450,7 @@ Definir los valores por entorno y una lista de VMs que demuestre filtrado de rec
 
 Exponer el inventario efectivo de VMs y sus IPs, evitando mostrar por accidente contraseñas de demostración.
 
-- {% include step_label.html %} En `lab5/outputs.tf`, crea un output con los nombres de instancias realmente desplegadas.
+- {% include step_label.html id="s024" %} En `lab5/outputs.tf`, crea un output con los nombres de instancias realmente desplegadas.
 
   ```hcl
   output "enabled_vms" {
@@ -452,7 +462,7 @@ Exponer el inventario efectivo de VMs y sus IPs, evitando mostrar por accidente 
   > **Salida esperada:** `enabled_vms` deriva los nombres de las claves reales de `for_each`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de `enabled_vms`, construye el output `public_ips` a partir de los requisitos indicados.
+- {% include step_label.html id="s025" %} Debajo de `enabled_vms`, construye el output `public_ips` a partir de los requisitos indicados.
 
   > **Nota:** Inserta el bloque fuera de `enabled_vms`; usa `[0]` solo después de comprobar que existe `access_config`.
   {: .lab-note .info .compact}
@@ -467,7 +477,7 @@ Exponer el inventario efectivo de VMs y sus IPs, evitando mostrar por accidente 
   > **Salida esperada:** El mapa tendrá IP para la VM web y `null` para la VM API.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de `public_ips`, agrega el output sensible para demostrar la ocultación.
+- {% include step_label.html id="s026" %} Debajo de `public_ips`, agrega el output sensible para demostrar la ocultación.
 
   > **Advertencia:** No ejecutes `terraform output -raw demo_secret`: imprimiría el valor deliberadamente oculto.
   {: .lab-note .warning .compact}
@@ -483,7 +493,7 @@ Exponer el inventario efectivo de VMs y sus IPs, evitando mostrar por accidente 
   > **Salida esperada:** El valor `demo_secret` se presentará como sensible en la salida habitual.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab5/.gitignore`, protege estados, archivos de variables con datos y otros artefactos locales.
+- {% include step_label.html id="s027" %} En `lab5/.gitignore`, protege estados, archivos de variables con datos y otros artefactos locales.
 
   > **Nota:** Este `.gitignore` protege el repositorio solo si la carpeta se utiliza en Git; no sustituye las políticas de seguridad.
   {: .lab-note .info .compact}
@@ -510,13 +520,15 @@ Exponer el inventario efectivo de VMs y sus IPs, evitando mostrar por accidente 
 
 ## 🚀 Tarea 4. Desplegar y validar DEV y PROD — 7 min
 
+{% assign tracking_task_id = "t004" %}
+
 Inicializarás Terraform y desplegarás un estado distinto por Workspace, confirmando que los archivos `.tfvars` controlan parámetros sin reemplazar los recursos del otro entorno.
 
 ### Tarea 4.1. Inicializar y preparar Workspaces
 
 Descargar el proveedor y crear los entornos lógicos sin reutilizar los workspaces de la Práctica 4.
 
-- {% include step_label.html %} En Git Bash dentro de `lab5`, inicializa la configuración Terraform.
+- {% include step_label.html id="s028" %} En Git Bash dentro de `lab5`, inicializa la configuración Terraform.
 
   ```bash
   terraform init
@@ -525,7 +537,7 @@ Descargar el proveedor y crear los entornos lógicos sin reutilizar los workspac
   > **Salida esperada:** Terraform instala el proveedor y muestra `Terraform has been successfully initialized!`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Normaliza formato y valida la configuración antes de desplegar.
+- {% include step_label.html id="s029" %} Normaliza formato y valida la configuración antes de desplegar.
 
   > **Nota:** Si falla `validate`, revisa primero la definición de `vm_config`, la segunda VM PROD y el output `public_ips`.
   {: .lab-note .info .compact}
@@ -538,7 +550,7 @@ Descargar el proveedor y crear los entornos lógicos sin reutilizar los workspac
   > **Salida esperada:** Aparece `Success! The configuration is valid.`
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Crea Workspaces nuevos para `dev` y `prod`, sin ejecutar `apply` en `default`.
+- {% include step_label.html id="s030" %} Crea Workspaces nuevos para `dev` y `prod`, sin ejecutar `apply` en `default`.
 
   ```bash
   terraform workspace new dev
@@ -553,7 +565,7 @@ Descargar el proveedor y crear los entornos lógicos sin reutilizar los workspac
 
 Comprobar que únicamente se crea la VM habilitada y que el estado DEV usa los parámetros definidos en su archivo.
 
-- {% include step_label.html %} Selecciona DEV y revisa su plan antes de aplicar.
+- {% include step_label.html id="s031" %} Selecciona DEV y revisa su plan antes de aplicar.
 
   > **Nota:** Revisa que sean **4 recursos**: VPC, subred, firewall y una VM. No debe aparecer `lab5-vm-disabled`.
   {: .lab-note .info .compact}
@@ -566,7 +578,7 @@ Comprobar que únicamente se crea la VM habilitada y que el estado DEV usa los p
   > **Salida esperada:** El plan muestra `4 to add`, si el estado DEV estaba vacío.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Despliega DEV mediante Terraform y espera a que termine.
+- {% include step_label.html id="s032" %} Despliega DEV mediante Terraform y espera a que termine.
 
   > **Nota:** Escribe `yes` cuando Terraform solicite confirmar; si el despliegue falla por cuota, no avances a PROD.
   {: .lab-note .info .compact}
@@ -578,7 +590,7 @@ Comprobar que únicamente se crea la VM habilitada y que el estado DEV usa los p
   > **Salida esperada:** `Apply complete! Resources: 4 added` en un despliegue nuevo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta el inventario y las salidas de DEV.
+- {% include step_label.html id="s033" %} Consulta el inventario y las salidas de DEV.
 
   ```bash
   terraform output enabled_vms
@@ -593,7 +605,7 @@ Comprobar que únicamente se crea la VM habilitada y que el estado DEV usa los p
 
 Cambiar a otro estado y confirmar dos VMs creadas, una con IP externa y otra solo con IP privada.
 
-- {% include step_label.html %} Selecciona PROD y genera el plan con su archivo de parámetros.
+- {% include step_label.html id="s034" %} Selecciona PROD y genera el plan con su archivo de parámetros.
 
   > **Nota:** El plan de PROD no debe mostrar eliminaciones de DEV; usan estados distintos.
   {: .lab-note .info .compact}
@@ -606,7 +618,7 @@ Cambiar a otro estado y confirmar dos VMs creadas, una con IP externa y otra sol
   > **Salida esperada:** Se proponen **5 recursos**: VPC, subred, firewall y dos VMs.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Aplica el plan de PROD de manera interactiva.
+- {% include step_label.html id="s035" %} Aplica el plan de PROD de manera interactiva.
 
   ```bash
   terraform apply -var-file="env/prod.tfvars"
@@ -615,7 +627,7 @@ Cambiar a otro estado y confirmar dos VMs creadas, una con IP externa y otra sol
   > **Salida esperada:** `Apply complete! Resources: 5 added` en el primer despliegue de PROD.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta las salidas condicionales de PROD.
+- {% include step_label.html id="s036" %} Consulta las salidas condicionales de PROD.
 
   ```bash
   terraform output enabled_vms
@@ -626,7 +638,7 @@ Cambiar a otro estado y confirmar dos VMs creadas, una con IP externa y otra sol
   > **Salida esperada:** Se muestran `lab5-vm-web` y `lab5-vm-api`; solo la primera tiene IP pública.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Confirma desde GCP que existen las VMs de ambos entornos simultáneamente.
+- {% include step_label.html id="s037" %} Confirma desde GCP que existen las VMs de ambos entornos simultáneamente.
 
   ```bash
   gcloud compute instances list --filter="name~^lab5-vm-" --format="table(name,zone,status,networkInterfaces[0].accessConfigs[0].natIP)"
@@ -642,13 +654,15 @@ Cambiar a otro estado y confirmar dos VMs creadas, una con IP externa y otra sol
 
 ## 🧹 Tarea 5. Comprobar estados y limpiar los entornos — 3 min
 
+{% assign tracking_task_id = "t005" %}
+
 Verificarás la independencia de los estados antes de ejecutar `destroy` por entorno y eliminar los Workspaces vacíos, conservando los archivos fuente para prácticas posteriores.
 
 ### Tarea 5.1. Revisar el estado de DEV y PROD
 
 Comparar el inventario de Terraform en cada Workspace y detectar recursos antes de iniciar la limpieza.
 
-- {% include step_label.html %} Selecciona DEV y consulta sus recursos administrados.
+- {% include step_label.html id="s038" %} Selecciona DEV y consulta sus recursos administrados.
 
   ```bash
   terraform workspace select dev
@@ -658,7 +672,7 @@ Comparar el inventario de Terraform en cada Workspace y detectar recursos antes 
   > **Salida esperada:** Aparecen la VPC, la subred, el firewall y `google_compute_instance.vm["lab5-vm-dev"]`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Selecciona PROD y verifica que maneja un inventario diferente.
+- {% include step_label.html id="s039" %} Selecciona PROD y verifica que maneja un inventario diferente.
 
   > **Nota:** Cada Workspace mantiene su propio estado local en `terraform.tfstate.d/<workspace>/terraform.tfstate`.
   {: .lab-note .info .compact}
@@ -675,7 +689,7 @@ Comparar el inventario de Terraform en cada Workspace y detectar recursos antes 
 
 Eliminar recursos del proyecto sin afectar otras prácticas, luego borrar Workspaces vacíos y verificar el estado final.
 
-- {% include step_label.html %} Con PROD seleccionado, destruye sus recursos usando los valores de PROD.
+- {% include step_label.html id="s040" %} Con PROD seleccionado, destruye sus recursos usando los valores de PROD.
 
   > **Importante:** Revisa `Plan: ... to destroy` y confirma con `yes`; no uses los parámetros de DEV.
   {: .lab-note .important .compact}
@@ -687,7 +701,7 @@ Eliminar recursos del proyecto sin afectar otras prácticas, luego borrar Worksp
   > **Salida esperada:** `Destroy complete! Resources: 5 destroyed` si ambos recursos VM estaban presentes.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Selecciona DEV y destruye sus recursos mediante el archivo de valores correcto.
+- {% include step_label.html id="s041" %} Selecciona DEV y destruye sus recursos mediante el archivo de valores correcto.
 
   ```bash
   terraform workspace select dev
@@ -697,7 +711,7 @@ Eliminar recursos del proyecto sin afectar otras prácticas, luego borrar Worksp
   > **Salida esperada:** `Destroy complete! Resources: 4 destroyed` si DEV estaba completo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Regresa a `default`, elimina los dos Workspaces vacíos y verifica que las VM del laboratorio ya no existan.
+- {% include step_label.html id="s042" %} Regresa a `default`, elimina los dos Workspaces vacíos y verifica que las VM del laboratorio ya no existan.
 
   > **Advertencia:** Si `workspace delete` señala recursos pendientes, no uses `-force`: revisa y destruye primero el estado correspondiente.
   {: .lab-note .warning .compact}

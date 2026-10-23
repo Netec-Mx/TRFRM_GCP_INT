@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l012
+tracking: true
+position: 12
 layout: lab
 title: "Práctica 12: Estimar costos con Infracost"
 permalink: /lab12/lab12/
@@ -44,18 +48,20 @@ next: /lab13/lab13/
 
 ## 🔎 Tarea 1. Preparar el proyecto Terraform para estimación — 6 min
 
+{% assign tracking_task_id = "t001" %}
+
 Crearás `lab12` sin alterar las prácticas anteriores y definirás una VM, una VPC y un bucket de ejemplo. Los recursos permanecerán únicamente en el código.
 
 ### Tarea 1.1. Preparar directorios y herramientas
 
 Abrir la raíz del curso, crear una carpeta independiente y verificar las herramientas disponibles en Git Bash.
 
-- {% include step_label.html %} En **VS Code**, abre **File > Open Folder...** y selecciona la carpeta `terraform-gcp-intermediate` del Escritorio; abre **Terminal > New Terminal** y elige **Git Bash**.
+- {% include step_label.html id="s001" %} En **VS Code**, abre **File > Open Folder...** y selecciona la carpeta `terraform-gcp-intermediate` del Escritorio; abre **Terminal > New Terminal** y elige **Git Bash**.
 
   > **Salida esperada:** El Explorer muestra `lab1` a `lab11` y la terminal muestra un prompt Bash.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, identifica la ubicación real del Escritorio de Windows y crea exclusivamente `lab12`.
+- {% include step_label.html id="s002" %} En **Git Bash**, identifica la ubicación real del Escritorio de Windows y crea exclusivamente `lab12`.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '
@@ -69,7 +75,7 @@ Abrir la raíz del curso, crear una carpeta independiente y verificar las herram
   > **Salida esperada:** La ruta termina en `/terraform-gcp-intermediate/lab12` y existe la carpeta `reports`, incluso si el Escritorio usa OneDrive.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Crea los archivos de Terraform y un `.gitignore` que excluya estado, planes y reportes de la publicación accidental.
+- {% include step_label.html id="s003" %} Crea los archivos de Terraform y un `.gitignore` que excluya estado, planes y reportes de la publicación accidental.
 
   ```bash
   touch providers.tf variables.tf main.tf terraform.tfvars .gitignore
@@ -95,7 +101,7 @@ Abrir la raíz del curso, crear una carpeta independiente y verificar las herram
 
 Declarar un ejemplo que combine cómputo y almacenamiento. Conservaremos el código legible en archivos separados, con la infraestructura propia del laboratorio.
 
-- {% include step_label.html %} En **VS Code**, abre `lab12/providers.tf` y declara Terraform y el Google Provider. No incluyas claves JSON.
+- {% include step_label.html id="s004" %} En **VS Code**, abre `lab12/providers.tf` y declara Terraform y el Google Provider. No incluyas claves JSON.
 
   ```hcl
   terraform {
@@ -118,7 +124,7 @@ Declarar un ejemplo que combine cómputo y almacenamiento. Conservaremos el cód
   > **Salida esperada:** La configuración del proveedor depende de variables y no contiene credenciales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `variables.tf`, define proyecto, región, zona, tipo de máquina y clase de almacenamiento. Estas dos últimas entradas se compararán después.
+- {% include step_label.html id="s005" %} En `variables.tf`, define proyecto, región, zona, tipo de máquina y clase de almacenamiento. Estas dos últimas entradas se compararán después.
 
   ```hcl
   variable "project_id" {
@@ -150,7 +156,7 @@ Declarar un ejemplo que combine cómputo y almacenamiento. Conservaremos el cód
   > **Salida esperada:** Existen cinco variables, con `machine_type = "e2-medium"` y `storage_class = "STANDARD"` como valores iniciales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `main.tf`, agrega la VPC de ejemplo y la VM. Conecta `machine_type` con `var.machine_type` y fija un disco `pd-standard` de 20 GB.
+- {% include step_label.html id="s006" %} En `main.tf`, agrega la VPC de ejemplo y la VM. Conecta `machine_type` con `var.machine_type` y fija un disco `pd-standard` de 20 GB.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -187,7 +193,7 @@ Declarar un ejemplo que combine cómputo y almacenamiento. Conservaremos el cód
   > **Salida esperada:** El recurso Compute Engine usa `e2-medium`, disco de 20 GB e IP externa, vinculado a la VPC de ejemplo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Debajo de la VM**, añade el bucket GCS y prepara `terraform.tfvars` con el proyecto real. El bucket no se creará.
+- {% include step_label.html id="s007" %} **Debajo de la VM**, añade el bucket GCS y prepara `terraform.tfvars` con el proyecto real. El bucket no se creará.
 
   ```hcl
   resource "google_storage_bucket" "bucket" {
@@ -219,13 +225,15 @@ Declarar un ejemplo que combine cómputo y almacenamiento. Conservaremos el cód
 
 ## 🔎 Tarea 2. Instalar y autenticar Infracost — 5 min
 
+{% assign tracking_task_id = "t002" %}
+
 Comprobarás que Infracost CLI esté disponible en Windows y vincularás una cuenta del servicio, necesaria para consultar estimaciones.
 
 ### Tarea 2.1. Comprobar o instalar la CLI
 
 Evitar instalaciones innecesarias y utilizar una opción aprobada para la VM Windows.
 
-- {% include step_label.html %} En **Git Bash**, comprueba si Infracost ya está en `PATH` antes de instalarlo.
+- {% include step_label.html id="s008" %} En **Git Bash**, comprueba si Infracost ya está en `PATH` antes de instalarlo.
 
   ```bash
   if command -v infracost >/dev/null 2>&1; then
@@ -238,7 +246,7 @@ Evitar instalaciones innecesarias y utilizar una opción aprobada para la VM Win
   > **Salida esperada:** Infracost muestra una versión o queda confirmado que debes instalarlo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Si falta Infracost, instala la herramienta con Chocolatey en una terminal administrativa o utiliza el ejecutable oficial Windows amd64.
+- {% include step_label.html id="s009" %} Si falta Infracost, instala la herramienta con Chocolatey en una terminal administrativa o utiliza el ejecutable oficial Windows amd64.
 
   **Instrucciones:**
 
@@ -256,12 +264,12 @@ Evitar instalaciones innecesarias y utilizar una opción aprobada para la VM Win
 
 Abrir la autenticación de Infracost sin copiar claves privadas a Terraform.
 
-- {% include step_label.html %} En el navegador, accede a [Infracost Dashboard](https://dashboard.infracost.io/) y entra o registra una cuenta utilizando el método permitido por el curso.
+- {% include step_label.html id="s010" %} En el navegador, accede a [Infracost Dashboard](https://dashboard.infracost.io/) y entra o registra una cuenta utilizando el método permitido por el curso.
 
   > **Salida esperada:** La cuenta de Infracost está disponible; no usaste enlaces de inicio de sesión con tokens temporales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, ejecuta la autenticación interactiva de la CLI y finaliza el procedimiento abierto en el navegador.
+- {% include step_label.html id="s011" %} En **Git Bash**, ejecuta la autenticación interactiva de la CLI y finaliza el procedimiento abierto en el navegador.
 
   ```bash
   infracost auth login
@@ -273,7 +281,7 @@ Abrir la autenticación de Infracost sin copiar claves privadas a Terraform.
   > **Salida esperada:** Infracost informa que la CLI quedó autenticada.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Valida que la autenticación esté vigente y anota únicamente el estado de la sesión, sin revelar credenciales.
+- {% include step_label.html id="s012" %} Valida que la autenticación esté vigente y anota únicamente el estado de la sesión, sin revelar credenciales.
 
   ```bash
   infracost auth whoami
@@ -291,13 +299,15 @@ Abrir la autenticación de Infracost sin copiar claves privadas a Terraform.
 
 ## 🔎 Tarea 3. Generar el costo inicial y guardar la línea base — 5 min
 
+{% assign tracking_task_id = "t003" %}
+
 Inicializarás el proyecto, obtendrás evidencia de un plan Terraform y generarás la estimación inicial que posteriormente se utilizará como referencia.
 
 ### Tarea 3.1. Inicializar Terraform y exportar el plan JSON
 
 Comprobar la sintaxis HCL y guardar un plan solo de lectura, sin aprovisionar recursos.
 
-- {% include step_label.html %} Desde `lab12`, normaliza el formato e inicializa el proveedor Google.
+- {% include step_label.html id="s013" %} Desde `lab12`, normaliza el formato e inicializa el proveedor Google.
 
   ```bash
   terraform fmt -recursive
@@ -308,7 +318,7 @@ Comprobar la sintaxis HCL y guardar un plan solo de lectura, sin aprovisionar re
   > **Salida esperada:** Terraform finaliza la inicialización y `validate` muestra `Success! The configuration is valid.`
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba el proyecto y las credenciales ADC **solo para la generación del plan Terraform**. Si faltan, autentica la cuenta autorizada.
+- {% include step_label.html id="s014" %} Comprueba el proyecto y las credenciales ADC **solo para la generación del plan Terraform**. Si faltan, autentica la cuenta autorizada.
 
   ```bash
   PROJECT_ID="$(gcloud config get-value project)"
@@ -322,7 +332,7 @@ Comprobar la sintaxis HCL y guardar un plan solo de lectura, sin aprovisionar re
   > **Salida esperada:** El proyecto activo coincide con `terraform.tfvars` y, cuando hay permisos, se muestra `ADC disponible`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Genera un plan guardado y conviértelo a JSON. **No ejecutes `terraform apply`**.
+- {% include step_label.html id="s015" %} Genera un plan guardado y conviértelo a JSON. **No ejecutes `terraform apply`**.
 
   ```bash
   terraform plan -out=lab12.tfplan
@@ -340,7 +350,7 @@ Comprobar la sintaxis HCL y guardar un plan solo de lectura, sin aprovisionar re
 
 Usar Infracost para examinar la VM y GCS y guardar una línea base consistente anterior a cualquier modificación.
 
-- {% include step_label.html %} Ejecuta el reporte de costos en tabla desde HCL y, si obtuviste el plan JSON, úsalo adicionalmente para contrastar valores.
+- {% include step_label.html id="s016" %} Ejecuta el reporte de costos en tabla desde HCL y, si obtuviste el plan JSON, úsalo adicionalmente para contrastar valores.
 
   ```bash
   infracost scan tfplan.json
@@ -352,7 +362,7 @@ Usar Infracost para examinar la VM y GCS y guardar una línea base consistente a
   > **Salida esperada:** Aparece un desglose mensual estimado de los recursos cubiertos por Infracost; los valores no tienen que ser idénticos a los de otro participante.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Antes de cambiar el HCL**, genera la línea base JSON que utilizará `infracost diff`.
+- {% include step_label.html id="s017" %} **Antes de cambiar el HCL**, genera la línea base JSON que utilizará `infracost diff`.
 
   ```bash
   infracost scan --json tfplan.json > infracost-base.json
@@ -362,7 +372,7 @@ Usar Infracost para examinar la VM y GCS y guardar una línea base consistente a
   > **Salida esperada:** Existe `infracost-base.json` y representa `e2-medium` con GCS `STANDARD`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Identifica en el reporte inicial qué recurso concentra el costo fijo estimado y qué conceptos de GCS dependen del consumo.
+- {% include step_label.html id="s018" %} Identifica en el reporte inicial qué recurso concentra el costo fijo estimado y qué conceptos de GCS dependen del consumo.
 
   **Instrucciones:**
 
@@ -382,13 +392,15 @@ Usar Infracost para examinar la VM y GCS y guardar una línea base consistente a
 
 ## 🔎 Tarea 4. Modificar infraestructura y comparar estimaciones — 6 min
 
+{% assign tracking_task_id = "t004" %}
+
 Actualizarás dos atributos que impactan la estimación y compararás los resultados contra la línea base guardada, sin modificar infraestructura real.
 
 ### Tarea 4.1. Modificar VM y clase de almacenamiento
 
 Editar el código HCL original en la ubicación correcta, conservando el resto del proyecto.
 
-- {% include step_label.html %} En **VS Code**, abre `lab12/variables.tf` y ubica `variable "machine_type"`. Cambia únicamente su valor predeterminado a `e2-standard-2`.
+- {% include step_label.html id="s019" %} En **VS Code**, abre `lab12/variables.tf` y ubica `variable "machine_type"`. Cambia únicamente su valor predeterminado a `e2-standard-2`.
 
   ```hcl
   variable "machine_type" {
@@ -401,7 +413,7 @@ Editar el código HCL original en la ubicación correcta, conservando el resto d
   > **Salida esperada:** La VM sigue usando `var.machine_type` en `main.tf`, pero ahora apunta a `e2-standard-2`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de `machine_type`, localiza `variable "storage_class"` y cambia su valor por `NEARLINE`.
+- {% include step_label.html id="s020" %} Debajo de `machine_type`, localiza `variable "storage_class"` y cambia su valor por `NEARLINE`.
 
   ```hcl
   variable "storage_class" {
@@ -414,7 +426,7 @@ Editar el código HCL original en la ubicación correcta, conservando el resto d
   > **Salida esperada:** El bucket continúa usando `var.storage_class` y la nueva clase es `NEARLINE`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Valida el formato y confirma en Git Bash que los dos valores modificados aparecen solo en las definiciones esperadas.
+- {% include step_label.html id="s021" %} Valida el formato y confirma en Git Bash que los dos valores modificados aparecen solo en las definiciones esperadas.
 
   ```bash
   terraform fmt -recursive
@@ -425,7 +437,7 @@ Editar el código HCL original en la ubicación correcta, conservando el resto d
   > **Salida esperada:** Terraform valida correctamente y `grep` muestra ambos valores en `variables.tf`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Regenera el plan de Terraform para empaquetar las modificaciones de las variables antes de consultar a Infracost.
+- {% include step_label.html id="s022" %} Regenera el plan de Terraform para empaquetar las modificaciones de las variables antes de consultar a Infracost.
 
   ```bash
   terraform plan -out=lab12.tfplan
@@ -439,7 +451,7 @@ Editar el código HCL original en la ubicación correcta, conservando el resto d
 
 Generar la nueva estimación y obtener el cambio mensual mediante `infracost diff`.
 
-- {% include step_label.html %} Ejecuta una nueva estimación JSON sin sobrescribir `infracost-base.json`.
+- {% include step_label.html id="s023" %} Ejecuta una nueva estimación JSON sin sobrescribir `infracost-base.json`.
 
   ```bash
   infracost scan --json tfplan.json > infracost-nuevo.json
@@ -449,7 +461,7 @@ Generar la nueva estimación y obtener el cambio mensual mediante `infracost dif
   > **Salida esperada:** Existen dos reportes diferentes: original y modificado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Compara la configuración actual con la línea base mediante el comando documentado por Infracost.
+- {% include step_label.html id="s024" %} Compara la configuración actual con la línea base mediante el comando documentado por Infracost.
 
   ```bash
   infracost diff tfplan.json --compare-to infracost-base.json
@@ -461,7 +473,7 @@ Generar la nueva estimación y obtener el cambio mensual mediante `infracost dif
   > **Salida esperada:** Se presenta el cambio de costo estimado frente a la configuración inicial, especialmente el impacto del tipo de VM.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Interpreta el resultado en lugar de asumir que todas las modificaciones generan incrementos o ahorros.
+- {% include step_label.html id="s025" %} Interpreta el resultado en lugar de asumir que todas las modificaciones generan incrementos o ahorros.
 
   **Instrucciones:**
 
@@ -481,13 +493,15 @@ Generar la nueva estimación y obtener el cambio mensual mediante `infracost dif
 
 ## 🔎 Tarea 5. Exportar y verificar reportes de costos — 3 min
 
+{% assign tracking_task_id = "t005" %}
+
 Reunirás los artefactos del laboratorio y comprobarás que las estimaciones se generaron sin crear ningún recurso en GCP.
 
 ### Tarea 5.1. Guardar reportes legibles para revisión
 
 Conservar una salida de comparación y los JSON para utilizarlos como evidencia técnica.
 
-- {% include step_label.html %} Exporta el detalle de la nueva estimación a un archivo de texto y guarda la comparación de costos.
+- {% include step_label.html id="s026" %} Exporta el detalle de la nueva estimación a un archivo de texto y guarda la comparación de costos.
 
   ```bash
   infracost scan tfplan.json > reports/costo-nuevo.txt
@@ -498,7 +512,7 @@ Conservar una salida de comparación y los JSON para utilizarlos como evidencia 
   > **Salida esperada:** `reports/costo-nuevo.txt` y `reports/diferencia.txt` existen y contienen reportes legibles.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba los archivos de la línea base y de la nueva estimación sin imprimir llaves o tokens.
+- {% include step_label.html id="s027" %} Comprueba los archivos de la línea base y de la nueva estimación sin imprimir llaves o tokens.
 
   ```bash
   ls -lh infracost-base.json infracost-nuevo.json reports/*.txt
@@ -512,7 +526,7 @@ Conservar una salida de comparación y los JSON para utilizarlos como evidencia 
 
 Confirmar que solo se ejecutaron planes y estimaciones y cerrar la actividad sin destruir infraestructura ajena.
 
-- {% include step_label.html %} Confirma que no ejecutaste `apply` ni creaste estado con recursos administrados. Verifica desde Git Bash el contenido del directorio.
+- {% include step_label.html id="s028" %} Confirma que no ejecutaste `apply` ni creaste estado con recursos administrados. Verifica desde Git Bash el contenido del directorio.
 
   ```bash
   pwd
@@ -530,7 +544,7 @@ Confirmar que solo se ejecutaron planes y estimaciones y cerrar la actividad sin
   > **Salida esperada:** Se muestran archivos HCL y reportes; no hay despliegue realizado por esta práctica.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Revisa en **VS Code** los archivos finales y anota cuál cambio requiere aprobación presupuestaria antes de aplicar infraestructura.
+- {% include step_label.html id="s029" %} Revisa en **VS Code** los archivos finales y anota cuál cambio requiere aprobación presupuestaria antes de aplicar infraestructura.
 
   **Instrucciones:**
 

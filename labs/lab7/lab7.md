@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l007
+tracking: true
+position: 7
 layout: lab
 title: "Práctica 7: Crear pipeline que haga plan en pull requests y apply en merges"
 permalink: /lab7/lab7/
@@ -49,13 +53,15 @@ next: /lab8/lab8/
 
 ## 🔎 Tarea 1. Preparar el repositorio y la estación de trabajo — 7 min
 
+{% assign tracking_task_id = "t001" %}
+
 Crearás un repositorio público exclusivo de GitHub para la práctica, comprobarás las herramientas instaladas y prepararás `lab7` dentro del directorio central del curso, sin modificar las prácticas anteriores.
 
 ### Tarea 1.1. Verificar herramientas y preparar lab7
 
 Comprobar VS Code, Git Bash y las herramientas de línea de comandos antes de comenzar la configuración de GitHub y Google Cloud.
 
-- {% include step_label.html %} En **VS Code**, abre la carpeta principal del curso antes de comenzar. Sigue esta secuencia en la interfaz:
+- {% include step_label.html id="s001" %} En **VS Code**, abre la carpeta principal del curso antes de comenzar. Sigue esta secuencia en la interfaz:
 
   1. Selecciona **File > Open Folder...**.
   2. Abre la carpeta **Escritorio > terraform-gcp-intermediate**.
@@ -66,7 +72,7 @@ Comprobar VS Code, Git Bash y las herramientas de línea de comandos antes de co
   > **Salida esperada:** Debes ver la raíz del curso abierta y una terminal Bash con acceso al proyecto.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba las herramientas desde **Git Bash**: `git` administra versiones, `terraform` define infraestructura y `gcloud` configura IAM y GCS. No necesitas instalar GitHub CLI porque todas las acciones de Pull Request se realizan desde el navegador.
+- {% include step_label.html id="s002" %} Comprueba las herramientas desde **Git Bash**: `git` administra versiones, `terraform` define infraestructura y `gcloud` configura IAM y GCS. No necesitas instalar GitHub CLI porque todas las acciones de Pull Request se realizan desde el navegador.
 
   ```bash
   terraform version
@@ -77,7 +83,7 @@ Comprobar VS Code, Git Bash y las herramientas de línea de comandos antes de co
   > **Salida esperada:** Terraform, gcloud y Git muestran versión; GitHub CLI es opcional.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Confirma qué proyecto y qué usuario GCP están activos **antes** de crear permisos o buckets. Conserva el ID en una variable de la terminal para reutilizarlo. Si aparece otro proyecto, corrige `gcloud config set project` antes de continuar.
+- {% include step_label.html id="s003" %} Confirma qué proyecto y qué usuario GCP están activos **antes** de crear permisos o buckets. Conserva el ID en una variable de la terminal para reutilizarlo. Si aparece otro proyecto, corrige `gcloud config set project` antes de continuar.
 
   ```bash
   PROJECT_ID="$(gcloud config get-value project)"
@@ -98,7 +104,7 @@ Comprobar VS Code, Git Bash y las herramientas de línea de comandos antes de co
 
 Crear el repositorio público del laboratorio, establecer la carpeta `lab7` dentro del directorio del curso y clonar su contenido en esa ubicación.
 
-- {% include step_label.html %} En tu navegador, crea **un repositorio nuevo de GitHub** para alojar exclusivamente la infraestructura de esta práctica. No utilices el repositorio Jekyll donde publicas los laboratorios.
+- {% include step_label.html id="s004" %} En tu navegador, crea **un repositorio nuevo de GitHub** para alojar exclusivamente la infraestructura de esta práctica. No utilices el repositorio Jekyll donde publicas los laboratorios.
 
   1. Entra a [github.com](https://github.com/) e inicia sesión.
   2. En la esquina superior derecha, selecciona el icono **+** y después **New repository**. También puedes abrir [New repository](https://github.com/new).
@@ -126,7 +132,7 @@ Crear el repositorio público del laboratorio, establecer la carpeta `lab7` dent
   > **Salida esperada:** El repositorio público aparece en tu cuenta con la rama principal y un README.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, abre la terminal **Git Bash** y entra a la carpeta principal del curso ubicada en el Escritorio. Ejecuta `mkdir -p lab7` para **crear el directorio de la Práctica 7**, entra con `cd lab7` y confirma la ruta antes de clonar. Así tendrás `terraform-gcp-intermediate/lab7`, sin usar carpetas de las prácticas anteriores.
+- {% include step_label.html id="s005" %} En **VS Code**, abre la terminal **Git Bash** y entra a la carpeta principal del curso ubicada en el Escritorio. Ejecuta `mkdir -p lab7` para **crear el directorio de la Práctica 7**, entra con `cd lab7` y confirma la ruta antes de clonar. Así tendrás `terraform-gcp-intermediate/lab7`, sin usar carpetas de las prácticas anteriores.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
@@ -139,7 +145,7 @@ Crear el repositorio público del laboratorio, establecer la carpeta `lab7` dent
   > **Salida esperada:** La ruta termina en `/terraform-gcp-intermediate/lab7` y la carpeta no contiene archivos de otras prácticas.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En el repositorio GitHub, abre **Code > Local > HTTPS** y copia la URL. Regresa a **Git Bash**, ya ubicado en `lab7`, y clona el repositorio **dentro de esta carpeta vacía** mediante `git clone URL .` (el punto final es obligatorio). Sustituye `OWNER` y comprueba que el remoto coincida con tu cuenta antes de continuar.
+- {% include step_label.html id="s006" %} En el repositorio GitHub, abre **Code > Local > HTTPS** y copia la URL. Regresa a **Git Bash**, ya ubicado en `lab7`, y clona el repositorio **dentro de esta carpeta vacía** mediante `git clone URL .` (el punto final es obligatorio). Sustituye `OWNER` y comprueba que el remoto coincida con tu cuenta antes de continuar.
 
   ```bash
   git clone "https://github.com/OWNER/lab7-terraform-gcp.git" .
@@ -150,7 +156,7 @@ Crear el repositorio público del laboratorio, establecer la carpeta `lab7` dent
   > **Salida esperada:** `lab7` contiene `.git/` y `README.md`; `git status --short` no muestra cambios y `origin` corresponde al repositorio nuevo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Crea el directorio del workflow y los archivos base. Agrega `.gitignore` antes de crear estado o credenciales; Git no debe rastrear `.terraform/`, planes ni archivos locales con valores internos.
+- {% include step_label.html id="s007" %} Crea el directorio del workflow y los archivos base. Agrega `.gitignore` antes de crear estado o credenciales; Git no debe rastrear `.terraform/`, planes ni archivos locales con valores internos.
 
   ```bash
   mkdir -p .github/workflows
@@ -172,7 +178,7 @@ Crear el repositorio público del laboratorio, establecer la carpeta `lab7` dent
   > **Salida esperada:** Los archivos HCL y el workflow existen; `.gitignore` excluye estado, planes y credenciales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, verifica la identidad del repositorio y establece las variables que usaremos con GitHub. Reemplaza `OWNER` por el propietario real de tu repositorio, respeta mayúsculas y minúsculas y no añadas espacios.
+- {% include step_label.html id="s008" %} En **Git Bash**, verifica la identidad del repositorio y establece las variables que usaremos con GitHub. Reemplaza `OWNER` por el propietario real de tu repositorio, respeta mayúsculas y minúsculas y no añadas espacios.
 
   ```bash
   GH_OWNER="OWNER"
@@ -195,13 +201,15 @@ Crear el repositorio público del laboratorio, establecer la carpeta `lab7` dent
 
 ## ☁️ Tarea 2. Preparar Workload Identity Federation y GCS — 18 min
 
+{% assign tracking_task_id = "t002" %}
+
 Habilitarás el acceso de GitHub Actions a Google Cloud sin claves JSON, configurarás permisos limitados y prepararás un bucket GCS para compartir el estado entre ejecuciones.
 
 ### Tarea 2.1. Verificar permisos y habilitar APIs
 
 Confirmar que el proyecto permita crear identidades, asignar permisos y acceder a las APIs que utilizará el pipeline.
 
-- {% include step_label.html %} En **Git Bash**, habilita las APIs indispensables. La cuenta del participante debe poder administrar estos servicios; si aparece `PERMISSION_DENIED`, detente y solicita al instructor la preconfiguración del laboratorio.
+- {% include step_label.html id="s009" %} En **Git Bash**, habilita las APIs indispensables. La cuenta del participante debe poder administrar estos servicios; si aparece `PERMISSION_DENIED`, detente y solicita al instructor la preconfiguración del laboratorio.
 
   ```bash
   gcloud services enable \
@@ -213,7 +221,7 @@ Confirmar que el proyecto permita crear identidades, asignar permisos y acceder 
   > **Salida esperada:** Las APIs quedan habilitadas; la operación no muestra errores de permisos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Define IDs cortos y repetibles para los recursos de identidad. La Service Account operará Terraform y el Workload Identity Pool aceptará tokens OIDC del repositorio. Ninguno requiere una llave JSON descargable.
+- {% include step_label.html id="s010" %} Define IDs cortos y repetibles para los recursos de identidad. La Service Account operará Terraform y el Workload Identity Pool aceptará tokens OIDC del repositorio. Ninguno requiere una llave JSON descargable.
 
   ```bash
   SA_NAME="lab7-terraform"
@@ -226,7 +234,7 @@ Confirmar que el proyecto permita crear identidades, asignar permisos y acceder 
   > **Salida esperada:** Las variables muestran el email y los identificadores que se usarán en los siguientes comandos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Crea la Service Account y limita sus funciones. El recurso de demostración será únicamente una VPC, por lo que basta el rol de redes para esa tarea; el acceso al bucket de estado se concederá por separado a nivel de bucket.
+- {% include step_label.html id="s011" %} Crea la Service Account y limita sus funciones. El recurso de demostración será únicamente una VPC, por lo que basta el rol de redes para esa tarea; el acceso al bucket de estado se concederá por separado a nivel de bucket.
 
   ```bash
   gcloud iam service-accounts create "$SA_NAME" \
@@ -243,7 +251,7 @@ Confirmar que el proyecto permita crear identidades, asignar permisos y acceder 
 
 Crear el Workload Identity Pool y el OIDC Provider, restringir la confianza al repositorio autorizado y habilitar la suplantación de la Service Account.
 
-- {% include step_label.html %} Crea el **Workload Identity Pool** dentro del proyecto. El pool representa un conjunto de identidades externas autorizadas para solicitar credenciales temporales de Google Cloud. Si ya existe por un intento anterior, confírmalo con `list` antes de reintentar.
+- {% include step_label.html id="s012" %} Crea el **Workload Identity Pool** dentro del proyecto. El pool representa un conjunto de identidades externas autorizadas para solicitar credenciales temporales de Google Cloud. Si ya existe por un intento anterior, confírmalo con `list` antes de reintentar.
 
   ```bash
   gcloud iam workload-identity-pools create "$POOL_ID" \
@@ -254,7 +262,7 @@ Crear el Workload Identity Pool y el OIDC Provider, restringir la confianza al r
   > **Salida esperada:** El comando termina correctamente y el pool aparece habilitado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Crea un **OIDC Provider** para `https://token.actions.githubusercontent.com`. La condición `assertion.repository` limita la confianza al repositorio elegido, evitando admitir tokens de otros repositorios del mismo propietario. Utiliza valores reales para `GH_FULL_REPO`.
+- {% include step_label.html id="s013" %} Crea un **OIDC Provider** para `https://token.actions.githubusercontent.com`. La condición `assertion.repository` limita la confianza al repositorio elegido, evitando admitir tokens de otros repositorios del mismo propietario. Utiliza valores reales para `GH_FULL_REPO`.
 
   ```bash
   gcloud iam workload-identity-pools providers create-oidc "$PROVIDER_ID" \
@@ -269,7 +277,7 @@ Crear el Workload Identity Pool y el OIDC Provider, restringir la confianza al r
   > **Salida esperada:** El provider se crea y solo admite tokens cuyo atributo `repository` coincida con el repositorio de la práctica.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba con `describe` que el OIDC Provider quedó habilitado y contiene la condición de repositorio correcta. Una diferencia en `GH_OWNER` o `GH_REPO` ocasionaría que los tokens de GitHub fueran rechazados; corrige el provider antes de ejecutar el pipeline.
+- {% include step_label.html id="s014" %} Comprueba con `describe` que el OIDC Provider quedó habilitado y contiene la condición de repositorio correcta. Una diferencia en `GH_OWNER` o `GH_REPO` ocasionaría que los tokens de GitHub fueran rechazados; corrige el provider antes de ejecutar el pipeline.
 
   ```bash
   gcloud iam workload-identity-pools providers describe "$PROVIDER_ID" \
@@ -281,7 +289,7 @@ Crear el Workload Identity Pool y el OIDC Provider, restringir la confianza al r
   > **Salida esperada:** Se confirma `ACTIVE` y la condición coincide exactamente con el propietario y repositorio configurados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Asigna a las identidades permitidas el rol `roles/iam.workloadIdentityUser` **sobre la Service Account**, no sobre todo el proyecto. El principalSet utiliza el número de proyecto y el atributo de repositorio del provider.
+- {% include step_label.html id="s015" %} Asigna a las identidades permitidas el rol `roles/iam.workloadIdentityUser` **sobre la Service Account**, no sobre todo el proyecto. El principalSet utiliza el número de proyecto y el atributo de repositorio del provider.
 
   ```bash
   gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
@@ -293,7 +301,7 @@ Crear el Workload Identity Pool y el OIDC Provider, restringir la confianza al r
   > **Salida esperada:** La política IAM de la Service Account contiene el principalSet exacto del repositorio.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Obtén el identificador completo del provider. Este valor se configurará como variable de GitHub; evita escribirlo manualmente porque debe incluir número del proyecto, ubicación global, pool y provider.
+- {% include step_label.html id="s016" %} Obtén el identificador completo del provider. Este valor se configurará como variable de GitHub; evita escribirlo manualmente porque debe incluir número del proyecto, ubicación global, pool y provider.
 
   ```bash
   WIF_PROVIDER="$(gcloud iam workload-identity-pools providers describe "$PROVIDER_ID" \
@@ -310,7 +318,7 @@ Crear el Workload Identity Pool y el OIDC Provider, restringir la confianza al r
 
 Crear el bucket versionado para estado remoto y configurar las variables necesarias para conectar el workflow con Google Cloud.
 
-- {% include step_label.html %} Crea el bucket de estado **antes** de inicializar Terraform. El nombre GCS es global, por eso añadimos un sufijo aleatorio. Activa el versionado para conservar generaciones anteriores. Guarda el nombre para usarlo en el workflow.
+- {% include step_label.html id="s017" %} Crea el bucket de estado **antes** de inicializar Terraform. El nombre GCS es global, por eso añadimos un sufijo aleatorio. Activa el versionado para conservar generaciones anteriores. Guarda el nombre para usarlo en el workflow.
 
   ```bash
   STATE_BUCKET="tfstate-lab7-${PROJECT_ID}-${RANDOM}"
@@ -324,7 +332,7 @@ Crear el bucket versionado para estado remoto y configurar las variables necesar
   > **Salida esperada:** Se creó un bucket exclusivo para lab7 y el versionado de objetos está habilitado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Otorga acceso a los objetos del bucket únicamente a la Service Account del pipeline. Para la práctica utilizaremos `roles/storage.objectAdmin` **a nivel del bucket**; nunca concedas acceso administrativo a todos los buckets del proyecto.
+- {% include step_label.html id="s018" %} Otorga acceso a los objetos del bucket únicamente a la Service Account del pipeline. Para la práctica utilizaremos `roles/storage.objectAdmin` **a nivel del bucket**; nunca concedas acceso administrativo a todos los buckets del proyecto.
 
   ```bash
   gcloud storage buckets add-iam-policy-binding "gs://${STATE_BUCKET}" \
@@ -336,7 +344,7 @@ Crear el bucket versionado para estado remoto y configurar las variables necesar
   > **Salida esperada:** El bucket tiene versionado activo y la Service Account dispone de acceso a objetos de ese bucket.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En GitHub, configura las cuatro **Repository variables** que utilizará el workflow para identificar tu proyecto, la Service Account y el backend GCS.
+- {% include step_label.html id="s019" %} En GitHub, configura las cuatro **Repository variables** que utilizará el workflow para identificar tu proyecto, la Service Account y el backend GCS.
 
   1. Abre tu repositorio en el navegador y selecciona **Settings**.
   2. En la barra lateral, entra a **Secrets and variables > Actions**.
@@ -361,7 +369,7 @@ Crear el bucket versionado para estado remoto y configurar las variables necesar
   > **Salida esperada:** Las cuatro variables aparecen registradas en GitHub Actions con nombres y valores exactos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Después de registrar las variables de GitHub, anota el nombre del bucket y la información del provider en un archivo **local ignorado por Git**. Esto evita perder las variables de Git Bash si cierras VS Code y hace reproducibles las validaciones posteriores. El archivo no contiene llaves privadas.
+- {% include step_label.html id="s020" %} Después de registrar las variables de GitHub, anota el nombre del bucket y la información del provider en un archivo **local ignorado por Git**. Esto evita perder las variables de Git Bash si cierras VS Code y hace reproducibles las validaciones posteriores. El archivo no contiene llaves privadas.
 
   ```bash
   printf 'PROJECT_ID=%q\nPROJECT_NUMBER=%q\nSTATE_BUCKET=%q\nSA_EMAIL=%q\nWIF_PROVIDER=%q\n' \
@@ -383,13 +391,15 @@ Crear el bucket versionado para estado remoto y configurar las variables necesar
 
 ## 🧩 Tarea 3. Construir la configuración Terraform — 8 min
 
+{% assign tracking_task_id = "t003" %}
+
 Definirás una VPC de prueba mediante Terraform, con variables, outputs y backend GCS. Inicializarás la configuración en Git Bash y revisarás el plan antes de subir los archivos al repositorio.
 
 ### Tarea 3.1. Definir Provider, variables y recurso de prueba
 
 Crear la configuración del proveedor Google, declarar las variables requeridas y definir el recurso de red que GitHub Actions administrará.
 
-- {% include step_label.html %} En **VS Code**, abre `lab7/providers.tf` y declara la versión mínima de Terraform y la dependencia del proveedor Google. El proyecto se suministrará mediante una variable, lo que permite reutilizar el mismo código en distintas cuentas del curso.
+- {% include step_label.html id="s021" %} En **VS Code**, abre `lab7/providers.tf` y declara la versión mínima de Terraform y la dependencia del proveedor Google. El proyecto se suministrará mediante una variable, lo que permite reutilizar el mismo código en distintas cuentas del curso.
 
   ```hcl
   terraform {
@@ -411,7 +421,7 @@ Crear la configuración del proveedor Google, declarar las variables requeridas 
   > **Salida esperada:** El archivo define Google Provider sin incluir credenciales o llaves privadas.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En el explorador de **VS Code**, abre `lab7/variables.tf` y crea dos bloques `variable`, uno debajo del otro, **sin copiar código de otro archivo**.
+- {% include step_label.html id="s022" %} En el explorador de **VS Code**, abre `lab7/variables.tf` y crea dos bloques `variable`, uno debajo del otro, **sin copiar código de otro archivo**.
 
   | Variable | Tipo | Valor predeterminado | Resultado requerido |
   |---|---|---|---|
@@ -428,7 +438,7 @@ Crear la configuración del proveedor Google, declarar las variables requeridas 
   > **Salida esperada:** El archivo declara `project_id` obligatorio y `region` con el valor regional requerido.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de las variables anteriores, agrega `network_name` con el valor por defecto `lab7-cicd-vpc`. La VPC será el único recurso gestionado por el workflow; crear un recurso pequeño mantiene el laboratorio enfocado en CI/CD y simplifica la limpieza.
+- {% include step_label.html id="s023" %} Debajo de las variables anteriores, agrega `network_name` con el valor por defecto `lab7-cicd-vpc`. La VPC será el único recurso gestionado por el workflow; crear un recurso pequeño mantiene el laboratorio enfocado en CI/CD y simplifica la limpieza.
 
   ```hcl
   variable "network_name" {
@@ -441,7 +451,7 @@ Crear la configuración del proveedor Google, declarar las variables requeridas 
   > **Salida esperada:** La configuración dispone de un nombre de red estable y reconocible.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab7/main.tf`, crea la VPC personalizada. Establece `auto_create_subnetworks = false` para no desplegar subredes automáticas en otras regiones. El atributo `description` permitirá comparar el plan con la infraestructura aplicada.
+- {% include step_label.html id="s024" %} En `lab7/main.tf`, crea la VPC personalizada. Establece `auto_create_subnetworks = false` para no desplegar subredes automáticas en otras regiones. El atributo `description` permitirá comparar el plan con la infraestructura aplicada.
 
   ```hcl
   resource "google_compute_network" "pipeline" {
@@ -459,7 +469,7 @@ Crear la configuración del proveedor Google, declarar las variables requeridas 
 
 Definir salidas y backend GCS, inicializar Terraform en Git Bash y comprobar el plan antes de ejecutar GitHub Actions.
 
-- {% include step_label.html %} Crea el output para mostrar el nombre de la VPC creada por Terraform.
+- {% include step_label.html id="s025" %} Crea el output para mostrar el nombre de la VPC creada por Terraform.
 
   1. En el explorador de **VS Code**, abre `lab7/outputs.tf`.
   2. Declara un bloque **`output "network_name"`**.
@@ -473,7 +483,7 @@ Definir salidas y backend GCS, inicializar Terraform en Git Bash y comprobar el 
   > **Salida esperada:** El output muestra el nombre de la VPC que administrará el pipeline.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab7/backend.tf`, agrega el backend remoto GCS **sin incrustar el nombre de bucket**. Este valor se inyectará con `terraform init -backend-config` tanto en el entorno local como en GitHub Actions. No uses `var.*` dentro del backend, porque Terraform no acepta variables en esa sección.
+- {% include step_label.html id="s026" %} En `lab7/backend.tf`, agrega el backend remoto GCS **sin incrustar el nombre de bucket**. Este valor se inyectará con `terraform init -backend-config` tanto en el entorno local como en GitHub Actions. No uses `var.*` dentro del backend, porque Terraform no acepta variables en esa sección.
 
   ```hcl
   terraform {
@@ -486,7 +496,7 @@ Definir salidas y backend GCS, inicializar Terraform en Git Bash y comprobar el 
   > **Salida esperada:** El backend usa el prefijo exclusivo de lab7 y espera el nombre del bucket durante init.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, ejecuta `fmt` y `validate` después de completar ambos ejercicios dirigidos. Inicializa el backend usando el bucket de estado creado anteriormente y pasa el ID del proyecto a `validate` solo al planificar, no al inicializar.
+- {% include step_label.html id="s027" %} En **Git Bash**, ejecuta `fmt` y `validate` después de completar ambos ejercicios dirigidos. Inicializa el backend usando el bucket de estado creado anteriormente y pasa el ID del proyecto a `validate` solo al planificar, no al inicializar.
 
   ```bash
   terraform fmt -recursive
@@ -507,13 +517,15 @@ Definir salidas y backend GCS, inicializar Terraform en Git Bash y comprobar el 
 
 ## ⚙️ Tarea 4. Configurar GitHub Actions — 10 min
 
+{% assign tracking_task_id = "t004" %}
+
 Construirás un workflow YAML que ejecutará formato, validación y plan en Pull Requests, y aplicará los cambios únicamente después de fusionarlos a `main`.
 
 ### Tarea 4.1. Definir eventos, permisos y contexto de ejecución
 
 Configurar los eventos `pull_request` y `push`, los permisos OIDC del workflow y el job que revisará los cambios propuestos.
 
-- {% include step_label.html %} En **VS Code**, abre `.github/workflows/terraform.yml`. Identifica los eventos que deben activar GitHub Actions, antes de escribir el YAML completo del siguiente paso.
+- {% include step_label.html id="s028" %} En **VS Code**, abre `.github/workflows/terraform.yml`. Identifica los eventos que deben activar GitHub Actions, antes de escribir el YAML completo del siguiente paso.
 
   | Elemento del workflow | Configuración esperada |
   |---|---|
@@ -532,7 +544,7 @@ Configurar los eventos `pull_request` y `push`, los permisos OIDC del workflow y
   > **Salida esperada:** El workflow se activará ante PR hacia main y push producido al fusionar cambios.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Sustituye el contenido provisional de `.github/workflows/terraform.yml` por el encabezado siguiente. `id-token: write` permite solicitar un token OIDC temporal, `contents: read` permite checkout y `concurrency` impide que dos runs de este workflow operen simultáneamente.
+- {% include step_label.html id="s029" %} Sustituye el contenido provisional de `.github/workflows/terraform.yml` por el encabezado siguiente. `id-token: write` permite solicitar un token OIDC temporal, `contents: read` permite checkout y `concurrency` impide que dos runs de este workflow operen simultáneamente.
 
   {%raw%}
   ```yaml
@@ -566,7 +578,7 @@ Configurar los eventos `pull_request` y `push`, los permisos OIDC del workflow y
   > **Salida esperada:** El YAML tiene eventos, permisos mínimos de token y variables comunes definidos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Agrega el job `plan` debajo de `env`. **No** ejecutes autenticación de GCP sobre Pull Requests procedentes de forks: el condicional exige que el repositorio origen y destino sean el mismo. Usa `working-directory: .` porque Terraform vive en la raíz del nuevo repositorio.
+- {% include step_label.html id="s030" %} Agrega el job `plan` debajo de `env`. **No** ejecutes autenticación de GCP sobre Pull Requests procedentes de forks: el condicional exige que el repositorio origen y destino sean el mismo. Usa `working-directory: .` porque Terraform vive en la raíz del nuevo repositorio.
 
   {%raw%}
   ```yaml
@@ -621,7 +633,7 @@ Configurar los eventos `pull_request` y `push`, los permisos OIDC del workflow y
 
 Agregar el job `apply` condicionado a `main`, comprobar la indentación YAML y verificar que GitHub Actions esté habilitado.
 
-- {% include step_label.html %} Revisa en `.github/workflows/terraform.yml` cómo debe declararse el job `apply` debajo del job `plan`.
+- {% include step_label.html id="s031" %} Revisa en `.github/workflows/terraform.yml` cómo debe declararse el job `apply` debajo del job `plan`.
 
   1. Identifica la clave principal `jobs:` y el bloque existente `plan:`.
   2. Planea un segundo job llamado `apply:` **al mismo nivel de indentación que `plan:`**.
@@ -635,7 +647,7 @@ Agregar el job `apply` condicionado a `main`, comprobar la indentación YAML y v
   > **Salida esperada:** Apply se limita a push a main y no se ejecuta desde Pull Requests.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Añade el siguiente bloque YAML como **segundo job**, al mismo nivel que `plan`. Conserva exactamente la indentación de dos espacios. El `plan` se vuelve a calcular en la revisión fusionada y el `apply` ejecuta únicamente la configuración de `main`.
+- {% include step_label.html id="s032" %} Añade el siguiente bloque YAML como **segundo job**, al mismo nivel que `plan`. Conserva exactamente la indentación de dos espacios. El `plan` se vuelve a calcular en la revisión fusionada y el `apply` ejecuta únicamente la configuración de `main`.
 
   {%raw%}
   ```yaml
@@ -683,7 +695,7 @@ Agregar el job `apply` condicionado a `main`, comprobar la indentación YAML y v
   > **Salida esperada:** El archivo contiene dos jobs separados y la fase Apply no usa claves de servicio JSON.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En Git Bash, revisa que el workflow no tenga tabulaciones, bloques duplicados ni errores obvios de indentación. Comprueba en **Settings > Secrets and variables > Actions > Variables** que `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT` y `GCP_STATE_BUCKET` tienen valores. No son Secrets en esta práctica. Los pasos **Validar variables del repositorio** detendrán la ejecución con el nombre del valor faltante.
+- {% include step_label.html id="s033" %} En Git Bash, revisa que el workflow no tenga tabulaciones, bloques duplicados ni errores obvios de indentación. Comprueba en **Settings > Secrets and variables > Actions > Variables** que `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT` y `GCP_STATE_BUCKET` tienen valores. No son Secrets en esta práctica. Los pasos **Validar variables del repositorio** detendrán la ejecución con el nombre del valor faltante.
 
   ```bash
   git diff --check
@@ -695,7 +707,7 @@ Agregar el job `apply` condicionado a `main`, comprobar la indentación YAML y v
   > **Salida esperada:** El YAML contiene un encabezado, un único `jobs:` y los jobs `plan` y `apply` correctamente indentados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **GitHub**, revisa que el repositorio público tenga habilitado **GitHub Actions** antes de enviar el primer Pull Request.
+- {% include step_label.html id="s034" %} En **GitHub**, revisa que el repositorio público tenga habilitado **GitHub Actions** antes de enviar el primer Pull Request.
 
   1. Abre `lab7-terraform-gcp` en el navegador y selecciona **Settings**.
   2. En la barra lateral, entra a **Actions > General**.
@@ -718,13 +730,15 @@ Agregar el job `apply` condicionado a `main`, comprobar la indentación YAML y v
 
 ## 🚀 Tarea 5. Ejecutar Pull Request y merge controlado — 12 min
 
+{% assign tracking_task_id = "t005" %}
+
 Publicarás cambios desde una rama, revisarás los checks de GitHub Actions y fusionarás el Pull Request únicamente si el plan es correcto. Después comprobarás que la VPC existe en GCP.
 
 ### Tarea 5.1. Preparar la rama de cambio
 
 Crear la rama `feature/lab7-vpc`, revisar que no se suban archivos sensibles y publicar el primer Pull Request.
 
-- {% include step_label.html %} En **Git Bash**, verifica que la rama principal está actualizada y crea `feature/lab7-vpc`. Las modificaciones de infraestructura se proponen en ramas separadas; el pipeline revisa el cambio antes de desplegarlo.
+- {% include step_label.html id="s035" %} En **Git Bash**, verifica que la rama principal está actualizada y crea `feature/lab7-vpc`. Las modificaciones de infraestructura se proponen en ramas separadas; el pipeline revisa el cambio antes de desplegarlo.
 
   ```bash
   git switch main
@@ -735,7 +749,7 @@ Crear la rama `feature/lab7-vpc`, revisar que no se suban archivos sensibles y p
   > **Salida esperada:** La terminal indica que estás en `feature/lab7-vpc`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Confirma que únicamente subirás HCL y YAML. En particular, revisa que no se incluyan `.terraform/`, archivos `.tfstate`, planes ni credenciales. Luego crea un commit descriptivo.
+- {% include step_label.html id="s036" %} Confirma que únicamente subirás HCL y YAML. En particular, revisa que no se incluyan `.terraform/`, archivos `.tfstate`, planes ni credenciales. Luego crea un commit descriptivo.
 
   ```bash
   git status --short
@@ -747,7 +761,7 @@ Crear la rama `feature/lab7-vpc`, revisar que no se suban archivos sensibles y p
   > **Salida esperada:** El commit incluye infraestructura y workflow, sin archivos de credenciales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Publica la rama de trabajo en GitHub. Al terminar, confirma que la URL remota coincide con tu repositorio y que el push no creó accidentalmente una rama en otro proyecto.
+- {% include step_label.html id="s037" %} Publica la rama de trabajo en GitHub. Al terminar, confirma que la URL remota coincide con tu repositorio y que el push no creó accidentalmente una rama en otro proyecto.
 
   ```bash
   git push -u origin feature/lab7-vpc
@@ -756,7 +770,7 @@ Crear la rama `feature/lab7-vpc`, revisar que no se suban archivos sensibles y p
   > **Salida esperada:** GitHub recibe la rama y muestra la opción de abrir un Pull Request.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **GitHub**, abre un Pull Request para solicitar la incorporación del código Terraform a la rama `main`.
+- {% include step_label.html id="s038" %} En **GitHub**, abre un Pull Request para solicitar la incorporación del código Terraform a la rama `main`.
 
   1. Entra al repositorio y selecciona la pestaña **Pull requests**.
   2. Haz clic en **New pull request** (o en **Compare & pull request** si GitHub lo muestra).
@@ -780,7 +794,7 @@ Crear la rama `feature/lab7-vpc`, revisar que no se suban archivos sensibles y p
 
 Examinar el resultado de formato, validación y plan en la interfaz de GitHub antes de aprobar los cambios.
 
-- {% include step_label.html %} En el Pull Request abierto, inspecciona la ejecución automática de **Plan** antes de aprobar el cambio.
+- {% include step_label.html id="s039" %} En el Pull Request abierto, inspecciona la ejecución automática de **Plan** antes de aprobar el cambio.
 
   1. Abre la pestaña **Checks** del PR. Si aún no aparece, entra a **Actions** y selecciona el run correspondiente al evento `pull_request`.
   2. Identifica el workflow **Terraform lab7 CI/CD** y abre el job **plan**.
@@ -801,7 +815,7 @@ Examinar el resultado de formato, validación y plan en la interfaz de GitHub an
   > **Salida esperada:** El PR muestra un check Plan correcto y un plan que contempla crear solo la VPC de lab7.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Revisa la salida del paso **Terraform Plan** para confirmar que GitHub Actions administrará solamente el recurso previsto.
+- {% include step_label.html id="s040" %} Revisa la salida del paso **Terraform Plan** para confirmar que GitHub Actions administrará solamente el recurso previsto.
 
   1. En el log del job `plan`, desplázate hasta la línea `Plan:`.
   2. Confirma que el recurso mencionado sea `google_compute_network.pipeline`.
@@ -812,7 +826,7 @@ Examinar el resultado de formato, validación y plan en la interfaz de GitHub an
   > **Salida esperada:** El plan revisado solo afecta `lab7-cicd-vpc` y no toca recursos externos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Deja una explicación técnica breve como comentario en el Pull Request, sin modificar el código.
+- {% include step_label.html id="s041" %} Deja una explicación técnica breve como comentario en el Pull Request, sin modificar el código.
 
   1. Vuelve a la pestaña **Conversation** del PR.
   2. En el cuadro de comentario, explica **por qué `terraform plan` ocurre durante `pull_request`**.
@@ -831,7 +845,7 @@ Examinar el resultado de formato, validación y plan en la interfaz de GitHub an
 
 Fusionar el Pull Request, inspeccionar el job `apply` y comprobar la existencia de la VPC con gcloud.
 
-- {% include step_label.html %} Cuando **Plan esté en verde**, fusiona el Pull Request con la rama `main`.
+- {% include step_label.html id="s042" %} Cuando **Plan esté en verde**, fusiona el Pull Request con la rama `main`.
 
   1. Regresa a la pestaña **Conversation** del PR.
   2. Confirma que el check **plan** está correcto y que GitHub indique que la rama puede fusionarse.
@@ -843,7 +857,7 @@ Fusionar el Pull Request, inspeccionar el job `apply` y comprobar la existencia 
   > **Salida esperada:** El PR figura como Merged y se inicia la ejecución Apply en Actions.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **GitHub > Actions**, identifica la ejecución de **Apply** creada después del merge.
+- {% include step_label.html id="s043" %} En **GitHub > Actions**, identifica la ejecución de **Apply** creada después del merge.
 
   1. Entra a la pestaña **Actions** del repositorio.
   2. Selecciona **Terraform lab7 CI/CD** y localiza el run cuya rama es `main` y cuyo evento es **push**.
@@ -858,7 +872,7 @@ Fusionar el Pull Request, inspeccionar el job `apply` y comprobar la existencia 
   > **Salida esperada:** El run Apply termina en verde y el estado se actualiza en GCS.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Desde **Git Bash** de la VM Windows, comprueba la red sin modificarla. Usa el Project ID asignado para evitar mezclar resultados con VPC de laboratorios previos.
+- {% include step_label.html id="s044" %} Desde **Git Bash** de la VM Windows, comprueba la red sin modificarla. Usa el Project ID asignado para evitar mezclar resultados con VPC de laboratorios previos.
 
   ```bash
   gcloud compute networks describe lab7-cicd-vpc \
@@ -879,13 +893,15 @@ Fusionar el Pull Request, inspeccionar el job `apply` y comprobar la existencia 
 
 ## 🧹 Tarea 6. Limpiar mediante el mismo pipeline — 5 min
 
+{% assign tracking_task_id = "t006" %}
+
 Retirarás la infraestructura mediante un segundo Pull Request, confirmarás que el plan propone destruir solamente la VPC y conservarás el backend remoto para auditoría.
 
 ### Tarea 6.1. Retirar la VPC mediante un nuevo Pull Request
 
 Preparar una modificación que elimine solo el recurso de prueba y solicitar su aplicación mediante el mismo pipeline.
 
-- {% include step_label.html %} Actualiza tu clon local a `main` y crea una rama de limpieza. El recurso debe retirarse mediante Terraform: borrar la VPC con `gcloud` provocaría una divergencia entre la infraestructura real y el estado remoto.
+- {% include step_label.html id="s045" %} Actualiza tu clon local a `main` y crea una rama de limpieza. El recurso debe retirarse mediante Terraform: borrar la VPC con `gcloud` provocaría una divergencia entre la infraestructura real y el estado remoto.
 
   ```bash
   git switch main
@@ -896,7 +912,7 @@ Preparar una modificación que elimine solo el recurso de prueba y solicitar su 
   > **Salida esperada:** La nueva rama contiene el workflow y el estado remoto continúa intacto.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, prepara la limpieza **sin borrar archivos de configuración ni destruir recursos manualmente**.
+- {% include step_label.html id="s046" %} En **VS Code**, prepara la limpieza **sin borrar archivos de configuración ni destruir recursos manualmente**.
 
   1. Abre `lab7/main.tf` y localiza el bloque `resource "google_compute_network" "pipeline"`.
   2. Elimina **solo ese bloque completo**, incluidas sus llaves de apertura y cierre.
@@ -910,7 +926,7 @@ Preparar una modificación que elimine solo el recurso de prueba y solicitar su 
   > **Salida esperada:** Los archivos `main.tf` y `outputs.tf` quedan vacíos o contienen solo comentarios; Terraform conserva la configuración del provider y backend.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Ejecuta validación, crea el commit y publica la rama. Abre un nuevo PR hacia main, verifica que su plan indique **1 to destroy** para `google_compute_network.pipeline`, y solo entonces fusiona. Si aparece cualquier recurso ajeno, no hagas merge.
+- {% include step_label.html id="s047" %} Ejecuta validación, crea el commit y publica la rama. Abre un nuevo PR hacia main, verifica que su plan indique **1 to destroy** para `google_compute_network.pipeline`, y solo entonces fusiona. Si aparece cualquier recurso ajeno, no hagas merge.
 
   ```bash
   terraform fmt -recursive
@@ -933,7 +949,7 @@ Preparar una modificación que elimine solo el recurso de prueba y solicitar su 
 
 Comprobar la eliminación de la VPC en Google Cloud y preservar el bucket de estado para auditoría de la práctica.
 
-- {% include step_label.html %} Verifica en **GitHub > Actions** que el nuevo `apply` de main finalizó correctamente y comprueba desde Git Bash que la VPC ya no existe. Si deseas conservar una evidencia técnica, revisa que el objeto del estado permanezca en GCS, ahora sin el recurso VPC.
+- {% include step_label.html id="s048" %} Verifica en **GitHub > Actions** que el nuevo `apply` de main finalizó correctamente y comprueba desde Git Bash que la VPC ya no existe. Si deseas conservar una evidencia técnica, revisa que el objeto del estado permanezca en GCS, ahora sin el recurso VPC.
 
   ```bash
   gcloud compute networks list --project="$PROJECT_ID" \

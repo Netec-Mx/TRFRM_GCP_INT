@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l003
+tracking: true
+position: 3
 layout: lab
 title: "Práctica 3: Migrar el estado local a Google Cloud Storage (GCS) con locking"
 permalink: /lab3/lab3/
@@ -44,13 +48,15 @@ next: /lab4/lab4/
 
 ## 🔎 Tarea 1. Preparar lab3 y generar un estado local real — 8 min
 
+{% assign tracking_task_id = "t001" %}
+
 Prepararás un estado real desde el backend local para demostrar una migración con recursos existentes.
 
 ### Tarea 1.1. Crear la carpeta y verificar herramientas
 
 Crear un directorio exclusivo de esta práctica y confirmar que VS Code utiliza Git Bash con Terraform y gcloud disponibles.
 
-- {% include step_label.html %} Abre **Terminal > New Terminal**, selecciona **Git Bash** y crea el directorio `lab3` en el Escritorio.
+- {% include step_label.html id="s001" %} Abre **Terminal > New Terminal**, selecciona **Git Bash** y crea el directorio `lab3` en el Escritorio.
 
   > **Nota:** La ruta real puede estar redirigida a OneDrive; el comando consulta la ubicación de Windows.
   {: .lab-note .info .compact}
@@ -65,7 +71,7 @@ Crear un directorio exclusivo de esta práctica y confirmar que VS Code utiliza 
   > **Salida esperada:** El directorio actual termina en `/terraform-gcp-intermediate/lab3`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba las herramientas y el proyecto activo desde **Git Bash**.
+- {% include step_label.html id="s002" %} Comprueba las herramientas y el proyecto activo desde **Git Bash**.
 
   > **Nota:** Si falta ADC, ejecuta `gcloud auth application-default login` y regresa a esta carpeta.
   {: .lab-note .info .compact}
@@ -83,7 +89,7 @@ Crear un directorio exclusivo de esta práctica y confirmar que VS Code utiliza 
 
 Declarar una sola VPC sencilla para disponer de un recurso real administrado inicialmente con estado local.
 
-- {% include step_label.html %} En **Git Bash**, crea los archivos de configuración y exclusiones locales.
+- {% include step_label.html id="s003" %} En **Git Bash**, crea los archivos de configuración y exclusiones locales.
 
   > **Nota:** Deja `backend.tf` sin crear por ahora; así Terraform usará el backend local durante el primer despliegue.
   {: .lab-note .info .compact}
@@ -95,7 +101,7 @@ Declarar una sola VPC sencilla para disponer de un recurso real administrado ini
   > **Salida esperada:** Aparecen los archivos vacíos en el explorador de VS Code.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, pega el proveedor Google y la restricción de versiones en `lab3/providers.tf`.
+- {% include step_label.html id="s004" %} En **VS Code**, pega el proveedor Google y la restricción de versiones en `lab3/providers.tf`.
 
   > **Nota:** Si el proveedor autorizado en el curso tiene otra versión, ajusta esta restricción antes de ejecutar `init`.
   {: .lab-note .info .compact}
@@ -120,7 +126,7 @@ Declarar una sola VPC sencilla para disponer de un recurso real administrado ini
   > **Salida esperada:** El archivo declara el provider `hashicorp/google` y utiliza variables del módulo raíz.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab3/variables.tf`, declara `project_id`, `region` y la variable `network_name` según los requisitos.
+- {% include step_label.html id="s005" %} En `lab3/variables.tf`, declara `project_id`, `region` y la variable `network_name` según los requisitos.
 
   > **Nota:** **Completa `network_name` debajo de `region`**: debe ser de tipo `string`, describir el nombre de la VPC y no tener valor predeterminado. Referencia: https://developer.hashicorp.com/terraform/language/values/variables
   {: .lab-note .info .compact}
@@ -146,7 +152,7 @@ Declarar una sola VPC sencilla para disponer de un recurso real administrado ini
   > **Salida esperada:** Quedan declaradas tres variables; `network_name` será proporcionada mediante `terraform.tfvars`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab3/main.tf`, define el recurso VPC con red personalizada y una descripción inicial.
+- {% include step_label.html id="s006" %} En `lab3/main.tf`, define el recurso VPC con red personalizada y una descripción inicial.
 
   > **Nota:** Conserva el recurso `google_compute_network.vpc`: la descripción se modificará después para probar Object Versioning.
   {: .lab-note .info .compact}
@@ -162,7 +168,7 @@ Declarar una sola VPC sencilla para disponer de un recurso real administrado ini
   > **Salida esperada:** La VPC depende de `var.network_name` y no crea subredes automáticas.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab3/terraform.tfvars`, configura el proyecto real y el nombre único de la red.
+- {% include step_label.html id="s007" %} En `lab3/terraform.tfvars`, configura el proyecto real y el nombre único de la red.
 
   > **Nota:** Sustituye **TU_PROJECT_ID** por el resultado de `gcloud config get-value project` antes de continuar.
   {: .lab-note .info .compact}
@@ -180,7 +186,7 @@ Declarar una sola VPC sencilla para disponer de un recurso real administrado ini
 
 Ejecutar por primera vez Terraform sin backend remoto y comprobar que el archivo de estado contiene una VPC creada.
 
-- {% include step_label.html %} En `lab3/outputs.tf`, expón el identificador y el nombre de la VPC.
+- {% include step_label.html id="s008" %} En `lab3/outputs.tf`, expón el identificador y el nombre de la VPC.
 
   > **Nota:** Guarda todos los archivos con **Ctrl + S** antes de comenzar el flujo Terraform.
   {: .lab-note .info .compact}
@@ -198,7 +204,7 @@ Ejecutar por primera vez Terraform sin backend remoto y comprobar que el archivo
   > **Salida esperada:** Los outputs referencian el recurso declarado en `main.tf`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `.gitignore`, excluye estados, planes, credenciales y el archivo local con el bucket.
+- {% include step_label.html id="s009" %} En `.gitignore`, excluye estados, planes, credenciales y el archivo local con el bucket.
 
   > **Nota:** No elimines el archivo `.terraform.lock.hcl` del directorio; permite reproducir la selección de proveedor.
   {: .lab-note .info .compact}
@@ -217,7 +223,7 @@ Ejecutar por primera vez Terraform sin backend remoto y comprobar que el archivo
   > **Salida esperada:** Git no incorporará estados ni el archivo de variables de entorno del bucket.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, inicializa Terraform y verifica el formato y la configuración.
+- {% include step_label.html id="s010" %} En **Git Bash**, inicializa Terraform y verifica el formato y la configuración.
 
   > **Nota:** No debe existir aún un bloque `backend "gcs"` dentro del directorio.
   {: .lab-note .info .compact}
@@ -225,7 +231,7 @@ Ejecutar por primera vez Terraform sin backend remoto y comprobar que el archivo
   > **Salida esperada:** Terraform informa que la configuración es válida y prepara el backend local.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Revisa el plan y despliega únicamente la VPC del laboratorio.
+- {% include step_label.html id="s011" %} Revisa el plan y despliega únicamente la VPC del laboratorio.
 
   > **Nota:** Confirma con `yes` solo si el plan muestra **1 recurso para crear**, sin cambios ajenos al laboratorio.
   {: .lab-note .info .compact}
@@ -233,7 +239,7 @@ Ejecutar por primera vez Terraform sin backend remoto y comprobar que el archivo
   > **Salida esperada:** Aparece `Apply complete! Resources: 1 added` y el output con el nombre de VPC.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Confirma que `terraform.tfstate` existe y contiene la VPC creada.
+- {% include step_label.html id="s012" %} Confirma que `terraform.tfstate` existe y contiene la VPC creada.
 
   > **Nota:** **No copies ni publiques** el contenido completo de `terraform.tfstate`; puede incluir datos internos o sensibles.
   {: .lab-note .info .compact}
@@ -255,13 +261,15 @@ Ejecutar por primera vez Terraform sin backend remoto y comprobar que el archivo
 
 ## ☁️ Tarea 2. Crear un bucket GCS con versionado habilitado — 5 min
 
+{% assign tracking_task_id = "t002" %}
+
 Crearás un bucket exclusivo con acceso uniforme y Object Versioning antes de migrar el archivo tfstate.
 
 ### Tarea 2.1. Elegir un nombre persistente y crear el bucket
 
 Preparar un bucket nuevo y exclusivo para el estado de la práctica; guardar su nombre para las sesiones posteriores.
 
-- {% include step_label.html %} En **Git Bash**, identifica el proyecto y crea un nombre de bucket con sufijo aleatorio.
+- {% include step_label.html id="s013" %} En **Git Bash**, identifica el proyecto y crea un nombre de bucket con sufijo aleatorio.
 
   > **Nota:** El nombre del bucket debe ser globalmente único, en minúsculas y sin espacios.
   {: .lab-note .info .compact}
@@ -277,7 +285,7 @@ Preparar un bucket nuevo y exclusivo para el estado de la práctica; guardar su 
   > **Salida esperada:** La terminal muestra el identificador del nuevo bucket.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Guarda las variables en `lab3/.lab3-bucket.env` para poder recuperarlas si cierras VS Code.
+- {% include step_label.html id="s014" %} Guarda las variables en `lab3/.lab3-bucket.env` para poder recuperarlas si cierras VS Code.
 
   > **Nota:** Este archivo está excluido en `.gitignore`. No contiene credenciales; conserva el nombre exacto del bucket.
   {: .lab-note .info .compact}
@@ -290,7 +298,7 @@ Preparar un bucket nuevo y exclusivo para el estado de la práctica; guardar su 
   > **Salida esperada:** El archivo contiene tres declaraciones `export` y puede cargarse con `source .lab3-bucket.env`. 
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, crea el bucket con acceso uniforme y bloqueo de acceso público preventivo.
+- {% include step_label.html id="s015" %} En **Git Bash**, crea el bucket con acceso uniforme y bloqueo de acceso público preventivo.
 
   > **Nota:** Si la organización impone restricciones de ubicación, consulta al instructor antes de cambiar `us-central1`.
   {: .lab-note .info .compact}
@@ -302,7 +310,7 @@ Preparar un bucket nuevo y exclusivo para el estado de la práctica; guardar su 
   > **Salida esperada:** El bucket es creado sin errores y puede consultarse en Cloud Storage.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Verifica los detalles del bucket que acabas de crear.
+- {% include step_label.html id="s016" %} Verifica los detalles del bucket que acabas de crear.
 
   > **Nota:** No utilices buckets existentes que pertenezcan a otras prácticas o participantes.
   {: .lab-note .info .compact}
@@ -318,7 +326,7 @@ Preparar un bucket nuevo y exclusivo para el estado de la práctica; guardar su 
 
 Activar la conservación de generaciones de objeto para recuperar versiones anteriores del estado en caso de error.
 
-- {% include step_label.html %} Habilita Object Versioning desde **Git Bash**.
+- {% include step_label.html id="s017" %} Habilita Object Versioning desde **Git Bash**.
 
   > **Nota:** El versionado conserva generaciones previas, pero puede generar costos de almacenamiento si no se eliminan.
   {: .lab-note .info .compact}
@@ -330,7 +338,7 @@ Activar la conservación de generaciones de objeto para recuperar versiones ante
   > **Salida esperada:** La actualización del bucket termina correctamente.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta nuevamente las propiedades para verificar que `versioning` esté habilitado.
+- {% include step_label.html id="s018" %} Consulta nuevamente las propiedades para verificar que `versioning` esté habilitado.
 
   > **Nota:** Si aparece `enabled: true`, el bucket está listo para recibir el estado de Terraform.
   {: .lab-note .info .compact}
@@ -342,7 +350,7 @@ Activar la conservación de generaciones de objeto para recuperar versiones ante
   > **Salida esperada:** La salida muestra `Enabled`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba que el bucket se encuentra vacío antes de migrar el estado.
+- {% include step_label.html id="s019" %} Comprueba que el bucket se encuentra vacío antes de migrar el estado.
 
   > **Nota:** Una salida vacía o un aviso de cero objetos es normal antes de migrar.
   {: .lab-note .info .compact}
@@ -361,13 +369,15 @@ Activar la conservación de generaciones de objeto para recuperar versiones ante
 
 ## 🔄 Tarea 3. Configurar el backend remoto y migrar el estado — 6 min
 
+{% assign tracking_task_id = "t003" %}
+
 Configurarás el backend GCS y migrarás el estado sin recrear la VPC desplegada.
 
 ### Tarea 3.1. Configurar backend.tf y conservar una referencia del estado
 
 Preparar la conexión al bucket sin redefinir variables dentro del bloque backend ni perder el estado ya creado.
 
-- {% include step_label.html %} En **Git Bash**, recupera el nombre del bucket guardado en el archivo local.
+- {% include step_label.html id="s020" %} En **Git Bash**, recupera el nombre del bucket guardado en el archivo local.
 
   > **Nota:** El bucket debe coincidir con el creado en la tarea anterior.
   {: .lab-note .info .compact}
@@ -380,7 +390,7 @@ Preparar la conexión al bucket sin redefinir variables dentro del bloque backen
   > **Salida esperada:** La terminal muestra la ruta de destino del backend remoto.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Antes de la migración, registra los identificadores del estado y de la VPC en archivos temporales.
+- {% include step_label.html id="s021" %} Antes de la migración, registra los identificadores del estado y de la VPC en archivos temporales.
 
   > **Nota:** Estos archivos son solo referencias locales de validación; no los subas a Git.
   {: .lab-note .info .compact}
@@ -393,7 +403,7 @@ Preparar la conexión al bucket sin redefinir variables dentro del bloque backen
   > **Salida esperada:** Los archivos muestran el identificador de la VPC y el recurso Terraform administrado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, abre `lab3/backend.tf` (créalo si no existe) y configura un backend GCS.
+- {% include step_label.html id="s022" %} En **VS Code**, abre `lab3/backend.tf` (créalo si no existe) y configura un backend GCS.
 
   > **Importante:** **Construcción dirigida:** agrega un bloque `terraform` con `backend "gcs"` que contenga `bucket` con el nombre **literal** mostrado en Git Bash y `prefix = "terraform/state/lab3"`. No uses `var.*`. Documentación: https://developer.hashicorp.com/terraform/language/backend/gcs
   {: .lab-note .important .compact}
@@ -405,7 +415,7 @@ Preparar la conexión al bucket sin redefinir variables dentro del bloque backen
 
 Realizar la migración explícita y demostrar que se conserva el recurso existente sin crear una segunda red.
 
-- {% include step_label.html %} Ejecuta el comando de migración en **Git Bash**, desde `lab3`.
+- {% include step_label.html id="s023" %} Ejecuta el comando de migración en **Git Bash**, desde `lab3`.
 
   > **Nota:** Si Terraform solicita copiar el estado existente, responde `yes`; no uses `-reconfigure`, que no migra el estado.
   {: .lab-note .info .compact}
@@ -417,7 +427,7 @@ Realizar la migración explícita y demostrar que se conserva el recurso existen
   > **Salida esperada:** Terraform termina con `Successfully configured the backend "gcs"!`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta los recursos administrados después de la migración.
+- {% include step_label.html id="s024" %} Consulta los recursos administrados después de la migración.
 
   > **Nota:** No ejecutes `terraform apply` todavía: primero confirmaremos que el recurso sigue siendo el original.
   {: .lab-note .info .compact}
@@ -430,7 +440,7 @@ Realizar la migración explícita y demostrar que se conserva el recurso existen
   > **Salida esperada:** Continúa apareciendo `google_compute_network.vpc` y el identificador de VPC esperado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba que el identificador del recurso es exactamente el mismo antes y después.
+- {% include step_label.html id="s025" %} Comprueba que el identificador del recurso es exactamente el mismo antes y después.
 
   > **Nota:** `diff` sin diferencias prueba que no se recreó el recurso durante la migración.
   {: .lab-note .info .compact}
@@ -443,7 +453,7 @@ Realizar la migración explícita y demostrar que se conserva el recurso existen
   > **Salida esperada:** Aparece `OK: misma VPC`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Ejecuta un plan de control para verificar que Terraform no quiere recrear la infraestructura.
+- {% include step_label.html id="s026" %} Ejecuta un plan de control para verificar que Terraform no quiere recrear la infraestructura.
 
   > **Nota:** Espera `No changes. Your infrastructure matches the configuration.`. Si aparecen cambios, detente y revisa.
   {: .lab-note .info .compact}
@@ -455,7 +465,7 @@ Realizar la migración explícita y demostrar que se conserva el recurso existen
   > **Salida esperada:** El plan no propone crear, modificar ni destruir recursos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En Git Bash, localiza el objeto de estado del workspace `default` dentro de GCS.
+- {% include step_label.html id="s027" %} En Git Bash, localiza el objeto de estado del workspace `default` dentro de GCS.
 
   > **Nota:** El backend GCS utiliza `default.tfstate` para el workspace `default`.
   {: .lab-note .info .compact}
@@ -474,13 +484,15 @@ Realizar la migración explícita y demostrar que se conserva el recurso existen
 
 ## 🔐 Tarea 4. Verificar versiones del estado y bloqueo de operaciones — 7 min
 
+{% assign tracking_task_id = "t004" %}
+
 Comprobarás generaciones de estado y una condición de bloqueo entre dos terminales Git Bash.
 
 ### Tarea 4.1. Consultar el estado remoto y las generaciones de objeto
 
 Observar el archivo `default.tfstate` y registrar su historial de generaciones antes y después de un cambio aplicado.
 
-- {% include step_label.html %} Lista las generaciones disponibles de `default.tfstate` desde Git Bash.
+- {% include step_label.html id="s028" %} Lista las generaciones disponibles de `default.tfstate` desde Git Bash.
 
   > **Nota:** No compartas el contenido del estado: basta con visualizar nombre, tamaños y generaciones.
   {: .lab-note .info .compact}
@@ -493,7 +505,7 @@ Observar el archivo `default.tfstate` y registrar su historial de generaciones a
   > **Salida esperada:** Aparece al menos una generación del archivo `default.tfstate`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab3/main.tf`, cambia solamente el texto de `description` de la VPC, manteniendo el resto igual.
+- {% include step_label.html id="s029" %} En `lab3/main.tf`, cambia solamente el texto de `description` de la VPC, manteniendo el resto igual.
 
   > **Importante:** **Construcción dirigida:** dentro de `resource "google_compute_network" "vpc"`, reemplaza el valor de `description` por `Estado remoto versionado - laboratorio 3`. No cambies `name` ni `auto_create_subnetworks`. Documentación: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network
   {: .lab-note .important .compact}
@@ -501,7 +513,7 @@ Observar el archivo `default.tfstate` y registrar su historial de generaciones a
   > **Salida esperada:** El archivo conserva la misma VPC y únicamente presenta una descripción nueva.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Verifica con Terraform que la descripción se actualizará sin reemplazar la VPC.
+- {% include step_label.html id="s030" %} Verifica con Terraform que la descripción se actualizará sin reemplazar la VPC.
 
   > **Nota:** El resumen esperado es `Plan: 0 to add, 1 to change, 0 to destroy` si la API admite la actualización.
   {: .lab-note .info .compact}
@@ -519,7 +531,7 @@ Observar el archivo `default.tfstate` y registrar su historial de generaciones a
 
 Realizar una modificación segura sobre la VPC y comprobar que Cloud Storage conserva la generación anterior del estado.
 
-- {% include step_label.html %} Aplica la actualización y confirma de manera interactiva.
+- {% include step_label.html id="s031" %} Aplica la actualización y confirma de manera interactiva.
 
   > **Nota:** Responde `yes` solo si el plan no muestra un reemplazo ni recursos adicionales.
   {: .lab-note .info .compact}
@@ -531,7 +543,7 @@ Realizar una modificación segura sobre la VPC y comprobar que Cloud Storage con
   > **Salida esperada:** Terraform termina con una VPC modificada y sin destrucciones.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta otra vez las generaciones del objeto de estado.
+- {% include step_label.html id="s032" %} Consulta otra vez las generaciones del objeto de estado.
 
   > **Nota:** El versionado es del objeto en GCS; `terraform plan` por sí solo no garantiza una nueva generación.
   {: .lab-note .info .compact}
@@ -543,7 +555,7 @@ Realizar una modificación segura sobre la VPC y comprobar que Cloud Storage con
   > **Salida esperada:** Deben existir varias generaciones del mismo objeto de estado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba que Terraform sigue gestionando un único recurso y que el estado está actualizado.
+- {% include step_label.html id="s033" %} Comprueba que Terraform sigue gestionando un único recurso y que el estado está actualizado.
 
   > **Nota:** Si la actualización se aplicó correctamente, el segundo plan no debe proponer cambios.
   {: .lab-note .info .compact}
@@ -560,7 +572,7 @@ Realizar una modificación segura sobre la VPC y comprobar que Cloud Storage con
 
 Mantener una sesión interactiva que retiene el lock mientras una segunda terminal intenta planificar el mismo estado.
 
-- {% include step_label.html %} Abre una **Terminal A** en VS Code, entra en `lab3`, realiza una modificación menor en la descripción o etiquetas de tu archivo main.tf y ejecuta `terraform apply`.
+- {% include step_label.html id="s034" %} Abre una **Terminal A** en VS Code, entra en `lab3`, realiza una modificación menor en la descripción o etiquetas de tu archivo main.tf y ejecuta `terraform apply`.
 
   > **Importante:** **Importante:** Deja abierta la terminal en la pantalla de confirmación que solicita escribir yes/no; no escribas nada ni canceles el comando hasta terminar la prueba. Esto mantendrá el bloqueo activo en Google Cloud Storage durante la sesión.
   {: .lab-note .important .compact}
@@ -568,7 +580,7 @@ Mantener una sesión interactiva que retiene el lock mientras una segunda termin
   > **Salida esperada:**  La Terminal A se pausa y muestra el prompt de confirmación interactivo de **Terraform (Enter a value:).**
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Abre una **Terminal B** en el **mismo directorio lab3** y lanza un plan sin espera de locking.
+- {% include step_label.html id="s035" %} Abre una **Terminal B** en el **mismo directorio lab3** y lanza un plan sin espera de locking.
 
   > **Nota:** Si la consola A retiene el lock, la Terminal B debe mostrar `Error acquiring the state lock` y el objeto `.tflock`. No uses `-lock=false`.
   {: .lab-note .info .compact}
@@ -580,7 +592,7 @@ Mantener una sesión interactiva que retiene el lock mientras una segunda termin
   > **Salida esperada:** Se observa el bloqueo concurrente; si no ocurre, no afirmes que la prueba lo demostró.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En la **Terminal A**, escribe `no` para cancelar el apply de forma segura y repite el plan desde la **Terminal B**.
+- {% include step_label.html id="s036" %} En la **Terminal A**, escribe `no` para cancelar el apply de forma segura y repite el plan desde la **Terminal B**.
 
   > **Nota:** Ejecuta `no` **en el prompt de confirmación de terraform**, no cierres la shell de VS Code. Esto liberará automáticamente el candado en tu bucket de GCS. Si el bloqueo persiste, revisa sesiones abiertas antes de actuar.
   {: .lab-note .info .compact}
@@ -599,13 +611,15 @@ Mantener una sesión interactiva que retiene el lock mientras una segunda termin
 
 ## 🧹 Tarea 5. Destruir la VPC y retirar el bucket remoto — 4 min
 
+{% assign tracking_task_id = "t005" %}
+
 Destruirás la infraestructura, desconectarás el backend y eliminarás exclusivamente el bucket de esta práctica.
 
 ### Tarea 5.1. Destruir infraestructura y verificar la ausencia de recursos
 
 Liberar la VPC creada para la práctica manteniendo el backend GCS disponible durante todo el proceso de destrucción.
 
-- {% include step_label.html %} Desde Git Bash, confirma el proyecto y el recurso exacto que vas a eliminar.
+- {% include step_label.html id="s037" %} Desde Git Bash, confirma el proyecto y el recurso exacto que vas a eliminar.
 
   > **Nota:** No ejecutes destrucción si la lista contiene recursos que no pertenecen a esta práctica.
   {: .lab-note .info .compact}
@@ -618,7 +632,7 @@ Liberar la VPC creada para la práctica manteniendo el backend GCS disponible du
   > **Salida esperada:** Solo figura `google_compute_network.vpc`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Ejecuta `terraform destroy` con confirmación interactiva.
+- {% include step_label.html id="s038" %} Ejecuta `terraform destroy` con confirmación interactiva.
 
   > **Advertencia:** **Advertencia:** revisa que el plan destruya solo la VPC de `lab3`; después confirma con `yes`.
   {: .lab-note .warning .compact}
@@ -630,7 +644,7 @@ Liberar la VPC creada para la práctica manteniendo el backend GCS disponible du
   > **Salida esperada:** Aparece `Destroy complete! Resources: 1 destroyed.`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Confirma que ya no hay recursos administrados y que el backend remoto sigue accesible.
+- {% include step_label.html id="s039" %} Confirma que ya no hay recursos administrados y que el backend remoto sigue accesible.
 
   > **Nota:** No elimines el bucket si cualquiera de estos comandos falla: el estado debe seguir accesible.
   {: .lab-note .info .compact}
@@ -647,7 +661,7 @@ Liberar la VPC creada para la práctica manteniendo el backend GCS disponible du
 
 Completar la limpieza sin dejar Terraform configurado hacia un bucket eliminado ni borrar estados de otros laboratorios.
 
-- {% include step_label.html %} En **VS Code**, elimina únicamente el archivo `lab3/backend.tf` y reinicializa el backend local vacío.
+- {% include step_label.html id="s040" %} En **VS Code**, elimina únicamente el archivo `lab3/backend.tf` y reinicializa el backend local vacío.
 
   > **Nota:** Hazlo solo **después** de comprobar que no existen recursos. `-reconfigure` no migra estado; aquí se usa para dejar de apuntar al bucket.
   {: .lab-note .info .compact}
@@ -660,7 +674,7 @@ Completar la limpieza sin dejar Terraform configurado hacia un bucket eliminado 
   > **Salida esperada:** Terraform queda inicializado con backend local. El estado remoto anterior permanece en GCS hasta eliminar el bucket.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta el nombre exacto del bucket y elimina **solo el bucket exclusivo de lab3** con todas sus versiones.
+- {% include step_label.html id="s041" %} Consulta el nombre exacto del bucket y elimina **solo el bucket exclusivo de lab3** con todas sus versiones.
 
   > **Advertencia:** **Advertencia:** `--recursive` también elimina las generaciones antiguas y el bucket. Revisa el nombre antes de confirmar. No uses buckets compartidos.
   {: .lab-note .warning .compact}
@@ -674,7 +688,7 @@ Completar la limpieza sin dejar Terraform configurado hacia un bucket eliminado 
   > **Salida esperada:** Cloud Storage informa la eliminación de los objetos versionados y del bucket.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Verifica que el bucket no existe y conserva los archivos fuente para estudiar la migración.
+- {% include step_label.html id="s042" %} Verifica que el bucket no existe y conserva los archivos fuente para estudiar la migración.
 
   > **Nota:** Un error de consulta no prueba por sí solo la eliminación; confirma en la consola de Cloud Storage si hay dudas.
   {: .lab-note .info .compact}

@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l009
+tracking: true
+position: 9
 layout: lab
 title: "Práctica 9: Refactorizar un proyecto real monolítico en modular y validado"
 permalink: /lab9/lab9/
@@ -45,6 +49,8 @@ next: /lab10/lab10/
 
 ## 🔎 Tarea 1. Preparar un proyecto monolítico — 9 min
 
+{% assign tracking_task_id = "t001" %}
+
 Crear un root Terraform independiente, declarar cuatro recursos y reconocer por qué un archivo único puede dificultar el mantenimiento.
 
 
@@ -53,7 +59,7 @@ Crear un root Terraform independiente, declarar cuatro recursos y reconocer por 
 Usar la carpeta principal del curso y verificar el proyecto antes de escribir infraestructura.
 
 
-- {% include step_label.html %} En **VS Code**, selecciona **File > Open Folder...**, abre **Escritorio > terraform-gcp-intermediate** y después **Terminal > New Terminal**. Usa la carpeta existente, incluso si Windows tiene el Escritorio redirigido a OneDrive.
+- {% include step_label.html id="s001" %} En **VS Code**, selecciona **File > Open Folder...**, abre **Escritorio > terraform-gcp-intermediate** y después **Terminal > New Terminal**. Usa la carpeta existente, incluso si Windows tiene el Escritorio redirigido a OneDrive.
 
   **Acciones o requisitos:**
 
@@ -66,7 +72,7 @@ Usar la carpeta principal del curso y verificar el proyecto antes de escribir in
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash**, crea `lab9` y sus archivos; el `pwd` confirma el directorio de trabajo.
+- {% include step_label.html id="s002" %} En **Git Bash**, crea `lab9` y sus archivos; el `pwd` confirma el directorio de trabajo.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
@@ -81,7 +87,7 @@ Usar la carpeta principal del curso y verificar el proyecto antes de escribir in
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba Terraform, la cuenta activa y el proyecto de GCP. Corrige el proyecto antes de continuar si es diferente al asignado.
+- {% include step_label.html id="s003" %} Comprueba Terraform, la cuenta activa y el proyecto de GCP. Corrige el proyecto antes de continuar si es diferente al asignado.
 
   ```bash
   terraform version
@@ -104,7 +110,7 @@ Usar la carpeta principal del curso y verificar el proyecto antes de escribir in
 Declarar Provider, entradas, recursos y outputs directamente en el root module.
 
 
-- {% include step_label.html %} En `lab9/providers.tf`, escribe el bloque de versión requerida y Google Provider. Comprueba que la autenticación use el proyecto de `terraform.tfvars`, no un ID fijo.
+- {% include step_label.html id="s004" %} En `lab9/providers.tf`, escribe el bloque de versión requerida y Google Provider. Comprueba que la autenticación use el proyecto de `terraform.tfvars`, no un ID fijo.
 
   ```hcl
   terraform {
@@ -128,7 +134,7 @@ Declarar Provider, entradas, recursos y outputs directamente en el root module.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `lab9/variables.tf`, declara las tres variables. Después guarda `terraform.tfvars` con el ID real de tu proyecto.
+- {% include step_label.html id="s005" %} En `lab9/variables.tf`, declara las tres variables. Después guarda `terraform.tfvars` con el ID real de tu proyecto.
 
   ```hcl
   variable "project_id" {
@@ -156,7 +162,7 @@ Declarar Provider, entradas, recursos y outputs directamente en el root module.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **VS Code**, abre `lab9/main.tf` y pega los cuatro recursos monolíticos. Observa las referencias a VPC y subred, pero **no los despliegues todavía**.
+- {% include step_label.html id="s006" %} En **VS Code**, abre `lab9/main.tf` y pega los cuatro recursos monolíticos. Observa las referencias a VPC y subred, pero **no los despliegues todavía**.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -213,7 +219,7 @@ Declarar Provider, entradas, recursos y outputs directamente en el root module.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **VS Code**, abre `lab9/outputs.tf` y agrega las salidas de red y cómputo. Después, crea las exclusiones en `.gitignore` para no publicar estado ni archivos temporales.
+- {% include step_label.html id="s007" %} En **VS Code**, abre `lab9/outputs.tf` y agrega las salidas de red y cómputo. Después, crea las exclusiones en `.gitignore` para no publicar estado ni archivos temporales.
 
   ```hcl
   output "vpc_name" {
@@ -254,6 +260,8 @@ Declarar Provider, entradas, recursos y outputs directamente en el root module.
 
 ## 🔎 Tarea 2. Desplegar y registrar el estado inicial — 10 min
 
+{% assign tracking_task_id = "t002" %}
+
 Aplicar el monolito una sola vez para crear recursos reales y capturar las direcciones actuales del estado.
 
 
@@ -262,7 +270,7 @@ Aplicar el monolito una sola vez para crear recursos reales y capturar las direc
 Realizar comprobaciones técnicas antes de crear recursos facturables.
 
 
-- {% include step_label.html %} Completa `lab9/terraform.tfvars` con la línea indicada. Usa el valor real de tu proyecto, sin corchetes ni marcadores.
+- {% include step_label.html id="s008" %} Completa `lab9/terraform.tfvars` con la línea indicada. Usa el valor real de tu proyecto, sin corchetes ni marcadores.
 
   ```hcl
   project_id = "TU_PROJECT_ID"
@@ -272,7 +280,7 @@ Realizar comprobaciones técnicas antes de crear recursos facturables.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Inicializa el directorio raíz y normaliza los archivos HCL. No cambies de carpeta.
+- {% include step_label.html id="s009" %} Inicializa el directorio raíz y normaliza los archivos HCL. No cambies de carpeta.
 
   ```bash
   terraform init
@@ -284,7 +292,7 @@ Realizar comprobaciones técnicas antes de crear recursos facturables.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Genera un plan previo al despliegue y examina el resumen. Deben aparecer exactamente cuatro recursos nuevos.
+- {% include step_label.html id="s010" %} Genera un plan previo al despliegue y examina el resumen. Deben aparecer exactamente cuatro recursos nuevos.
 
   ```bash
   terraform plan -out=monolith.tfplan
@@ -300,7 +308,7 @@ Realizar comprobaciones técnicas antes de crear recursos facturables.
 Guardar evidencia del estado original para identificar los movimientos durante el refactoring.
 
 
-- {% include step_label.html %} Aplica el plan previamente revisado desde `lab9`; espera a que finalice la creación de Compute Engine.
+- {% include step_label.html id="s011" %} Aplica el plan previamente revisado desde `lab9`; espera a que finalice la creación de Compute Engine.
 
   ```bash
   terraform apply monolith.tfplan
@@ -310,7 +318,7 @@ Guardar evidencia del estado original para identificar los movimientos durante e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Enumera las direcciones que Terraform administra y guárdalas como línea base de comparación.
+- {% include step_label.html id="s012" %} Enumera las direcciones que Terraform administra y guárdalas como línea base de comparación.
 
   ```bash
   terraform state list
@@ -322,7 +330,7 @@ Guardar evidencia del estado original para identificar los movimientos durante e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Consulta la VPC y la VM desde gcloud; evita alterar recursos manualmente porque el estado debe conservar correspondencia.
+- {% include step_label.html id="s013" %} Consulta la VPC y la VM desde gcloud; evita alterar recursos manualmente porque el estado debe conservar correspondencia.
 
   ```bash
   gcloud compute networks describe lab9-vpc --project="$PROJECT_ID" --format="value(name)"
@@ -341,6 +349,8 @@ Guardar evidencia del estado original para identificar los movimientos durante e
 
 ## 🔎 Tarea 3. Construir módulos reutilizables — 18 min
 
+{% assign tracking_task_id = "t003" %}
+
 Extraer red y cómputo del monolito sin cambiar nombres ni atributos de los recursos desplegados.
 
 
@@ -349,7 +359,7 @@ Extraer red y cómputo del monolito sin cambiar nombres ni atributos de los recu
 Crear subdirectorios para Network y Compute y conservar respaldo del monolito fuera de los archivos `.tf` activos.
 
 
-- {% include step_label.html %} Crea las carpetas `modules/network` y `modules/compute`, manteniendo `lab9` como único root Terraform.
+- {% include step_label.html id="s014" %} Crea las carpetas `modules/network` y `modules/compute`, manteniendo `lab9` como único root Terraform.
 
   ```bash
   mkdir -p modules/network modules/compute
@@ -360,7 +370,7 @@ Crear subdirectorios para Network y Compute y conservar respaldo del monolito fu
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Crea los tres archivos HCL en cada módulo y revisa que VS Code los muestre en el explorador.
+- {% include step_label.html id="s015" %} Crea los tres archivos HCL en cada módulo y revisa que VS Code los muestre en el explorador.
 
   ```bash
   touch modules/network/{main,variables,outputs}.tf
@@ -371,7 +381,7 @@ Crear subdirectorios para Network y Compute y conservar respaldo del monolito fu
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Guarda una copia de la configuración monolítica como evidencia en un archivo **no .tf**. Terraform no debe interpretar esta copia como recursos duplicados.
+- {% include step_label.html id="s016" %} Guarda una copia de la configuración monolítica como evidencia en un archivo **no .tf**. Terraform no debe interpretar esta copia como recursos duplicados.
 
   ```bash
   cp main.tf monolith-before.txt
@@ -387,7 +397,7 @@ Crear subdirectorios para Network y Compute y conservar respaldo del monolito fu
 Extraer VPC, subred y firewall respetando los atributos originales, añadiendo entradas tipadas y outputs.
 
 
-- {% include step_label.html %} Abre `modules/network/variables.tf` y declara las entradas `network_name`, `subnet_name`, `region`, `subnet_cidr` y `allow_ssh_iap`.
+- {% include step_label.html id="s017" %} Abre `modules/network/variables.tf` y declara las entradas `network_name`, `subnet_name`, `region`, `subnet_cidr` y `allow_ssh_iap`.
 
   ```hcl
   variable "network_name" {
@@ -412,7 +422,7 @@ Extraer VPC, subred y firewall respetando los atributos originales, añadiendo e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En el mismo archivo, agrega **dentro de** `variable "subnet_cidr"`, antes de su `}`, una validación dirigida para un CIDR válido.
+- {% include step_label.html id="s018" %} En el mismo archivo, agrega **dentro de** `variable "subnet_cidr"`, antes de su `}`, una validación dirigida para un CIDR válido.
 
   **Acciones o requisitos:**
 
@@ -425,7 +435,7 @@ Extraer VPC, subred y firewall respetando los atributos originales, añadiendo e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/network/main.tf`, declara la VPC y la subred con los nombres anteriores. Conserva el CIDR y la región para no forzar cambios.
+- {% include step_label.html id="s019" %} En `modules/network/main.tf`, declara la VPC y la subred con los nombres anteriores. Conserva el CIDR y la región para no forzar cambios.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -445,7 +455,7 @@ Extraer VPC, subred y firewall respetando los atributos originales, añadiendo e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Debajo de la subred, agrega el firewall del módulo. Conservar los atributos originales evita diferencias de red durante la migración.
+- {% include step_label.html id="s020" %} Debajo de la subred, agrega el firewall del módulo. Conservar los atributos originales evita diferencias de red durante la migración.
 
   ```hcl
   resource "google_compute_firewall" "ssh_iap" {
@@ -469,7 +479,7 @@ Extraer VPC, subred y firewall respetando los atributos originales, añadiendo e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/network/outputs.tf`, crea un output `network_name` y deja preparado uno llamado `subnet_self_link` mediante.
+- {% include step_label.html id="s021" %} En `modules/network/outputs.tf`, crea un output `network_name` y deja preparado uno llamado `subnet_self_link` mediante.
 
   **Acciones o requisitos:**
 
@@ -492,7 +502,7 @@ Extraer VPC, subred y firewall respetando los atributos originales, añadiendo e
 Encapsular la instancia Debian y obtener el enlace a la subred como entrada proveniente de otro módulo.
 
 
-- {% include step_label.html %} En `modules/compute/variables.tf`, declara las entradas de VM y construye la variable `subnet_self_link` siguiendo sus requisitos.
+- {% include step_label.html id="s022" %} En `modules/compute/variables.tf`, declara las entradas de VM y construye la variable `subnet_self_link` siguiendo sus requisitos.
 
   **Acciones o requisitos:**
 
@@ -512,7 +522,7 @@ Encapsular la instancia Debian y obtener el enlace a la subred como entrada prov
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/compute/main.tf`, escribe la VM Debian con la misma configuración que la original, incluida su IP externa y OS Login.
+- {% include step_label.html id="s023" %} En `modules/compute/main.tf`, escribe la VM Debian con la misma configuración que la original, incluida su IP externa y OS Login.
 
   ```hcl
   resource "google_compute_instance" "vm" {
@@ -542,7 +552,7 @@ Encapsular la instancia Debian y obtener el enlace a la subred como entrada prov
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/compute/outputs.tf`, publica nombre, IP interna e IP externa mediante expresiones que no dependan de la posición de otros recursos.
+- {% include step_label.html id="s024" %} En `modules/compute/outputs.tf`, publica nombre, IP interna e IP externa mediante expresiones que no dependan de la posición de otros recursos.
 
   ```hcl
   output "instance_name" {
@@ -560,7 +570,7 @@ Encapsular la instancia Debian y obtener el enlace a la subred como entrada prov
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba en el explorador que el módulo Network contiene tres recursos y Compute uno; no ejecutes `terraform apply` desde `modules/`.
+- {% include step_label.html id="s025" %} Comprueba en el explorador que el módulo Network contiene tres recursos y Compute uno; no ejecutes `terraform apply` desde `modules/`.
 
   **Acciones o requisitos:**
 
@@ -572,7 +582,7 @@ Encapsular la instancia Debian y obtener el enlace a la subred como entrada prov
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Consulta el respaldo `monolith-before.txt` y compara los nombres de recursos; no modifiques `main.tf` del root hasta la siguiente tarea.
+- {% include step_label.html id="s026" %} Consulta el respaldo `monolith-before.txt` y compara los nombres de recursos; no modifiques `main.tf` del root hasta la siguiente tarea.
 
   ```bash
   grep -E '^resource ' monolith-before.txt
@@ -591,6 +601,8 @@ Encapsular la instancia Debian y obtener el enlace a la subred como entrada prov
 
 ## 🔎 Tarea 4. Refactorizar el root y conservar el estado — 15 min
 
+{% assign tracking_task_id = "t004" %}
+
 Sustituir recursos monolíticos por llamadas a módulos y declarar movimientos explícitos de las direcciones originales.
 
 
@@ -599,7 +611,7 @@ Sustituir recursos monolíticos por llamadas a módulos y declarar movimientos e
 Dejar en el root solo la orquestación; no inicializar otro directorio ni cambiar el backend.
 
 
-- {% include step_label.html %} En `lab9/main.tf`, **reemplaza todo su contenido anterior** por las llamadas a los módulos. Es imprescindible retirar los recursos monolíticos del root para no duplicarlos.
+- {% include step_label.html id="s027" %} En `lab9/main.tf`, **reemplaza todo su contenido anterior** por las llamadas a los módulos. Es imprescindible retirar los recursos monolíticos del root para no duplicarlos.
 
   ```hcl
   module "network" {
@@ -626,7 +638,7 @@ Dejar en el root solo la orquestación; no inicializar otro directorio ni cambia
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba la relación entre los módulos como: `Compute` debe recibir el output real de `Network`, no una ruta escrita a mano.
+- {% include step_label.html id="s028" %} Comprueba la relación entre los módulos como: `Compute` debe recibir el output real de `Network`, no una ruta escrita a mano.
 
   **Acciones o requisitos:**
 
@@ -639,7 +651,7 @@ Dejar en el root solo la orquestación; no inicializar otro directorio ni cambia
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Reescribe `lab9/outputs.tf` para consumir los outputs de ambos módulos; no dejes las referencias antiguas a `google_compute_instance.vm` del root.
+- {% include step_label.html id="s029" %} Reescribe `lab9/outputs.tf` para consumir los outputs de ambos módulos; no dejes las referencias antiguas a `google_compute_instance.vm` del root.
 
   ```hcl
   output "vpc_name" {
@@ -660,7 +672,7 @@ Dejar en el root solo la orquestación; no inicializar otro directorio ni cambia
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `lab9`, confirma que no existe un segundo directorio raíz `monolitico` o `modularizado/main`; el trabajo se realiza en la misma carpeta y con el estado ya creado.
+- {% include step_label.html id="s030" %} En `lab9`, confirma que no existe un segundo directorio raíz `monolitico` o `modularizado/main`; el trabajo se realiza en la misma carpeta y con el estado ya creado.
 
   ```bash
   pwd
@@ -677,7 +689,7 @@ Dejar en el root solo la orquestación; no inicializar otro directorio ni cambia
 Relacionar cada recurso monolítico con la nueva dirección exacta de su módulo.
 
 
-- {% include step_label.html %} En **Git Bash**, ejecuta `touch moved.tf` dentro de `lab9`. Después, abre `lab9/moved.tf` en **VS Code** y agrega estos tres movimientos para red y VM. Cada bloque `from` apunta al recurso original y `to` al nuevo destino.
+- {% include step_label.html id="s031" %} En **Git Bash**, ejecuta `touch moved.tf` dentro de `lab9`. Después, abre `lab9/moved.tf` en **VS Code** y agrega estos tres movimientos para red y VM. Cada bloque `from` apunta al recurso original y `to` al nuevo destino.
 
   ```hcl
   moved {
@@ -700,7 +712,7 @@ Relacionar cada recurso monolítico con la nueva dirección exacta de su módulo
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Debajo de esos bloques, crea mediante el movimiento del firewall que ahora usa `count`.
+- {% include step_label.html id="s032" %} Debajo de esos bloques, crea mediante el movimiento del firewall que ahora usa `count`.
 
   **Acciones o requisitos:**
 
@@ -714,7 +726,7 @@ Relacionar cada recurso monolítico con la nueva dirección exacta de su módulo
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Enumera las direcciones originales de `state-before.txt` y compáralas con `from` en `moved.tf`; todavía no alteres el estado mediante `terraform state mv`.
+- {% include step_label.html id="s033" %} Enumera las direcciones originales de `state-before.txt` y compáralas con `from` en `moved.tf`; todavía no alteres el estado mediante `terraform state mv`.
 
   ```bash
   cat state-before.txt
@@ -733,7 +745,7 @@ Relacionar cada recurso monolítico con la nueva dirección exacta de su módulo
 Verificar que los movimientos se representen como cambios de dirección, sin destruir recursos reales.
 
 
-- {% include step_label.html %} Inicializa otra vez el root para instalar módulos locales y después comprueba el formato y la validez de toda la configuración.
+- {% include step_label.html id="s034" %} Inicializa otra vez el root para instalar módulos locales y después comprueba el formato y la validez de toda la configuración.
 
   ```bash
   terraform init
@@ -745,7 +757,7 @@ Verificar que los movimientos se representen como cambios de dirección, sin des
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Ejecuta un plan **sin auto-approve** y revísalo antes de cualquier escritura del estado.
+- {% include step_label.html id="s035" %} Ejecuta un plan **sin auto-approve** y revísalo antes de cualquier escritura del estado.
 
   ```bash
   terraform plan -out=refactor.tfplan
@@ -758,7 +770,7 @@ Verificar que los movimientos se representen como cambios de dirección, sin des
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Solo si el plan no propone modificaciones físicas, aplica el plan guardado y comprueba el nuevo listado de direcciones del estado.
+- {% include step_label.html id="s036" %} Solo si el plan no propone modificaciones físicas, aplica el plan guardado y comprueba el nuevo listado de direcciones del estado.
 
   ```bash
   terraform apply refactor.tfplan
@@ -777,6 +789,8 @@ Verificar que los movimientos se representen como cambios de dirección, sin des
 
 ## 🔎 Tarea 5. Validar y documentar el proyecto — 9 min
 
+{% assign tracking_task_id = "t005" %}
+
 Comparar evidencia previa y posterior, verificar que GCP conserve los recursos y documentar el uso de los módulos.
 
 
@@ -785,7 +799,7 @@ Comparar evidencia previa y posterior, verificar que GCP conserve los recursos y
 Distinguir cambio de direcciones Terraform de cambios reales de infraestructura.
 
 
-- {% include step_label.html %} Guarda el nuevo listado del estado y compáralo con el registro original, sin modificar manualmente los archivos `tfstate`.
+- {% include step_label.html id="s037" %} Guarda el nuevo listado del estado y compáralo con el registro original, sin modificar manualmente los archivos `tfstate`.
 
   ```bash
   terraform state list > state-after.txt
@@ -797,7 +811,7 @@ Distinguir cambio de direcciones Terraform de cambios reales de infraestructura.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Ejecuta un plan sin cambios para comprobar que la configuración modular coincide con la infraestructura existente.
+- {% include step_label.html id="s038" %} Ejecuta un plan sin cambios para comprobar que la configuración modular coincide con la infraestructura existente.
 
   ```bash
   terraform plan
@@ -807,7 +821,7 @@ Distinguir cambio de direcciones Terraform de cambios reales de infraestructura.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Valida los outputs y la presencia de VM y VPC en GCP; la refactorización no debió crear una segunda VM.
+- {% include step_label.html id="s039" %} Valida los outputs y la presencia de VM y VPC en GCP; la refactorización no debió crear una segunda VM.
 
   ```bash
   terraform output
@@ -824,7 +838,7 @@ Distinguir cambio de direcciones Terraform de cambios reales de infraestructura.
 Dejar instrucciones para que otro instructor o participante reproduzca la configuración sin adivinar directorios.
 
 
-- {% include step_label.html %} Crea el archivo `lab9/README.md`, coloca una descripción concreta del proyecto, la estructura de módulos y sus comandos básicos.
+- {% include step_label.html id="s040" %} Crea el archivo `lab9/README.md`, coloca una descripción concreta del proyecto, la estructura de módulos y sus comandos básicos.
 
   ```markdown
   # Lab 9 — Refactorización Terraform
@@ -852,7 +866,7 @@ Dejar instrucciones para que otro instructor o participante reproduzca la config
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Completa la documentación de los inputs y outputs mediante una tabla sencilla debajo de `## Estructura` en el README.
+- {% include step_label.html id="s041" %} Completa la documentación de los inputs y outputs mediante una tabla sencilla debajo de `## Estructura` en el README.
 
   **Acciones o requisitos:**
 
@@ -864,7 +878,7 @@ Dejar instrucciones para que otro instructor o participante reproduzca la config
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Ejecuta la última revisión antes de la limpieza y comprueba que no haya recursos raíz duplicados.
+- {% include step_label.html id="s042" %} Ejecuta la última revisión antes de la limpieza y comprueba que no haya recursos raíz duplicados.
 
   ```bash
   terraform fmt -check -recursive
@@ -884,6 +898,8 @@ Dejar instrucciones para que otro instructor o participante reproduzca la config
 
 ## 🔎 Tarea 6. Destruir infraestructura y comprobar limpieza — 4 min
 
+{% assign tracking_task_id = "t006" %}
+
 Retirar los cuatro recursos administrados por el root modular y verificar que no existan recursos residuales del laboratorio.
 
 
@@ -892,7 +908,7 @@ Retirar los cuatro recursos administrados por el root modular y verificar que no
 Eliminar desde el mismo estado que administró tanto el monolito como los módulos.
 
 
-- {% include step_label.html %} Comprueba que ejecutas los comandos desde `lab9` y que el estado enumera los recursos del ejercicio, no los de laboratorios anteriores.
+- {% include step_label.html id="s043" %} Comprueba que ejecutas los comandos desde `lab9` y que el estado enumera los recursos del ejercicio, no los de laboratorios anteriores.
 
   ```bash
   pwd
@@ -903,7 +919,7 @@ Eliminar desde el mismo estado que administró tanto el monolito como los módul
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Ejecuta `terraform destroy`, examina el plan propuesto y escribe `yes` únicamente si elimina estos cuatro recursos.
+- {% include step_label.html id="s044" %} Ejecuta `terraform destroy`, examina el plan propuesto y escribe `yes` únicamente si elimina estos cuatro recursos.
 
   ```bash
   terraform destroy
@@ -921,7 +937,7 @@ Eliminar desde el mismo estado que administró tanto el monolito como los módul
 Confirmar la limpieza tanto en Terraform como en Google Cloud.
 
 
-- {% include step_label.html %} Consulta el estado de Terraform después de la destrucción. No debe contener recursos administrados.
+- {% include step_label.html id="s045" %} Consulta el estado de Terraform después de la destrucción. No debe contener recursos administrados.
 
   ```bash
   terraform state list
@@ -931,7 +947,7 @@ Confirmar la limpieza tanto en Terraform como en Google Cloud.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba específicamente VPC, instancia y firewall del laboratorio. Si alguna consulta devuelve recursos, revisa el estado antes de borrarlos manualmente.
+- {% include step_label.html id="s046" %} Comprueba específicamente VPC, instancia y firewall del laboratorio. Si alguna consulta devuelve recursos, revisa el estado antes de borrarlos manualmente.
 
   ```bash
   gcloud compute networks list --project="$PROJECT_ID" --filter="name=lab9-vpc" --format="value(name)"

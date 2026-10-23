@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l011
+tracking: true
+position: 11
 layout: lab
 title: "Práctica 11: Generar doc automática con terraform-docs"
 permalink: /lab11/lab11/
@@ -41,13 +45,15 @@ next: /lab12/lab12/
 
 ## 🔎 Tarea 1. Preparar el módulo Terraform — 5 min
 
+{% assign tracking_task_id = "t001" %}
+
 Prepararás un directorio aislado para la práctica y crearás un módulo GCS sencillo cuyos metadatos serán la fuente de la documentación generada.
 
 ### Tarea 1.1. Crear lab11 y su estructura
 
 Construir las rutas desde el directorio principal del curso y verificar que la terminal corresponda a Git Bash.
 
-- {% include step_label.html %} En **VS Code**, abre el proyecto principal `terraform-gcp-intermediate` en el Escritorio de Windows y selecciona **Git Bash** como terminal integrada.
+- {% include step_label.html id="s001" %} En **VS Code**, abre el proyecto principal `terraform-gcp-intermediate` en el Escritorio de Windows y selecciona **Git Bash** como terminal integrada.
 
   **Instrucciones:**
 
@@ -59,7 +65,7 @@ Construir las rutas desde el directorio principal del curso y verificar que la t
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Desde **Git Bash**, crea explícitamente `lab11/modules/gcs-bucket` y entra en `lab11`. Comprueba la ubicación antes de continuar para evitar crear archivos en otra práctica.
+- {% include step_label.html id="s002" %} Desde **Git Bash**, crea explícitamente `lab11/modules/gcs-bucket` y entra en `lab11`. Comprueba la ubicación antes de continuar para evitar crear archivos en otra práctica.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
@@ -74,7 +80,7 @@ Construir las rutas desde el directorio principal del curso y verificar que la t
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash**, crea los archivos del módulo y los de automatización de la raíz. El README y el archivo de configuración se crearán posteriormente, cuando veas cómo funciona la generación.
+- {% include step_label.html id="s003" %} En **Git Bash**, crea los archivos del módulo y los de automatización de la raíz. El README y el archivo de configuración se crearán posteriormente, cuando veas cómo funciona la generación.
 
   ```bash
   touch modules/gcs-bucket/providers.tf modules/gcs-bucket/main.tf
@@ -91,7 +97,7 @@ Construir las rutas desde el directorio principal del curso y verificar que la t
 
 Agregar código Terraform real pero destinado únicamente a lectura y documentación; no se desplegará infraestructura.
 
-- {% include step_label.html %} En **VS Code**, abre `lab11/modules/gcs-bucket/providers.tf` e indica el proveedor necesario. No incluyas un bloque `provider "google"` con credenciales: el módulo debe poder reutilizarse desde distintos proyectos.
+- {% include step_label.html id="s004" %} En **VS Code**, abre `lab11/modules/gcs-bucket/providers.tf` e indica el proveedor necesario. No incluyas un bloque `provider "google"` con credenciales: el módulo debe poder reutilizarse desde distintos proyectos.
 
   ```hcl
   terraform {
@@ -109,7 +115,7 @@ Agregar código Terraform real pero destinado únicamente a lectura y documentac
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/gcs-bucket/variables.tf`, declara las cuatro entradas del módulo. Escribe las descripciones completas: `terraform-docs` utilizará exactamente estos textos para construir la tabla **Inputs**.
+- {% include step_label.html id="s005" %} En `modules/gcs-bucket/variables.tf`, declara las cuatro entradas del módulo. Escribe las descripciones completas: `terraform-docs` utilizará exactamente estos textos para construir la tabla **Inputs**.
 
   ```hcl
   variable "bucket_name" {
@@ -140,7 +146,7 @@ Agregar código Terraform real pero destinado únicamente a lectura y documentac
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/gcs-bucket/main.tf`, declara un bucket que consuma las variables anteriores. Aunque el recurso es válido para Terraform, en esta práctica **no ejecutes `apply`**; el objetivo es obtener documentación de su definición.
+- {% include step_label.html id="s006" %} En `modules/gcs-bucket/main.tf`, declara un bucket que consuma las variables anteriores. Aunque el recurso es válido para Terraform, en esta práctica **no ejecutes `apply`**; el objetivo es obtener documentación de su definición.
 
   ```hcl
   resource "google_storage_bucket" "this" {
@@ -163,7 +169,7 @@ Agregar código Terraform real pero destinado únicamente a lectura y documentac
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/gcs-bucket/outputs.tf`, crea dos salidas documentadas. Ambas leerán propiedades del recurso una vez que un consumidor lo despliegue, pero aquí solo se incluirán en la tabla **Outputs**.
+- {% include step_label.html id="s007" %} En `modules/gcs-bucket/outputs.tf`, crea dos salidas documentadas. Ambas leerán propiedades del recurso una vez que un consumidor lo despliegue, pero aquí solo se incluirán en la tabla **Outputs**.
 
   ```hcl
   output "bucket_name" {
@@ -189,13 +195,15 @@ Agregar código Terraform real pero destinado únicamente a lectura y documentac
 
 ## 📄 Tarea 2. Instalar y generar documentación — 4 min
 
+{% assign tracking_task_id = "t002" %}
+
 Verificarás la disponibilidad de terraform-docs y crearás la primera documentación en Markdown a partir de los archivos HCL.
 
 ### Tarea 2.1. Comprobar instalación de terraform-docs
 
 Confirmar la herramienta en Windows y ofrecer una alternativa cuando no esté previamente instalada.
 
-- {% include step_label.html %} En **Git Bash** desde `lab11`, comprueba la instalación de `terraform-docs` y de Terraform; evita reinstalar aplicaciones que ya funcionen.
+- {% include step_label.html id="s008" %} En **Git Bash** desde `lab11`, comprueba la instalación de `terraform-docs` y de Terraform; evita reinstalar aplicaciones que ya funcionen.
 
   ```bash
   terraform version
@@ -210,7 +218,7 @@ Confirmar la herramienta en Windows y ofrecer una alternativa cuando no esté pr
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Si no tienes `terraform-docs`, utiliza el administrador de paquetes disponible o instala el ejecutable **Windows amd64** de la página oficial. Después abre una terminal Git Bash nueva para actualizar `PATH`.
+- {% include step_label.html id="s009" %} Si no tienes `terraform-docs`, utiliza el administrador de paquetes disponible o instala el ejecutable **Windows amd64** de la página oficial. Después abre una terminal Git Bash nueva para actualizar `PATH`.
 
   **Instrucciones:**
 
@@ -231,7 +239,7 @@ Confirmar la herramienta en Windows y ofrecer una alternativa cuando no esté pr
 
 Mostrar primero la salida de la herramienta sin configuración adicional para identificar las secciones que produce.
 
-- {% include step_label.html %} Ubícate en el módulo y pide a `terraform-docs` que muestre una tabla Markdown en la terminal. Esta primera ejecución permite confirmar que detecta el HCL sin crear aún un archivo.
+- {% include step_label.html id="s010" %} Ubícate en el módulo y pide a `terraform-docs` que muestre una tabla Markdown en la terminal. Esta primera ejecución permite confirmar que detecta el HCL sin crear aún un archivo.
 
   ```bash
   cd modules/gcs-bucket
@@ -242,7 +250,7 @@ Mostrar primero la salida de la herramienta sin configuración adicional para id
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Genera el primer `README.md` redirigiendo la salida de `terraform-docs`. Este método sobrescribe el archivo, por lo que solo lo usamos **en esta primera generación**, cuando todavía no contiene texto manual.
+- {% include step_label.html id="s011" %} Genera el primer `README.md` redirigiendo la salida de `terraform-docs`. Este método sobrescribe el archivo, por lo que solo lo usamos **en esta primera generación**, cuando todavía no contiene texto manual.
 
   ```bash
   terraform-docs markdown table . > README.md
@@ -253,7 +261,7 @@ Mostrar primero la salida de la herramienta sin configuración adicional para id
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Desde **VS Code**, abre `modules/gcs-bucket/README.md` y revisa la vista previa de Markdown para comprobar el resultado antes de personalizarlo.
+- {% include step_label.html id="s012" %} Desde **VS Code**, abre `modules/gcs-bucket/README.md` y revisa la vista previa de Markdown para comprobar el resultado antes de personalizarlo.
 
   **Instrucciones:**
 
@@ -273,13 +281,15 @@ Mostrar primero la salida de la herramienta sin configuración adicional para id
 
 ## 📝 Tarea 3. Personalizar y actualizar el README — 4 min
 
+{% assign tracking_task_id = "t003" %}
+
 Configurarás una región administrada por terraform-docs dentro de un README con texto manual y demostrarás que los cambios en el código actualizan la documentación.
 
 ### Tarea 3.1. Crear configuración para actualización controlada
 
 Usar el modo inject y marcadores delimitados para preservar el encabezado y las instrucciones redactadas por el participante.
 
-- {% include step_label.html %} Regresa desde el módulo a la raíz `lab11` y crea `.terraform-docs.yml` dentro de `modules/gcs-bucket`. Este archivo definirá el formato y dónde se insertará el contenido generado.
+- {% include step_label.html id="s013" %} Regresa desde el módulo a la raíz `lab11` y crea `.terraform-docs.yml` dentro de `modules/gcs-bucket`. Este archivo definirá el formato y dónde se insertará el contenido generado.
 
   ```bash
   cd ../..
@@ -291,7 +301,7 @@ Usar el modo inject y marcadores delimitados para preservar el encabezado y las 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/gcs-bucket/.terraform-docs.yml`, configura la generación Markdown con modo `inject`. Introduce los marcadores **BEGIN_TF_DOCS** y **END_TF_DOCS** para delimitar el contenido automático.
+- {% include step_label.html id="s014" %} En `modules/gcs-bucket/.terraform-docs.yml`, configura la generación Markdown con modo `inject`. Introduce los marcadores **BEGIN_TF_DOCS** y **END_TF_DOCS** para delimitar el contenido automático.
 
   {%raw%}
   ```yaml
@@ -314,7 +324,7 @@ Usar el modo inject y marcadores delimitados para preservar el encabezado y las 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Reemplaza el contenido previo de `modules/gcs-bucket/README.md` con un encabezado manual, una explicación del uso y los marcadores. Solo el espacio entre esos marcadores podrá actualizarlo automáticamente terraform-docs.
+- {% include step_label.html id="s015" %} Reemplaza el contenido previo de `modules/gcs-bucket/README.md` con un encabezado manual, una explicación del uso y los marcadores. Solo el espacio entre esos marcadores podrá actualizarlo automáticamente terraform-docs.
 
   ```markdown
   # Módulo GCS Bucket
@@ -342,7 +352,7 @@ Usar el modo inject y marcadores delimitados para preservar el encabezado y las 
 
 Generar la región automática y comprobar que una descripción HCL modificada se actualiza sin borrar el contenido del equipo.
 
-- {% include step_label.html %} Desde la raíz `lab11`, ejecuta `terraform-docs` con su archivo de configuración explícito. Este comando llenará la región marcada del README sin sustituir las secciones manuales.
+- {% include step_label.html id="s016" %} Desde la raíz `lab11`, ejecuta `terraform-docs` con su archivo de configuración explícito. Este comando llenará la región marcada del README sin sustituir las secciones manuales.
 
   ```bash
   terraform-docs --config modules/gcs-bucket/.terraform-docs.yml modules/gcs-bucket
@@ -353,7 +363,7 @@ Generar la región automática y comprobar que una descripción HCL modificada s
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `modules/gcs-bucket/variables.tf`, cambia solo la descripción de `labels` para demostrar que el README se obtiene del código y no de una tabla editada manualmente.
+- {% include step_label.html id="s017" %} En `modules/gcs-bucket/variables.tf`, cambia solo la descripción de `labels` para demostrar que el README se obtiene del código y no de una tabla editada manualmente.
 
   **Instrucciones:**
 
@@ -365,7 +375,7 @@ Generar la región automática y comprobar que una descripción HCL modificada s
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Vuelve a ejecutar la generación y busca la nueva descripción dentro del README. Confirma también que el encabezado, la explicación y la nota manual permanecen intactos.
+- {% include step_label.html id="s018" %} Vuelve a ejecutar la generación y busca la nueva descripción dentro del README. Confirma también que el encabezado, la explicación y la nota manual permanecen intactos.
 
   ```bash
   terraform-docs --config modules/gcs-bucket/.terraform-docs.yml modules/gcs-bucket
@@ -384,13 +394,15 @@ Generar la región automática y comprobar que una descripción HCL modificada s
 
 ## ⚙️ Tarea 4. Automatizar con pre-commit — 5 min
 
+{% assign tracking_task_id = "t004" %}
+
 Prepararás un repositorio Git independiente y configurarás un hook local que regenere la documentación del módulo antes de confirmar los cambios.
 
 ### Tarea 4.1. Verificar Python e inicializar Git
 
 Preparar el ejecutor de pre-commit sin afectar al repositorio Jekyll ni a otros laboratorios.
 
-- {% include step_label.html %} En Git Bash, comprueba `git` y Python. **pre-commit** necesita Python; elige el comando disponible en tu VM antes de instalar dependencias.
+- {% include step_label.html id="s019" %} En Git Bash, comprueba `git` y Python. **pre-commit** necesita Python; elige el comando disponible en tu VM antes de instalar dependencias.
 
   ```bash
   git --version
@@ -407,7 +419,7 @@ Preparar el ejecutor de pre-commit sin afectar al repositorio Jekyll ni a otros 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Instala `pre-commit` en el entorno Python de Windows cuando todavía no esté disponible. La opción `--user` evita alterar paquetes del sistema; el comando de verificación permite saber si la instalación terminó.
+- {% include step_label.html id="s020" %} Instala `pre-commit` en el entorno Python de Windows cuando todavía no esté disponible. La opción `--user` evita alterar paquetes del sistema; el comando de verificación permite saber si la instalación terminó.
 
   ```bash
   if command -v py >/dev/null 2>&1; then
@@ -426,7 +438,7 @@ Preparar el ejecutor de pre-commit sin afectar al repositorio Jekyll ni a otros 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Inicializa Git **dentro de `lab11`** y añade un `.gitignore` para evitar que se versionen estados Terraform o archivos de caché. No ejecutes `git init` en la carpeta que reúne todos los laboratorios.
+- {% include step_label.html id="s021" %} Inicializa Git **dentro de `lab11`** y añade un `.gitignore` para evitar que se versionen estados Terraform o archivos de caché. No ejecutes `git init` en la carpeta que reúne todos los laboratorios.
 
   ```bash
   git init
@@ -452,7 +464,7 @@ Preparar el ejecutor de pre-commit sin afectar al repositorio Jekyll ni a otros 
 
 Hacer que Git invoque el mismo comando de generación usado manualmente y documentar cómo funciona cuando modifica archivos.
 
-- {% include step_label.html %} Crea `.pre-commit-config.yaml` en la raíz `lab11` y registra un hook local de sistema. El hook no requiere clonar repositorios externos ni ejecutar Terraform contra GCP.
+- {% include step_label.html id="s022" %} Crea `.pre-commit-config.yaml` en la raíz `lab11` y registra un hook local de sistema. El hook no requiere clonar repositorios externos ni ejecutar Terraform contra GCP.
 
   ```yaml
   repos:
@@ -471,7 +483,7 @@ Hacer que Git invoque el mismo comando de generación usado manualmente y docume
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Instala el hook en `.git/hooks` mediante el Python disponible y comprueba que `pre-commit` detecta la configuración. La instalación se realiza dentro del repositorio `lab11`.
+- {% include step_label.html id="s023" %} Instala el hook en `.git/hooks` mediante el Python disponible y comprueba que `pre-commit` detecta la configuración. La instalación se realiza dentro del repositorio `lab11`.
 
   ```bash
   if command -v py >/dev/null 2>&1; then
@@ -486,7 +498,7 @@ Hacer que Git invoque el mismo comando de generación usado manualmente y docume
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Prepara los archivos rastreables e identifica qué se confirmará. Agrega solo el módulo, el README, `.gitignore` y la configuración del hook; revisa el listado antes de cualquier commit.
+- {% include step_label.html id="s024" %} Prepara los archivos rastreables e identifica qué se confirmará. Agrega solo el módulo, el README, `.gitignore` y la configuración del hook; revisa el listado antes de cualquier commit.
 
   ```bash
   git add .gitignore .pre-commit-config.yaml modules/gcs-bucket
@@ -504,13 +516,15 @@ Hacer que Git invoque el mismo comando de generación usado manualmente y docume
 
 ## ✅ Tarea 5. Validar automatización y resultados — 2 min
 
+{% assign tracking_task_id = "t005" %}
+
 Demostrarás que el hook ejecuta terraform-docs y deja el README listo para versionarse, incluyendo el comportamiento esperado cuando un hook modifica archivos.
 
 ### Tarea 5.1. Ejecutar hook en archivos rastreados
 
 Lanzar pre-commit de manera explícita antes de crear el commit y comprobar que los cambios son reproducibles.
 
-- {% include step_label.html %} Ejecuta todos los hooks desde Git Bash, usando el módulo Python que acabas de instalar. El hook puede modificar el README si detecta cambios en variables u outputs; si ocurre, prepara nuevamente el archivo.
+- {% include step_label.html id="s025" %} Ejecuta todos los hooks desde Git Bash, usando el módulo Python que acabas de instalar. El hook puede modificar el README si detecta cambios en variables u outputs; si ocurre, prepara nuevamente el archivo.
 
   ```bash
   if command -v py >/dev/null 2>&1; then
@@ -527,7 +541,7 @@ Lanzar pre-commit de manera explícita antes de crear el commit y comprobar que 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Confirma que el README conserva el contenido del equipo y que la descripción nueva de `labels` aparece en la región automática. Después, vuelve a agregar el README si el hook lo cambió.
+- {% include step_label.html id="s026" %} Confirma que el README conserva el contenido del equipo y que la descripción nueva de `labels` aparece en la región automática. Después, vuelve a agregar el README si el hook lo cambió.
 
   ```bash
   grep -n "Etiquetas de inventario" modules/gcs-bucket/README.md
@@ -546,7 +560,7 @@ Lanzar pre-commit de manera explícita antes de crear el commit y comprobar que 
 
 Comprobar la ejecución automática al confirmar cambios y dejar evidencia local de que la documentación está actualizada.
 
-- {% include step_label.html %} Configura el nombre y correo **solo para este repositorio** si Git aún no los tiene, y crea un commit de prueba. Si el hook genera cambios y bloquea el commit, inspecciona, agrega el README y repite el comando.
+- {% include step_label.html id="s027" %} Configura el nombre y correo **solo para este repositorio** si Git aún no los tiene, y crea un commit de prueba. Si el hook genera cambios y bloquea el commit, inspecciona, agrega el README y repite el comando.
 
   **Instrucciones:**
 
@@ -563,7 +577,7 @@ Comprobar la ejecución automática al confirmar cambios y dejar evidencia local
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba el commit y la estructura definitiva. No se ha iniciado sesión en Google Cloud ni creado buckets: el resultado es un módulo **documentado y automatizado**, listo para utilizarse en un proyecto posterior.
+- {% include step_label.html id="s028" %} Comprueba el commit y la estructura definitiva. No se ha iniciado sesión en Google Cloud ni creado buckets: el resultado es un módulo **documentado y automatizado**, listo para utilizarse en un proyecto posterior.
 
   ```bash
   git log -1 --oneline

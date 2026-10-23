@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l004
+tracking: true
+position: 4
 layout: lab
 title: "Práctica 4: Crear y gestionar entornos dev, test, prod con Workspaces."
 permalink: /lab4/lab4/
@@ -44,13 +48,15 @@ next: /lab5/lab5/
 
 ## 🔎 Tarea 1. Preparar lab4 y verificar el acceso a GCP — 4 min
 
+{% assign tracking_task_id = "t001" %}
+
 Crearás el directorio `lab4` dentro del árbol del curso y comprobarás herramientas, proyecto y autenticación. Conservarás intactas las carpetas de las prácticas anteriores y trabajarás únicamente con la terminal Git Bash integrada.
 
 ### Tarea 1.1. Crear el directorio y los archivos Terraform
 
 Preparar cinco archivos HCL en una carpeta propia, sin reutilizar archivos `.tfstate` de prácticas anteriores.
 
-- {% include step_label.html %} En **VS Code**, abre la carpeta **terraform-gcp-intermediate** mediante **File > Open Folder**.
+- {% include step_label.html id="s001" %} En **VS Code**, abre la carpeta **terraform-gcp-intermediate** mediante **File > Open Folder**.
 
   > **Nota:** Utiliza la carpeta que creaste en la Práctica 1; no generes un segundo directorio central.
   {: .lab-note .info .compact}
@@ -58,12 +64,12 @@ Preparar cinco archivos HCL en una carpeta propia, sin reutilizar archivos `.tfs
   > **Salida esperada:** El explorador de VS Code muestra `lab1`, `lab2` y `lab3` dentro de la carpeta del curso.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Abre **Terminal > New Terminal** y selecciona **Git Bash** como perfil de la terminal integrada.
+- {% include step_label.html id="s002" %} Abre **Terminal > New Terminal** y selecciona **Git Bash** como perfil de la terminal integrada.
 
   > **Salida esperada:** La terminal muestra un prompt Bash con el símbolo `$`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, crea y abre `lab4` desde la carpeta del curso y genera los cinco archivos iniciales.
+- {% include step_label.html id="s003" %} En **Git Bash**, crea y abre `lab4` desde la carpeta del curso y genera los cinco archivos iniciales.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
@@ -80,7 +86,7 @@ Preparar cinco archivos HCL en una carpeta propia, sin reutilizar archivos `.tfs
 
 Verificar el entorno de ejecución ya instalado y que la cuenta puede acceder al proyecto asignado para los tres entornos.
 
-- {% include step_label.html %} En **Git Bash**, comprueba la ubicación actual y la versión instalada de Terraform.
+- {% include step_label.html id="s004" %} En **Git Bash**, comprueba la ubicación actual y la versión instalada de Terraform.
 
   ```bash
   pwd
@@ -90,7 +96,7 @@ Verificar el entorno de ejecución ya instalado y que la cuenta puede acceder al
   > **Salida esperada:** La ruta termina en `/terraform-gcp-intermediate/lab4` y Terraform muestra su versión.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Confirma en la misma terminal la cuenta activa de **gcloud** y el proyecto seleccionado.
+- {% include step_label.html id="s005" %} Confirma en la misma terminal la cuenta activa de **gcloud** y el proyecto seleccionado.
 
   ```bash
   gcloud auth list --filter="status:ACTIVE" --format="value(account)"
@@ -103,7 +109,7 @@ Verificar el entorno de ejecución ya instalado y que la cuenta puede acceder al
   > **Salida esperada:** Aparecen la cuenta del curso y el identificador correcto del proyecto GCP.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba que las credenciales **ADC** y la API de Compute Engine están disponibles.
+- {% include step_label.html id="s006" %} Comprueba que las credenciales **ADC** y la API de Compute Engine están disponibles.
 
   ```bash
   gcloud auth application-default print-access-token >/dev/null && echo "ADC disponible"
@@ -124,13 +130,15 @@ Verificar el entorno de ejecución ya instalado y que la cuenta puede acceder al
 
 ## ☁️ Tarea 2. Definir infraestructura dinámica por entorno — 8 min
 
+{% assign tracking_task_id = "t002" %}
+
 Configurarás un único conjunto de archivos HCL que define una VPC y una subred por workspace, utilizando nombres derivados del entorno y una tabla de rangos CIDR sin superposición. Completarás algunos bloques a partir de requisitos concretos.
 
 ### Tarea 2.1. Configurar el proveedor y las variables
 
 Establecer el proveedor de Google Cloud y los valores de entrada necesarios para el proyecto, región y rangos CIDR.
 
-- {% include step_label.html %} En **VS Code**, abre `lab4/providers.tf` y pega la configuración de Terraform y del proveedor Google.
+- {% include step_label.html id="s007" %} En **VS Code**, abre `lab4/providers.tf` y pega la configuración de Terraform y del proveedor Google.
 
   ```hcl
   terraform {
@@ -156,7 +164,7 @@ Establecer el proveedor de Google Cloud y los valores de entrada necesarios para
   > **Salida esperada:** `providers.tf` define el proveedor Google y referencia `project_id` y `region`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, abre `lab4/variables.tf` y declara la variable `project_id`.
+- {% include step_label.html id="s008" %} En **VS Code**, abre `lab4/variables.tf` y declara la variable `project_id`.
 
   ```hcl
   variable "project_id" {
@@ -168,7 +176,7 @@ Establecer el proveedor de Google Cloud y los valores de entrada necesarios para
   > **Salida esperada:** La variable `project_id` está declarada sin un proyecto fijo dentro del código.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab4/variables.tf`, agrega **debajo de `variable "project_id"`** un bloque para la región.
+- {% include step_label.html id="s009" %} En `lab4/variables.tf`, agrega **debajo de `variable "project_id"`** un bloque para la región.
 
   > **Importante:** Escribe tú el bloque `variable`; debe llamarse `region`, usar `type = string` y tener `default = "us-central1"`. No lo insertes dentro de las llaves de `project_id`.
   {: .lab-note .important .compact}
@@ -179,7 +187,7 @@ Establecer el proveedor de Google Cloud y los valores de entrada necesarios para
   > **Salida esperada:** `variables.tf` contiene dos bloques `variable` independientes: `project_id` y `region`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En el mismo archivo, agrega **debajo de `variable "region"`** el mapa de CIDR para los tres entornos.
+- {% include step_label.html id="s010" %} En el mismo archivo, agrega **debajo de `variable "region"`** el mapa de CIDR para los tres entornos.
 
   ```hcl
   variable "subnet_cidrs" {
@@ -200,7 +208,7 @@ Establecer el proveedor de Google Cloud y los valores de entrada necesarios para
 
 Utilizar `terraform.workspace` para nombrar recursos y bloquear el despliegue involuntario desde el workspace default.
 
-- {% include step_label.html %} En **VS Code**, abre `lab4/main.tf` y agrega un bloque `locals` al comienzo del archivo.
+- {% include step_label.html id="s011" %} En **VS Code**, abre `lab4/main.tf` y agrega un bloque `locals` al comienzo del archivo.
 
   > **Importante:** Construye una variable local llamada `env` cuyo valor sea `terraform.workspace`. El bloque debe quedar **antes de cualquier `resource`**, fuera de otras llaves.
   {: .lab-note .important .compact}
@@ -211,7 +219,7 @@ Utilizar `terraform.workspace` para nombrar recursos y bloquear el despliegue in
   > **Salida esperada:** Los recursos podrán utilizar `local.env` para construir nombres según `dev`, `test` o `prod`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Debajo del bloque `locals`**, agrega en `main.tf` una VPC y una precondición que impida desplegar desde `default`.
+- {% include step_label.html id="s012" %} **Debajo del bloque `locals`**, agrega en `main.tf` una VPC y una precondición que impida desplegar desde `default`.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -234,7 +242,7 @@ Utilizar `terraform.workspace` para nombrar recursos y bloquear el despliegue in
   > **Salida esperada:** La VPC utilizará nombres como `lab4-dev-vpc` y bloqueará workspaces no autorizados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Debajo del recurso VPC**, agrega una subred que dependa de la VPC y obtenga su CIDR desde el mapa.
+- {% include step_label.html id="s013" %} **Debajo del recurso VPC**, agrega una subred que dependa de la VPC y obtenga su CIDR desde el mapa.
 
   ```hcl
   resource "google_compute_subnetwork" "subnet" {
@@ -252,7 +260,7 @@ Utilizar `terraform.workspace` para nombrar recursos y bloquear el despliegue in
   > **Salida esperada:** El recurso `subnet` usa una VPC asociada y el rango del workspace activo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Guarda `main.tf` y comprueba visualmente que `locals`, VPC y subred sean bloques independientes.
+- {% include step_label.html id="s014" %} Guarda `main.tf` y comprueba visualmente que `locals`, VPC y subred sean bloques independientes.
 
   > **Salida esperada:** Las referencias `local.env`, `var.region` y `var.subnet_cidrs` corresponden a definiciones existentes.
   {: .lab-note .output .compact}
@@ -261,7 +269,7 @@ Utilizar `terraform.workspace` para nombrar recursos y bloquear el despliegue in
 
 Definir el proyecto en un solo archivo de valores y preparar outputs para comparar lo desplegado por workspace.
 
-- {% include step_label.html %} En **VS Code**, abre `lab4/terraform.tfvars` y escribe tu ID real de GCP.
+- {% include step_label.html id="s015" %} En **VS Code**, abre `lab4/terraform.tfvars` y escribe tu ID real de GCP.
 
   ```hcl
   project_id = "REEMPLAZA_CON_TU_PROJECT_ID"
@@ -273,7 +281,7 @@ Definir el proyecto en un solo archivo de valores y preparar outputs para compar
   > **Salida esperada:** La variable `project_id` contiene tu identificador de proyecto GCP.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, abre `lab4/outputs.tf` y agrega los valores del entorno, nombre de VPC y nombre de subred.
+- {% include step_label.html id="s016" %} En **VS Code**, abre `lab4/outputs.tf` y agrega los valores del entorno, nombre de VPC y nombre de subred.
 
   ```hcl
   output "env" {
@@ -295,7 +303,7 @@ Definir el proyecto en un solo archivo de valores y preparar outputs para compar
   > **Salida esperada:** Hay tres outputs independientes que permiten identificar cada despliegue.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `lab4/outputs.tf`, agrega **debajo de `output "subnet_name"`** un cuarto output.
+- {% include step_label.html id="s017" %} En `lab4/outputs.tf`, agrega **debajo de `output "subnet_name"`** un cuarto output.
 
   > **Importante:** Debe llamarse `subnet_cidr`, incluir `description` y devolver el atributo `ip_cidr_range` del recurso `google_compute_subnetwork.subnet`.
   {: .lab-note .important .compact}
@@ -313,13 +321,15 @@ Definir el proyecto en un solo archivo de valores y preparar outputs para compar
 
 ## 🚀 Tarea 3. Crear Workspaces y desplegar tres entornos — 10 min
 
+{% assign tracking_task_id = "t003" %}
+
 Inicializarás Terraform, crearás los workspaces `dev`, `test` y `prod` y desplegarás dos recursos por entorno. El mismo conjunto de archivos funcionará en los tres casos, cambiando el nombre y CIDR según el workspace activo.
 
 ### Tarea 3.1. Inicializar y comprobar los Workspaces
 
 Validar HCL, instalar el proveedor y crear workspaces nombrados antes de cualquier despliegue.
 
-- {% include step_label.html %} En **Git Bash**, ubicado en `lab4`, inicializa Terraform y descarga el proveedor.
+- {% include step_label.html id="s018" %} En **Git Bash**, ubicado en `lab4`, inicializa Terraform y descarga el proveedor.
 
   ```bash
   terraform init
@@ -328,7 +338,7 @@ Validar HCL, instalar el proveedor y crear workspaces nombrados antes de cualqui
   > **Salida esperada:** Se muestra `Terraform has been successfully initialized!` y aparece `.terraform.lock.hcl`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Ejecuta el formato y la validación antes de crear recursos.
+- {% include step_label.html id="s019" %} Ejecuta el formato y la validación antes de crear recursos.
 
   ```bash
   terraform fmt
@@ -338,7 +348,7 @@ Validar HCL, instalar el proveedor y crear workspaces nombrados antes de cualqui
   > **Salida esperada:** El comando `validate` indica `Success! The configuration is valid.`
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Crea los workspaces **dev**, **test** y **prod** de forma consecutiva.
+- {% include step_label.html id="s020" %} Crea los workspaces **dev**, **test** y **prod** de forma consecutiva.
 
   ```bash
   terraform workspace new dev
@@ -352,7 +362,7 @@ Validar HCL, instalar el proveedor y crear workspaces nombrados antes de cualqui
   > **Salida esperada:** Se crean los tres workspaces sin errores de nombres duplicados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Lista los workspaces y verifica cuál está seleccionado.
+- {% include step_label.html id="s021" %} Lista los workspaces y verifica cuál está seleccionado.
 
   ```bash
   terraform workspace list
@@ -366,7 +376,7 @@ Validar HCL, instalar el proveedor y crear workspaces nombrados antes de cualqui
 
 Ejecutar el mismo código para crear VPC y subred por entorno, inspeccionando los cambios propuestos antes de aplicarlos.
 
-- {% include step_label.html %} Selecciona **dev** y confirma que es el workspace activo.
+- {% include step_label.html id="s022" %} Selecciona **dev** y confirma que es el workspace activo.
 
   ```bash
   terraform workspace select dev
@@ -376,7 +386,7 @@ Ejecutar el mismo código para crear VPC y subred por entorno, inspeccionando lo
   > **Salida esperada:** El workspace activo se muestra como `dev`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **dev**, revisa el plan y crea los recursos después de comprobar sus nombres.
+- {% include step_label.html id="s023" %} En **dev**, revisa el plan y crea los recursos después de comprobar sus nombres.
 
   ```bash
   terraform plan
@@ -389,7 +399,7 @@ Ejecutar el mismo código para crear VPC y subred por entorno, inspeccionando lo
   > **Salida esperada:** `Apply complete! Resources: 2 added, 0 changed, 0 destroyed.`
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Cambia a **test**, revisa el plan y despliega la VPC y la subred de pruebas.
+- {% include step_label.html id="s024" %} Cambia a **test**, revisa el plan y despliega la VPC y la subred de pruebas.
 
   ```bash
   terraform workspace select test
@@ -403,7 +413,7 @@ Ejecutar el mismo código para crear VPC y subred por entorno, inspeccionando lo
   > **Salida esperada:** Se crean `lab4-test-vpc` y `lab4-test-subnet`, sin cambios en dev.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Cambia a **prod**, revisa el plan y despliega el entorno simulado de producción.
+- {% include step_label.html id="s025" %} Cambia a **prod**, revisa el plan y despliega el entorno simulado de producción.
 
   ```bash
   terraform workspace select prod
@@ -417,7 +427,7 @@ Ejecutar el mismo código para crear VPC y subred por entorno, inspeccionando lo
   > **Salida esperada:** Se crean `lab4-prod-vpc` y `lab4-prod-subnet`, con CIDR `10.30.1.0/24`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta los outputs del workspace activo **prod** para confirmar sus valores.
+- {% include step_label.html id="s026" %} Consulta los outputs del workspace activo **prod** para confirmar sus valores.
 
   ```bash
   terraform workspace show
@@ -434,13 +444,15 @@ Ejecutar el mismo código para crear VPC y subred por entorno, inspeccionando lo
 
 ## 🔍 Tarea 4. Verificar recursos y separación del estado — 5 min
 
+{% assign tracking_task_id = "t004" %}
+
 Contrastarás la infraestructura real de Google Cloud con los outputs de Terraform y explorarás el estado de cada workspace. Comprobarás que cambiar de workspace modifica el estado consultado, pero no altera los otros entornos.
 
 ### Tarea 4.1. Validar VPC, subred y CIDR en Google Cloud
 
 Comprobar por separado la existencia de las seis piezas de red desplegadas en el proyecto del curso.
 
-- {% include step_label.html %} En **Git Bash**, lista únicamente las VPC de la Práctica 4 en el proyecto activo.
+- {% include step_label.html id="s027" %} En **Git Bash**, lista únicamente las VPC de la Práctica 4 en el proyecto activo.
 
   ```bash
   gcloud compute networks list --filter="name~'^lab4-(dev|test|prod)-vpc$'" --format="table(name,subnet_mode)"
@@ -449,7 +461,7 @@ Comprobar por separado la existencia de las seis piezas de red desplegadas en el
   > **Salida esperada:** Aparecen `lab4-dev-vpc`, `lab4-test-vpc` y `lab4-prod-vpc`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Lista las subredes y compara los rangos CIDR asignados a cada entorno.
+- {% include step_label.html id="s028" %} Lista las subredes y compara los rangos CIDR asignados a cada entorno.
 
   ```bash
   gcloud compute networks subnets list --filter="name~'^lab4-(dev|test|prod)-subnet$'" --format="table(name,region,ipCidrRange)"
@@ -458,7 +470,7 @@ Comprobar por separado la existencia de las seis piezas de red desplegadas en el
   > **Salida esperada:** Las subredes `dev`, `test` y `prod` muestran `10.10.1.0/24`, `10.20.1.0/24` y `10.30.1.0/24`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Selecciona **dev** y comprueba con Terraform que no quedan cambios pendientes.
+- {% include step_label.html id="s029" %} Selecciona **dev** y comprueba con Terraform que no quedan cambios pendientes.
 
   ```bash
   terraform workspace select dev
@@ -472,7 +484,7 @@ Comprobar por separado la existencia de las seis piezas de red desplegadas en el
 
 Identificar la organización del estado local y verificar que los recursos de cada entorno pertenecen únicamente a su workspace.
 
-- {% include step_label.html %} En **Git Bash**, localiza los archivos locales de estado bajo `terraform.tfstate.d`.
+- {% include step_label.html id="s030" %} En **Git Bash**, localiza los archivos locales de estado bajo `terraform.tfstate.d`.
 
   ```bash
   find terraform.tfstate.d -type f -name 'terraform.tfstate' | sort
@@ -481,7 +493,7 @@ Identificar la organización del estado local y verificar que los recursos de ca
   > **Salida esperada:** Se muestran los archivos `dev/terraform.tfstate`, `test/terraform.tfstate` y `prod/terraform.tfstate`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Con **dev** activo, consulta el workspace y los recursos almacenados en su estado.
+- {% include step_label.html id="s031" %} Con **dev** activo, consulta el workspace y los recursos almacenados en su estado.
 
   ```bash
   terraform workspace show
@@ -492,7 +504,7 @@ Identificar la organización del estado local y verificar que los recursos de ca
   > **Salida esperada:** Dev presenta dos recursos Terraform y los outputs correspondientes al prefijo `lab4-dev-`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Compara el estado de **test** con el de **dev**, sin modificar ni crear infraestructura.
+- {% include step_label.html id="s032" %} Compara el estado de **test** con el de **dev**, sin modificar ni crear infraestructura.
 
   > **Importante:** Selecciona `test`, ejecuta `terraform state list` y `terraform output`, y compara `vpc_name` y `subnet_cidr` con los resultados anteriores de dev.
   {: .lab-note .important .compact}
@@ -503,7 +515,7 @@ Identificar la organización del estado local y verificar que los recursos de ca
   > **Salida esperada:** Test conserva los mismos tipos de recursos, pero reporta `lab4-test-vpc` y `10.20.1.0/24`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, vuelve a **prod** y comprueba que conserva sus outputs originales.
+- {% include step_label.html id="s033" %} En **Git Bash**, vuelve a **prod** y comprueba que conserva sus outputs originales.
 
   ```bash
   terraform workspace select prod
@@ -521,13 +533,15 @@ Identificar la organización del estado local y verificar que los recursos de ca
 
 ## 🧹 Tarea 5. Destruir recursos y retirar Workspaces — 3 min
 
+{% assign tracking_task_id = "t005" %}
+
 Liberarás los recursos de los tres entornos para evitar costos y después eliminarás los workspaces vacíos. Conservarás los archivos `.tf` como material de estudio y no borrarás directorios de prácticas anteriores.
 
 ### Tarea 5.1. Destruir las VPC y subredes por entorno
 
 Eliminar primero los recursos administrados en cada estado, verificando que cada ejecución apunte al workspace correcto.
 
-- {% include step_label.html %} En **Git Bash**, selecciona **dev** y destruye sus recursos tras revisar el plan.
+- {% include step_label.html id="s034" %} En **Git Bash**, selecciona **dev** y destruye sus recursos tras revisar el plan.
 
   ```bash
   terraform workspace select dev
@@ -540,7 +554,7 @@ Eliminar primero los recursos administrados en cada estado, verificando que cada
   > **Salida esperada:** `Destroy complete! Resources: 2 destroyed.`
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Selecciona **test** y destruye únicamente los recursos de ese workspace.
+- {% include step_label.html id="s035" %} Selecciona **test** y destruye únicamente los recursos de ese workspace.
 
   ```bash
   terraform workspace select test
@@ -553,7 +567,7 @@ Eliminar primero los recursos administrados en cada estado, verificando que cada
   > **Salida esperada:** `Destroy complete! Resources: 2 destroyed.`
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Selecciona **prod** y destruye los dos recursos del entorno simulado.
+- {% include step_label.html id="s036" %} Selecciona **prod** y destruye los dos recursos del entorno simulado.
 
   ```bash
   terraform workspace select prod
@@ -570,7 +584,7 @@ Eliminar primero los recursos administrados en cada estado, verificando que cada
 
 Volver a default para eliminar los workspaces vacíos sin intentar borrar el workspace activo.
 
-- {% include step_label.html %} Selecciona **default** y elimina los workspaces `dev`, `test` y `prod`.
+- {% include step_label.html id="s037" %} Selecciona **default** y elimina los workspaces `dev`, `test` y `prod`.
 
   ```bash
   terraform workspace select default
@@ -585,7 +599,7 @@ Volver a default para eliminar los workspaces vacíos sin intentar borrar el wor
   > **Salida esperada:** Terraform elimina los tres workspaces sin advertencias de estado con recursos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Verifica los workspaces restantes y confirma en GCP que no persisten redes `lab4-*`.
+- {% include step_label.html id="s038" %} Verifica los workspaces restantes y confirma en GCP que no persisten redes `lab4-*`.
 
   ```bash
   terraform workspace list

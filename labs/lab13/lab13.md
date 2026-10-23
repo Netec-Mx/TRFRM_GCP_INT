@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l013
+tracking: true
+position: 13
 layout: lab
 title: "Práctica 13: Crear un wrapper básico con Terragrunt"
 permalink: /lab13/lab13/
@@ -47,18 +51,20 @@ prev: /lab12/lab12/
 
 ## 🔎 Tarea 1. Preparar Terragrunt y construir el módulo base — 7 min
 
+{% assign tracking_task_id = "t001" %}
+
 Prepararás `lab13` sin modificar laboratorios anteriores, comprobarás acceso a Google Cloud y crearás un módulo Terraform reutilizable que expone el nombre del bucket.
 
 ### Tarea 1.1. Crear lab13 y verificar herramientas
 
 Trabajar exclusivamente desde el directorio central del curso, con Git Bash, Terraform, Terragrunt y gcloud disponibles.
 
-- {% include step_label.html %} En **VS Code**, abre **File > Open Folder...**, selecciona `terraform-gcp-intermediate` del Escritorio y abre **Terminal > New Terminal** con perfil **Git Bash**.
+- {% include step_label.html id="s001" %} En **VS Code**, abre **File > Open Folder...**, selecciona `terraform-gcp-intermediate` del Escritorio y abre **Terminal > New Terminal** con perfil **Git Bash**.
 
   > **Salida esperada:** El Explorer muestra `lab1` a `lab12` y la terminal integrada presenta el prompt de Git Bash.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, localiza el Escritorio real de Windows, crea `lab13` y prepara las carpetas del módulo y los entornos.
+- {% include step_label.html id="s002" %} En **Git Bash**, localiza el Escritorio real de Windows, crea `lab13` y prepara las carpetas del módulo y los entornos.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
@@ -72,7 +78,7 @@ Trabajar exclusivamente desde el directorio central del curso, con Git Bash, Ter
   > **Salida esperada:** La ruta termina en `/terraform-gcp-intermediate/lab13` y existen `modules/bucket`, `live/dev`, `live/test` y `live/prod`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba versiones, cuenta y proyecto. Guarda el proyecto activo en una variable de entorno para que `root.hcl` pueda leerlo.
+- {% include step_label.html id="s003" %} Comprueba versiones, cuenta y proyecto. Guarda el proyecto activo en una variable de entorno para que `root.hcl` pueda leerlo.
 
   ```bash
   terraform version
@@ -96,7 +102,7 @@ Trabajar exclusivamente desde el directorio central del curso, con Git Bash, Ter
 
 Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `outputs.tf`, sin incrustar el ID del proyecto ni credenciales.
 
-- {% include step_label.html %} En Git Bash, crea los cuatro archivos del módulo y un `.gitignore` en `lab13`.
+- {% include step_label.html id="s004" %} En Git Bash, crea los cuatro archivos del módulo y un `.gitignore` en `lab13`.
 
   ```bash
   touch modules/bucket/providers.tf modules/bucket/variables.tf \
@@ -117,7 +123,7 @@ Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `
   > **Salida esperada:** Los cuatro archivos están dentro de `modules/bucket`; `.gitignore` excluye caché, estado y datos locales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, abre `lab13/modules/bucket/providers.tf` y declara el proveedor Google con restricciones de versión.
+- {% include step_label.html id="s005" %} En **VS Code**, abre `lab13/modules/bucket/providers.tf` y declara el proveedor Google con restricciones de versión.
 
   ```hcl
   terraform {
@@ -134,7 +140,7 @@ Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `
   > **Salida esperada:** El módulo declara `hashicorp/google` y no contiene un bloque `provider` con credenciales.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `modules/bucket/variables.tf`, define las tres entradas que recibirán los entornos a través de Terragrunt.
+- {% include step_label.html id="s006" %} En `modules/bucket/variables.tf`, define las tres entradas que recibirán los entornos a través de Terragrunt.
 
   ```hcl
   variable "name" {
@@ -156,7 +162,7 @@ Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `
   > **Salida esperada:** El módulo exige `name`, `location` y `project_id`; ninguna variable tiene un identificador de proyecto fijo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `modules/bucket/main.tf`, crea el recurso GCS. Conservarás `force_destroy = false` para no borrar objetos por accidente.
+- {% include step_label.html id="s007" %} En `modules/bucket/main.tf`, crea el recurso GCS. Conservarás `force_destroy = false` para no borrar objetos por accidente.
 
   ```hcl
   resource "google_storage_bucket" "bucket" {
@@ -177,7 +183,7 @@ Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `
   > **Salida esperada:** El bucket consume las variables del módulo, tiene UBLA y prevención de acceso público habilitados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `modules/bucket/outputs.tf`, crea un output llamado `bucket_name` cuyo valor sea `google_storage_bucket.bucket.name`.
+- {% include step_label.html id="s008" %} En `modules/bucket/outputs.tf`, crea un output llamado `bucket_name` cuyo valor sea `google_storage_bucket.bucket.name`.
 
   > **Importante:** Coloca el bloque `output` como declaración independiente en `outputs.tf`, no dentro de otro bloque. Debe devolver el nombre real del recurso.
   {: .lab-note .important .compact}
@@ -193,13 +199,15 @@ Separar el contrato del módulo en `providers.tf`, `variables.tf`, `main.tf` y `
 
 ## 🧩 Tarea 2. Configurar valores compartidos de Terragrunt — 5 min
 
+{% assign tracking_task_id = "t002" %}
+
 Crearás `root.hcl` para centralizar el proyecto y la ubicación, y prepararás la configuración reutilizable de los tres entornos sin convertir la raíz en una unidad ejecutable.
 
 ### Tarea 2.1. Crear root.hcl con entradas compartidas
 
 Definir los valores comunes una sola vez y explicar la diferencia entre las entradas compartidas y las específicas de un entorno.
 
-- {% include step_label.html %} En **Git Bash**, desde `lab13`, crea `root.hcl` en la raíz del laboratorio; no lo nombres `terragrunt.hcl`.
+- {% include step_label.html id="s009" %} En **Git Bash**, desde `lab13`, crea `root.hcl` en la raíz del laboratorio; no lo nombres `terragrunt.hcl`.
 
   ```bash
   touch root.hcl
@@ -210,7 +218,7 @@ Definir los valores comunes una sola vez y explicar la diferencia entre las entr
   > **Salida esperada:** `root.hcl` existe en `lab13` y no hay un `terragrunt.hcl` ejecutable en la raíz.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **VS Code**, abre `lab13/root.hcl` y declara las entradas compartidas. Terragrunt tomará el proyecto desde la variable del shell.
+- {% include step_label.html id="s010" %} En **VS Code**, abre `lab13/root.hcl` y declara las entradas compartidas. Terragrunt tomará el proyecto desde la variable del shell.
 
   ```hcl
   inputs = {
@@ -226,7 +234,7 @@ Definir los valores comunes una sola vez y explicar la diferencia entre las entr
   > **Salida esperada:** `root.hcl` define `project_id` desde `GOOGLE_CLOUD_PROJECT` y `location = "us-central1"`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Identifica cuál variable del módulo se comparte (`project_id`, `location`) y cuál debe cambiar por entorno (`name`).
+- {% include step_label.html id="s011" %} Identifica cuál variable del módulo se comparte (`project_id`, `location`) y cuál debe cambiar por entorno (`name`).
 
   > **Nota:** Usa [Terragrunt Includes](https://terragrunt.gruntwork.io/docs/features/includes/) para revisar cómo se heredan los valores `inputs`.
   {: .lab-note .info .compact}
@@ -238,7 +246,7 @@ Definir los valores comunes una sola vez y explicar la diferencia entre las entr
 
 Evitar que varios entornos administren un mismo estado y que este se pierda al limpiar la caché de Terragrunt.
 
-- {% include step_label.html %} Crea los tres directorios de trabajo si no existen y comprueba la estructura antes de definir los backends locales.
+- {% include step_label.html id="s012" %} Crea los tres directorios de trabajo si no existen y comprueba la estructura antes de definir los backends locales.
 
   ```bash
   mkdir -p live/dev live/test live/prod
@@ -248,7 +256,7 @@ Evitar que varios entornos administren un mismo estado y que este se pierda al l
   > **Salida esperada:** Existen `live/dev`, `live/test` y `live/prod` dentro de lab13.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Revisa la regla de estado que agregarás a **cada** `terragrunt.hcl`: el backend `local` guardará el estado en el directorio propio de la unidad, no en `.terragrunt-cache`.
+- {% include step_label.html id="s013" %} Revisa la regla de estado que agregarás a **cada** `terragrunt.hcl`: el backend `local` guardará el estado en el directorio propio de la unidad, no en `.terragrunt-cache`.
 
   ```hcl
   remote_state {
@@ -273,13 +281,15 @@ Evitar que varios entornos administren un mismo estado y que este se pierda al l
 
 ## ☁️ Tarea 3. Configurar los entornos dev, test y prod — 6 min
 
+{% assign tracking_task_id = "t003" %}
+
 Crearás tres unidades Terragrunt que heredan la configuración de `root.hcl`, apuntan al mismo módulo y proporcionan un nombre de bucket único por entorno.
 
 ### Tarea 3.1. Definir dev y test con el módulo compartido
 
 Escribir configuraciones que difieren solo en el nombre del bucket y almacenan su estado local en cada directorio.
 
-- {% include step_label.html %} Desde **Git Bash** en `lab13`, crea los archivos de configuración de los tres entornos.
+- {% include step_label.html id="s014" %} Desde **Git Bash** en `lab13`, crea los archivos de configuración de los tres entornos.
 
   ```bash
   touch live/dev/terragrunt.hcl live/test/terragrunt.hcl live/prod/terragrunt.hcl
@@ -289,7 +299,7 @@ Escribir configuraciones que difieren solo en el nombre del bucket y almacenan s
   > **Salida esperada:** Aparecen los tres archivos `terragrunt.hcl` bajo `live/dev`, `live/test` y `live/prod`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `live/dev/terragrunt.hcl`, agrega la configuración completa de desarrollo. La ruta del módulo parte del archivo `root.hcl`, y el estado se guarda en `live/dev`.
+- {% include step_label.html id="s015" %} En `live/dev/terragrunt.hcl`, agrega la configuración completa de desarrollo. La ruta del módulo parte del archivo `root.hcl`, y el estado se guarda en `live/dev`.
 
   ```hcl
   include "root" {
@@ -319,7 +329,7 @@ Escribir configuraciones que difieren solo en el nombre del bucket y almacenan s
   > **Salida esperada:** El entorno dev hereda `project_id` y `location` y configura el bucket `lab13-dev-PROJECT_ID`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `live/test/terragrunt.hcl`, usa el mismo módulo, el mismo include y un estado separado; cambia solo el nombre lógico del bucket.
+- {% include step_label.html id="s016" %} En `live/test/terragrunt.hcl`, usa el mismo módulo, el mismo include y un estado separado; cambia solo el nombre lógico del bucket.
 
   ```hcl
   include "root" {
@@ -349,7 +359,7 @@ Escribir configuraciones que difieren solo en el nombre del bucket y almacenan s
   > **Salida esperada:** El entorno test crea un nombre distinto sin duplicar las definiciones Terraform.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En Git Bash, revisa los nombres de ambos buckets con el Project ID real, sin crear recursos todavía.
+- {% include step_label.html id="s017" %} En Git Bash, revisa los nombres de ambos buckets con el Project ID real, sin crear recursos todavía.
 
   ```bash
   printf 'DEV  lab13-dev-%s\n' "$GOOGLE_CLOUD_PROJECT"
@@ -363,7 +373,7 @@ Escribir configuraciones que difieren solo en el nombre del bucket y almacenan s
 
 Definir el tercer entorno y verificar la separación de los estados antes del primer despliegue.
 
-- {% include step_label.html %} En `live/prod/terragrunt.hcl`, reproduce el esquema de `dev`, sustituyendo únicamente `lab13-dev-` por `lab13-prod-` en `inputs.name`.
+- {% include step_label.html id="s018" %} En `live/prod/terragrunt.hcl`, reproduce el esquema de `dev`, sustituyendo únicamente `lab13-dev-` por `lab13-prod-` en `inputs.name`.
 
   > **Importante:** El `source` debe seguir apuntando a `get_parent_terragrunt_dir("root")/modules/bucket`, no a un directorio dentro de otro entorno. Consulta las [funciones de Terragrunt](https://terragrunt.gruntwork.io/docs/reference/built-in-functions/).
   {: .lab-note .important .compact}
@@ -371,7 +381,7 @@ Definir el tercer entorno y verificar la separación de los estados antes del pr
   > **Salida esperada:** El archivo prod contiene `include "root"`, `terraform.source`, `remote_state` local y `inputs.name = "lab13-prod-${get_env("GOOGLE_CLOUD_PROJECT")}"`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba en **VS Code** la estructura: raíz `root.hcl`, cuatro archivos `.tf` dentro del módulo y tres unidades `terragrunt.hcl`.
+- {% include step_label.html id="s019" %} Comprueba en **VS Code** la estructura: raíz `root.hcl`, cuatro archivos `.tf` dentro del módulo y tres unidades `terragrunt.hcl`.
 
   ```bash
   find modules/bucket -maxdepth 1 -name '*.tf' | sort
@@ -381,7 +391,7 @@ Definir el tercer entorno y verificar la separación de los estados antes del pr
   > **Salida esperada:** Se encuentran cuatro archivos HCL Terraform y tres configuraciones de entorno, sin duplicar el módulo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Desde Git Bash, verifica que el proyecto activo siga siendo correcto y que ninguno de los tres nombres de bucket esté ocupado en tu proyecto.
+- {% include step_label.html id="s020" %} Desde Git Bash, verifica que el proyecto activo siga siendo correcto y que ninguno de los tres nombres de bucket esté ocupado en tu proyecto.
 
   ```bash
   test -n "$GOOGLE_CLOUD_PROJECT" && echo "Proyecto: $GOOGLE_CLOUD_PROJECT"
@@ -409,13 +419,15 @@ Definir el tercer entorno y verificar la separación de los estados antes del pr
 
 ## 🚀 Tarea 4. Desplegar y validar los tres entornos — 8 min
 
+{% assign tracking_task_id = "t004" %}
+
 Inicializarás y planificarás cada unidad Terragrunt antes de aplicar; después comprobarás que cada estado administra un solo bucket y que los tres existen en GCP.
 
 ### Tarea 4.1. Inicializar, planificar y desplegar dev
 
 Verificar primero la unidad de desarrollo y leer su plan completo antes de crear recursos.
 
-- {% include step_label.html %} En **Git Bash**, entra desde `lab13` a `live/dev` e inicializa el módulo Terraform a través de Terragrunt.
+- {% include step_label.html id="s021" %} En **Git Bash**, entra desde `lab13` a `live/dev` e inicializa el módulo Terraform a través de Terragrunt.
 
   ```bash
   cd live/dev
@@ -425,7 +437,7 @@ Verificar primero la unidad de desarrollo y leer su plan completo antes de crear
   > **Salida esperada:** Terragrunt prepara el módulo y Terraform termina con `Terraform has been successfully initialized!`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En `live/dev`, ejecuta `plan` y confirma que aparece **un solo bucket** `lab13-dev-PROJECT_ID`.
+- {% include step_label.html id="s022" %} En `live/dev`, ejecuta `plan` y confirma que aparece **un solo bucket** `lab13-dev-PROJECT_ID`.
 
   ```bash
   terragrunt plan
@@ -437,7 +449,7 @@ Verificar primero la unidad de desarrollo y leer su plan completo antes de crear
   > **Salida esperada:** El plan propone `1 to add, 0 to change, 0 to destroy` para `google_storage_bucket.bucket`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Aplica el plan de `dev` desde la misma carpeta y confirma después de revisar los cambios.
+- {% include step_label.html id="s023" %} Aplica el plan de `dev` desde la misma carpeta y confirma después de revisar los cambios.
 
   ```bash
   terragrunt apply
@@ -451,7 +463,7 @@ Verificar primero la unidad de desarrollo y leer su plan completo antes de crear
 
 Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y nombres separados.
 
-- {% include step_label.html %} Regresa a `live/`, entra a `test` y ejecuta `init`, `plan` y `apply` secuencialmente, después de revisar el plan.
+- {% include step_label.html id="s024" %} Regresa a `live/`, entra a `test` y ejecuta `init`, `plan` y `apply` secuencialmente, después de revisar el plan.
 
   ```bash
   cd ../test
@@ -466,7 +478,7 @@ Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y no
   > **Salida esperada:** Se crea `lab13-test-PROJECT_ID`, sin cambiar ni destruir el bucket de dev.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Desde `live/test`, cambia a `prod` y repite inicialización, plan y aplicación con verificación previa.
+- {% include step_label.html id="s025" %} Desde `live/test`, cambia a `prod` y repite inicialización, plan y aplicación con verificación previa.
 
   ```bash
   cd ../prod
@@ -484,7 +496,7 @@ Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y no
   > **Salida esperada:** Se crea `lab13-prod-PROJECT_ID`; la configuración de producción es solo una simulación dentro del proyecto del curso.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En Git Bash, desde `live/prod`, consulta los tres nombres directamente con Cloud Storage sin listar indiscriminadamente todos los recursos de capacitación.
+- {% include step_label.html id="s026" %} En Git Bash, desde `live/prod`, consulta los tres nombres directamente con Cloud Storage sin listar indiscriminadamente todos los recursos de capacitación.
 
   ```bash
   for env in dev test prod; do
@@ -500,7 +512,7 @@ Repetir el mismo flujo para los otros dos entornos, manteniendo sus estados y no
 
 Verificar la diferencia entre reutilizar un módulo y compartir un estado, que debe permanecer aislado por entorno.
 
-- {% include step_label.html %} Regresa a `live` y muestra los tres archivos de estado. Explica por qué se mantienen separados pese a que el módulo es común.
+- {% include step_label.html id="s027" %} Regresa a `live` y muestra los tres archivos de estado. Explica por qué se mantienen separados pese a que el módulo es común.
 
   ```bash
   cd ..
@@ -517,7 +529,7 @@ Verificar la diferencia entre reutilizar un módulo y compartir un estado, que d
   > **Salida esperada:** Hay un estado en cada carpeta y cada output corresponde al bucket específico de su entorno.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba desde las tres carpetas que cada unidad conoce exactamente un recurso Terraform y no tiene cambios pendientes.
+- {% include step_label.html id="s028" %} Comprueba desde las tres carpetas que cada unidad conoce exactamente un recurso Terraform y no tiene cambios pendientes.
 
   ```bash
   for env in dev test prod; do
@@ -540,13 +552,15 @@ Verificar la diferencia entre reutilizar un módulo y compartir un estado, que d
 
 ## 🧹 Tarea 5. Eliminar buckets y comprobar la limpieza — 4 min
 
+{% assign tracking_task_id = "t005" %}
+
 Destruirás los tres entornos de forma controlada, revisando individualmente los planes, y comprobarás que los buckets de esta práctica ya no existan.
 
 ### Tarea 5.1. Destruir los tres entornos con planes revisados
 
 Retirar cada recurso desde su propio estado para evitar afectar infraestructura administrada por otras prácticas.
 
-- {% include step_label.html %} Desde `lab13/live`, revisa los tres planes de destrucción individualmente. Debe aparecer un bucket por entorno.
+- {% include step_label.html id="s029" %} Desde `lab13/live`, revisa los tres planes de destrucción individualmente. Debe aparecer un bucket por entorno.
 
   ```bash
   for env in dev test prod; do
@@ -561,7 +575,7 @@ Retirar cada recurso desde su propio estado para evitar afectar infraestructura 
   > **Salida esperada:** Cada plan indica `0 to add, 0 to change, 1 to destroy` y solo menciona su bucket `lab13-*`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Ejecuta `destroy` en cada entorno, uno a la vez, confirmando únicamente la eliminación del bucket que corresponda.
+- {% include step_label.html id="s030" %} Ejecuta `destroy` en cada entorno, uno a la vez, confirmando únicamente la eliminación del bucket que corresponda.
 
   ```bash
   (cd dev && terragrunt destroy)
@@ -579,7 +593,7 @@ Retirar cada recurso desde su propio estado para evitar afectar infraestructura 
 
 Corroborar en Terraform y Google Cloud que solo quedaron archivos fuente del laboratorio, sin recursos activos.
 
-- {% include step_label.html %} En `lab13/live`, consulta los estados de los tres entornos. No debe haber recursos administrados después de la destrucción.
+- {% include step_label.html id="s031" %} En `lab13/live`, consulta los estados de los tres entornos. No debe haber recursos administrados después de la destrucción.
 
   ```bash
   for env in dev test prod; do
@@ -591,7 +605,7 @@ Corroborar en Terraform y Google Cloud que solo quedaron archivos fuente del lab
   > **Salida esperada:** Los tres listados están vacíos y no muestran `google_storage_bucket.bucket`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba específicamente que ninguno de los tres buckets existe y conserva los archivos HCL sin borrar el módulo reutilizable.
+- {% include step_label.html id="s032" %} Comprueba específicamente que ninguno de los tres buckets existe y conserva los archivos HCL sin borrar el módulo reutilizable.
 
   ```bash
   for env in dev test prod; do

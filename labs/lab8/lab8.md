@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l008
+tracking: true
+position: 8
 layout: lab
 title: "Práctica 8: Usar secretos desde Google Cloud Secret Manager y validar que no se expongan"
 permalink: /lab8/lab8/
@@ -47,6 +51,8 @@ next: /lab9/lab9/
 
 ## 🔎 Tarea 1. Preparar el directorio y verificar el entorno GCP — 7 min
 
+{% assign tracking_task_id = "t001" %}
+
 Crearás `lab8` dentro del directorio central del curso y verificarás Terraform, Google Cloud CLI, Python, el proyecto activo y las APIs necesarias antes de crear recursos facturables.
 
 
@@ -55,7 +61,7 @@ Crearás `lab8` dentro del directorio central del curso y verificarás Terraform
 Abrir el curso en VS Code y preparar tanto la configuración Terraform como los programas auxiliares de verificación, sin copiar archivos de otras prácticas.
 
 
-- {% include step_label.html %} En **VS Code**, abre la carpeta principal del curso mediante **File > Open Folder...** y selecciona **Escritorio > terraform-gcp-intermediate**.
+- {% include step_label.html id="s001" %} En **VS Code**, abre la carpeta principal del curso mediante **File > Open Folder...** y selecciona **Escritorio > terraform-gcp-intermediate**.
 
   1. Comprueba que el Explorador muestre `lab6` y `lab7` como carpetas vecinas.
   2. Selecciona **Terminal > New Terminal**.
@@ -66,7 +72,7 @@ Abrir el curso en VS Code y preparar tanto la configuración Terraform como los 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash**, crea la carpeta `lab8` dentro de `terraform-gcp-intermediate` y prepara sus archivos.
+- {% include step_label.html id="s002" %} En **Git Bash**, crea la carpeta `lab8` dentro de `terraform-gcp-intermediate` y prepara sus archivos.
 
   ```bash
   DESKTOP_WIN="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Desktop")' | tr -d '\r')"
@@ -84,7 +90,7 @@ Abrir el curso en VS Code y preparar tanto la configuración Terraform como los 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Crea un `.gitignore` básico para evitar publicar estado Terraform y artefactos de autenticación.
+- {% include step_label.html id="s003" %} Crea un `.gitignore` básico para evitar publicar estado Terraform y artefactos de autenticación.
 
   ```bash
   cat > .gitignore <<'EOF'
@@ -112,7 +118,7 @@ Abrir el curso en VS Code y preparar tanto la configuración Terraform como los 
 Comprobar el contexto de gcloud y el estado de APIs antes de crear recursos que generan costos.
 
 
-- {% include step_label.html %} Verifica en **Git Bash** las versiones instaladas de Terraform, Google Cloud CLI y Python 3.
+- {% include step_label.html id="s004" %} Verifica en **Git Bash** las versiones instaladas de Terraform, Google Cloud CLI y Python 3.
 
   ```bash
   terraform version
@@ -127,7 +133,7 @@ Comprobar el contexto de gcloud y el estado de APIs antes de crear recursos que 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Consulta el usuario y el proyecto activos; guarda el identificador que se usará en los siguientes comandos.
+- {% include step_label.html id="s005" %} Consulta el usuario y el proyecto activos; guarda el identificador que se usará en los siguientes comandos.
 
   ```bash
   PROJECT_ID="$(gcloud config get-value project)"
@@ -143,7 +149,7 @@ Comprobar el contexto de gcloud y el estado de APIs antes de crear recursos que 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba que las cuatro APIs requeridas estén habilitadas; habilita las ausentes solo si tienes autorización.
+- {% include step_label.html id="s006" %} Comprueba que las cuatro APIs requeridas estén habilitadas; habilita las ausentes solo si tienes autorización.
 
   ```bash
   gcloud services list --enabled --project="$PROJECT_ID" \
@@ -170,6 +176,8 @@ Comprobar el contexto de gcloud y el estado de APIs antes de crear recursos que 
 
 ## ☁️ Tarea 2. Crear Secret Manager y planear el acceso mínimo — 13 min
 
+{% assign tracking_task_id = "t002" %}
+
 Crearás el secreto `lab8-db-password` sin incluir contraseñas en archivos Terraform, revisarás su configuración y definirás los permisos que necesitará la Service Account de la VM.
 
 
@@ -178,7 +186,7 @@ Crearás el secreto `lab8-db-password` sin incluir contraseñas en archivos Terr
 Crear un secreto del laboratorio fuera del estado Terraform. El contenido se cargará después de desplegar Cloud SQL.
 
 
-- {% include step_label.html %} Define los identificadores del laboratorio en **Git Bash** y confirma el nombre del secreto.
+- {% include step_label.html id="s007" %} Define los identificadores del laboratorio en **Git Bash** y confirma el nombre del secreto.
 
   ```bash
   PROJECT_ID="$(gcloud config get-value project)"
@@ -192,7 +200,7 @@ Crear un secreto del laboratorio fuera del estado Terraform. El contenido se car
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Crea el secreto en Secret Manager con replicación administrada por Google Cloud.
+- {% include step_label.html id="s008" %} Crea el secreto en Secret Manager con replicación administrada por Google Cloud.
 
   ```bash
   gcloud secrets create "$SECRET_ID" \
@@ -206,7 +214,7 @@ Crear un secreto del laboratorio fuera del estado Terraform. El contenido se car
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba los metadatos del secreto sin recuperar ninguna versión de su contenido.
+- {% include step_label.html id="s009" %} Comprueba los metadatos del secreto sin recuperar ninguna versión de su contenido.
 
   ```bash
   gcloud secrets describe "$SECRET_ID" --project="$PROJECT_ID" \
@@ -217,7 +225,7 @@ Crear un secreto del laboratorio fuera del estado Terraform. El contenido se car
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Verifica que el secreto todavía no tiene versiones habilitadas: el contenido se generará después de crear la base de datos.
+- {% include step_label.html id="s010" %} Verifica que el secreto todavía no tiene versiones habilitadas: el contenido se generará después de crear la base de datos.
 
   ```bash
   gcloud secrets versions list "$SECRET_ID" --project="$PROJECT_ID" \
@@ -233,7 +241,7 @@ Crear un secreto del laboratorio fuera del estado Terraform. El contenido se car
 Definir el principio de mínimo privilegio que se implementará en Terraform para la cuenta de servicio de la VM.
 
 
-- {% include step_label.html %} Consulta el rol **Secret Manager Secret Accessor** en la documentación y distingue permiso de lectura de administración.
+- {% include step_label.html id="s011" %} Consulta el rol **Secret Manager Secret Accessor** en la documentación y distingue permiso de lectura de administración.
 
   1. Abre [Control de acceso de Secret Manager](https://cloud.google.com/secret-manager/docs/access-control).
   2. Localiza `roles/secretmanager.secretAccessor`.
@@ -244,7 +252,7 @@ Definir el principio de mínimo privilegio que se implementará en Terraform par
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Determina cómo Cloud SQL Auth Proxy autentica a la VM mediante la Service Account adjunta.
+- {% include step_label.html id="s012" %} Determina cómo Cloud SQL Auth Proxy autentica a la VM mediante la Service Account adjunta.
 
   1. Abre [Cloud SQL Auth Proxy](https://cloud.google.com/sql/docs/mysql/connect-auth-proxy).
   2. Identifica el rol `roles/cloudsql.client`.
@@ -255,7 +263,7 @@ Definir el principio de mínimo privilegio que se implementará en Terraform par
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba que el usuario del curso puede crear cuentas de servicio y asignarles roles antes de ejecutar Terraform.
+- {% include step_label.html id="s013" %} Comprueba que el usuario del curso puede crear cuentas de servicio y asignarles roles antes de ejecutar Terraform.
 
   ```bash
   gcloud iam service-accounts list --project="$PROJECT_ID" \
@@ -274,7 +282,7 @@ Definir el principio de mínimo privilegio que se implementará en Terraform par
 Definir valores no sensibles en Terraform y comprender qué datos sí se podrán compartir.
 
 
-- {% include step_label.html %} Crea `env/dev.tfvars` con el identificador de proyecto, la región y los nombres del laboratorio.
+- {% include step_label.html id="s014" %} Crea `env/dev.tfvars` con el identificador de proyecto, la región y los nombres del laboratorio.
 
   ```hcl
   project_id    = "TU_PROJECT_ID"
@@ -290,7 +298,7 @@ Definir valores no sensibles en Terraform y comprender qué datos sí se podrán
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba con **Git Bash** que el archivo `.tfvars` no contiene credenciales y que el nombre del secreto coincide.
+- {% include step_label.html id="s015" %} Comprueba con **Git Bash** que el archivo `.tfvars` no contiene credenciales y que el nombre del secreto coincide.
 
   ```bash
   grep -E '^(project_id|secret_id|instance_name|db_name|db_user)' env/dev.tfvars
@@ -301,7 +309,7 @@ Definir valores no sensibles en Terraform y comprender qué datos sí se podrán
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Identifica explícitamente el límite de seguridad: marcar una variable como `sensitive` no elimina su valor del estado Terraform.
+- {% include step_label.html id="s016" %} Identifica explícitamente el límite de seguridad: marcar una variable como `sensitive` no elimina su valor del estado Terraform.
 
   - **Configuración:** no escribiremos contraseñas en `main.tf`, `variables.tf` o `.tfvars`.
   - **Estado:** Terraform solo administrará recursos sin valores de contraseña.
@@ -320,6 +328,8 @@ Definir valores no sensibles en Terraform y comprender qué datos sí se podrán
 
 ## 🧩 Tarea 3. Desplegar Cloud SQL, cuenta de servicio y VM con Terraform — 22 min
 
+{% assign tracking_task_id = "t003" %}
+
 Construirás una VPC, una instancia Cloud SQL, una base MySQL y una VM con identidad limitada. Después generarás la contraseña fuera de Terraform y la cargarás en Secret Manager sin mostrarla.
 
 
@@ -328,7 +338,7 @@ Construirás una VPC, una instancia Cloud SQL, una base MySQL y una VM con ident
 Crear la configuración HCL con referencias explícitas y recursos cuyo estado no contenga valores secretos.
 
 
-- {% include step_label.html %} En `providers.tf`, declara el Google Provider y la versión requerida de Terraform.
+- {% include step_label.html id="s017" %} En `providers.tf`, declara el Google Provider y la versión requerida de Terraform.
 
   ```hcl
   terraform {
@@ -352,7 +362,7 @@ Crear la configuración HCL con referencias explícitas y recursos cuyo estado n
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `variables.tf`, declara los identificadores y propiedades de la infraestructura, sin ninguna variable `db_password`.
+- {% include step_label.html id="s018" %} En `variables.tf`, declara los identificadores y propiedades de la infraestructura, sin ninguna variable `db_password`.
 
   ```hcl
   variable "project_id" {
@@ -384,7 +394,7 @@ Crear la configuración HCL con referencias explícitas y recursos cuyo estado n
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `main.tf`, crea una red VPC y una subred propias de `lab8`, diferentes de las prácticas anteriores.
+- {% include step_label.html id="s019" %} En `main.tf`, crea una red VPC y una subred propias de `lab8`, diferentes de las prácticas anteriores.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -419,7 +429,7 @@ Crear la configuración HCL con referencias explícitas y recursos cuyo estado n
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En el mismo archivo `main.tf`, agrega el bloque `google_service_account.vm`.
+- {% include step_label.html id="s020" %} En el mismo archivo `main.tf`, agrega el bloque `google_service_account.vm`.
 
   **Requisitos de construcción:**
 
@@ -438,7 +448,7 @@ Crear la configuración HCL con referencias explícitas y recursos cuyo estado n
 Aprovisionar MySQL y conceder a la VM únicamente acceso al secreto designado y a Cloud SQL.
 
 
-- {% include step_label.html %} Debajo de la Service Account, configura el rol de lectura **sobre el secreto específico** y el rol de cliente Cloud SQL.
+- {% include step_label.html id="s021" %} Debajo de la Service Account, configura el rol de lectura **sobre el secreto específico** y el rol de cliente Cloud SQL.
 
   ```hcl
   resource "google_secret_manager_secret_iam_member" "secret_reader" {
@@ -462,7 +472,7 @@ Aprovisionar MySQL y conceder a la VM únicamente acceso al secreto designado y 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Agrega una instancia Cloud SQL MySQL para laboratorio; habilita eliminación administrada por Terraform.
+- {% include step_label.html id="s022" %} Agrega una instancia Cloud SQL MySQL para laboratorio; habilita eliminación administrada por Terraform.
 
   ```hcl
   resource "google_sql_database_instance" "mysql" {
@@ -491,7 +501,7 @@ Aprovisionar MySQL y conceder a la VM únicamente acceso al secreto designado y 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Debajo de `google_sql_database_instance.mysql`, declara la base `appdb`; **no crees el usuario con contraseña en Terraform**.
+- {% include step_label.html id="s023" %} Debajo de `google_sql_database_instance.mysql`, declara la base `appdb`; **no crees el usuario con contraseña en Terraform**.
 
   ```hcl
   resource "google_sql_database" "appdb" {
@@ -504,7 +514,7 @@ Aprovisionar MySQL y conceder a la VM únicamente acceso al secreto designado y 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `outputs.tf`, publica únicamente metadatos útiles y añade un output de la conexión como **construcción dirigida**.
+- {% include step_label.html id="s024" %} En `outputs.tf`, publica únicamente metadatos útiles y añade un output de la conexión como **construcción dirigida**.
 
   1. Copia primero el siguiente bloque en `outputs.tf`:
 
@@ -533,7 +543,7 @@ Aprovisionar MySQL y conceder a la VM únicamente acceso al secreto designado y 
 Desplegar VM sin claves JSON y ejecutar un programa que genere una contraseña en memoria, la asigne al usuario SQL y la guarde en Secret Manager.
 
 
-- {% include step_label.html %} Al final de `main.tf`, crea la VM Debian 12 y adjunta su Service Account; agrega los metadatos requeridos para el ejercicio.
+- {% include step_label.html id="s025" %} Al final de `main.tf`, crea la VM Debian 12 y adjunta su Service Account; agrega los metadatos requeridos para el ejercicio.
 
   ```hcl
   resource "google_compute_instance" "vm" {
@@ -581,7 +591,7 @@ Desplegar VM sin claves JSON y ejecutar un programa que genere una contraseña e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Inicializa y valida Terraform desde **Git Bash**; corrige cualquier error HCL antes de desplegar.
+- {% include step_label.html id="s026" %} Inicializa y valida Terraform desde **Git Bash**; corrige cualquier error HCL antes de desplegar.
 
   ```bash
   terraform init
@@ -594,7 +604,7 @@ Desplegar VM sin claves JSON y ejecutar un programa que genere una contraseña e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Despliega los recursos y verifica que Cloud SQL haya finalizado su aprovisionamiento. **La creación tarda aproximadamente 13 minutos**
+- {% include step_label.html id="s027" %} Despliega los recursos y verifica que Cloud SQL haya finalizado su aprovisionamiento. **La creación tarda aproximadamente 13 minutos**
 
   ```bash
   terraform apply -var-file="env/dev.tfvars"
@@ -610,7 +620,7 @@ Desplegar VM sin claves JSON y ejecutar un programa que genere una contraseña e
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Crea `bootstrap_secret.py` con el código siguiente, revísalo y ejecútalo **una sola vez después del apply**. Generará una contraseña en memoria, creará el usuario en Cloud SQL Admin API y agregará una versión a Secret Manager sin imprimirla.
+- {% include step_label.html id="s028" %} Crea `bootstrap_secret.py` con el código siguiente, revísalo y ejecútalo **una sola vez después del apply**. Generará una contraseña en memoria, creará el usuario en Cloud SQL Admin API y agregará una versión a Secret Manager sin imprimirla.
 
   ```python
   import json
@@ -677,6 +687,8 @@ Desplegar VM sin claves JSON y ejecutar un programa que genere una contraseña e
 
 ## ⚙️ Tarea 4. Preparar Cloud SQL Auth Proxy dentro de la VM — 12 min
 
+{% assign tracking_task_id = "t004" %}
+
 Accederás a la VM mediante SSH autorizado, instalarás el cliente MySQL y Cloud SQL Auth Proxy, y comprobarás que el proxy escuche localmente antes de ejecutar consultas.
 
 
@@ -685,7 +697,7 @@ Accederás a la VM mediante SSH autorizado, instalarás el cliente MySQL y Cloud
 Validar la identidad de la sesión y dejar listo un cliente SQL sin crear archivos con claves permanentes.
 
 
-- {% include step_label.html %} Desde **Git Bash local**, revisa el nombre, zona y Service Account adjunta a la VM.
+- {% include step_label.html id="s029" %} Desde **Git Bash local**, revisa el nombre, zona y Service Account adjunta a la VM.
 
   ```bash
   gcloud compute instances describe lab8-vm \
@@ -697,7 +709,7 @@ Validar la identidad de la sesión y dejar listo un cliente SQL sin crear archiv
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Abre una sesión SSH con IAP desde Git Bash local; si la organización exige OS Login, usa la identidad autorizada.
+- {% include step_label.html id="s030" %} Abre una sesión SSH con IAP desde Git Bash local; si la organización exige OS Login, usa la identidad autorizada.
 
   ```bash
   gcloud compute ssh lab8-vm \
@@ -712,7 +724,7 @@ Validar la identidad de la sesión y dejar listo un cliente SQL sin crear archiv
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} **Dentro de la VM**, verifica el nombre del equipo, el usuario conectado y Python 3.
+- {% include step_label.html id="s031" %} **Dentro de la VM**, verifica el nombre del equipo, el usuario conectado y Python 3.
 
   ```bash
   hostname
@@ -724,7 +736,7 @@ Validar la identidad de la sesión y dejar listo un cliente SQL sin crear archiv
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} **Dentro de la VM**, instala el cliente MySQL y herramientas HTTPS desde los repositorios Debian.
+- {% include step_label.html id="s032" %} **Dentro de la VM**, instala el cliente MySQL y herramientas HTTPS desde los repositorios Debian.
 
   ```bash
   sudo apt-get update
@@ -740,7 +752,7 @@ Validar la identidad de la sesión y dejar listo un cliente SQL sin crear archiv
 Crear un túnel autenticado hacia Cloud SQL sin exponer directamente el puerto MySQL de la instancia.
 
 
-- {% include step_label.html %} **Dentro de la VM**, descarga la versión fijada del Cloud SQL Auth Proxy y comprueba su versión.
+- {% include step_label.html id="s033" %} **Dentro de la VM**, descarga la versión fijada del Cloud SQL Auth Proxy y comprueba su versión.
 
   ```bash
   curl -fsSL \
@@ -758,7 +770,7 @@ Crear un túnel autenticado hacia Cloud SQL sin exponer directamente el puerto M
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} **Dentro de la VM**, obtén el identificador de conexión SQL desde metadata, sin copiarlo manualmente.
+- {% include step_label.html id="s034" %} **Dentro de la VM**, obtén el identificador de conexión SQL desde metadata, sin copiarlo manualmente.
 
   ```bash
   META="http://metadata.google.internal/computeMetadata/v1"
@@ -771,7 +783,7 @@ Crear un túnel autenticado hacia Cloud SQL sin exponer directamente el puerto M
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} **Dentro de la VM**, inicia Cloud SQL Auth Proxy en segundo plano y revisa su bitácora sin habilitar trazas de credenciales.
+- {% include step_label.html id="s035" %} **Dentro de la VM**, inicia Cloud SQL Auth Proxy en segundo plano y revisa su bitácora sin habilitar trazas de credenciales.
 
   ```bash
   cloud-sql-proxy --port 3306 "$CONNECTION_NAME" \
@@ -797,6 +809,8 @@ Crear un túnel autenticado hacia Cloud SQL sin exponer directamente el puerto M
 
 ## 🔍 Tarea 5. Consumir el secreto y comprobar que no se expone — 11 min
 
+{% assign tracking_task_id = "t005" %}
+
 Consumirás el secreto con el token temporal de la VM, comprobarás la conexión MySQL y ejecutarás una consulta real sin imprimir la contraseña. Después inspeccionarás el estado y los permisos.
 
 
@@ -805,7 +819,7 @@ Consumirás el secreto con el token temporal de la VM, comprobarás la conexión
 Preparar un programa que obtenga el token de la VM, lea Secret Manager y cree un archivo temporal protegido en memoria para el cliente MySQL.
 
 
-- {% include step_label.html %} **Dentro de la VM**, crea `secure_mysql_test.py` con un programa que consulte metadata y Secret Manager mediante HTTPS; no pegues ninguna contraseña en el archivo.
+- {% include step_label.html id="s036" %} **Dentro de la VM**, crea `secure_mysql_test.py` con un programa que consulte metadata y Secret Manager mediante HTTPS; no pegues ninguna contraseña en el archivo.
 
   ```bash
   cat > ~/secure_mysql_test.py <<'PY'
@@ -861,7 +875,7 @@ Preparar un programa que obtenga el token de la VM, lea Secret Manager y cree un
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} **Dentro de la VM**, ejecuta la consulta de validación sin mostrar el secreto ni utilizar `mysql -pCONTRASEÑA`.
+- {% include step_label.html id="s037" %} **Dentro de la VM**, ejecuta la consulta de validación sin mostrar el secreto ni utilizar `mysql -pCONTRASEÑA`.
 
   ```bash
   python3 ~/secure_mysql_test.py
@@ -874,7 +888,7 @@ Preparar un programa que obtenga el token de la VM, lea Secret Manager y cree un
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Amplía el programa para ejecutar SQL de prueba usando el mismo archivo protegido.
+- {% include step_label.html id="s038" %} Amplía el programa para ejecutar SQL de prueba usando el mismo archivo protegido.
 
   1. Abre `~/secure_mysql_test.py` dentro de la VM con `nano ~/secure_mysql_test.py`.
   2. Ubica la cadena `'SELECT 1 AS conexion_ok;'` dentro de `subprocess.run`.
@@ -891,7 +905,7 @@ Preparar un programa que obtenga el token de la VM, lea Secret Manager y cree un
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Verifica que no permanecen archivos temporales de credenciales y comprueba el estado del proxy.
+- {% include step_label.html id="s039" %} Verifica que no permanecen archivos temporales de credenciales y comprueba el estado del proxy.
 
   ```bash
   find /dev/shm -maxdepth 1 -name 'lab8_mysql_*' -print
@@ -907,7 +921,7 @@ Preparar un programa que obtenga el token de la VM, lea Secret Manager y cree un
 Comprobar desde la computadora del participante que el estado Terraform y la configuración no incluyen contraseñas.
 
 
-- {% include step_label.html %} Sal de la VM para regresar a **Git Bash local** y consulta únicamente metadatos del secreto.
+- {% include step_label.html id="s040" %} Sal de la VM para regresar a **Git Bash local** y consulta únicamente metadatos del secreto.
 
   ```bash
   exit
@@ -924,7 +938,7 @@ Comprobar desde la computadora del participante que el estado Terraform y la con
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash local**, revisa que Terraform no administre versiones de secreto ni usuarios con contraseñas.
+- {% include step_label.html id="s041" %} En **Git Bash local**, revisa que Terraform no administre versiones de secreto ni usuarios con contraseñas.
 
   ```bash
   terraform state list
@@ -946,7 +960,7 @@ Comprobar desde la computadora del participante que el estado Terraform y la con
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba el ámbito IAM específico del secreto y registra solo la cuenta autorizada.
+- {% include step_label.html id="s042" %} Comprueba el ámbito IAM específico del secreto y registra solo la cuenta autorizada.
 
   ```bash
   gcloud secrets get-iam-policy lab8-db-password \
@@ -965,6 +979,8 @@ Comprobar desde la computadora del participante que el estado Terraform y la con
 
 ## 🧹 Tarea 6. Destruir recursos y comprobar limpieza — 5 min
 
+{% assign tracking_task_id = "t006" %}
+
 Destruirás los recursos administrados por Terraform, eliminarás por separado el secreto creado con gcloud y confirmarás que ya no quedan recursos de `lab8` generando cargos.
 
 
@@ -973,7 +989,7 @@ Destruirás los recursos administrados por Terraform, eliminarás por separado e
 Eliminar primero Cloud SQL y VM sin afectar redes, buckets o instancias de otros laboratorios.
 
 
-- {% include step_label.html %} Antes de destruir, verifica desde **Git Bash local** que el plan apunta a los recursos `lab8`.
+- {% include step_label.html id="s043" %} Antes de destruir, verifica desde **Git Bash local** que el plan apunta a los recursos `lab8`.
 
   ```bash
   pwd
@@ -985,7 +1001,7 @@ Eliminar primero Cloud SQL y VM sin afectar redes, buckets o instancias de otros
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Ejecuta la destrucción y espera hasta que Terraform finalice; no cierres la terminal a mitad del proceso.
+- {% include step_label.html id="s044" %} Ejecuta la destrucción y espera hasta que Terraform finalice; no cierres la terminal a mitad del proceso.
 
   ```bash
   terraform destroy -var-file="env/dev.tfvars"
@@ -1004,7 +1020,7 @@ Eliminar primero Cloud SQL y VM sin afectar redes, buckets o instancias de otros
 Como el secreto se creó mediante gcloud y no Terraform, su eliminación debe realizarse de manera explícita.
 
 
-- {% include step_label.html %} Elimina únicamente `lab8-db-password` de Secret Manager después de comprobar que Cloud SQL y la VM ya no existen.
+- {% include step_label.html id="s045" %} Elimina únicamente `lab8-db-password` de Secret Manager después de comprobar que Cloud SQL y la VM ya no existen.
 
   ```bash
   gcloud secrets delete lab8-db-password --project="$PROJECT_ID"
@@ -1017,7 +1033,7 @@ Como el secreto se creó mediante gcloud y no Terraform, su eliminación debe re
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Verifica en GCP que los recursos concretos de `lab8` ya no aparecen; no borres elementos de otras prácticas.
+- {% include step_label.html id="s046" %} Verifica en GCP que los recursos concretos de `lab8` ya no aparecen; no borres elementos de otras prácticas.
 
   ```bash
   gcloud compute instances list --project="$PROJECT_ID" \

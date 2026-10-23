@@ -46,3 +46,9 @@ instrucciones/GitHubPush-Instructores.md
 instrucciones/Instalacion-Instructores.md
 instrucciones/Instrucciones-Instructores.md
 instrucciones/EquipoDC.md
+# Lab Control: archivos generados localmente
+.labcontrol/
+labcontrol/
+
+# Respaldos temporales de migración
+.migration-backup-labcontrol/

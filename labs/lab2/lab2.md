@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l002
+tracking: true
+position: 2
 layout: lab
 title: "Práctica 2: Crear y usar módulos de red y máquinas virtuales."
 permalink: /lab2/lab2/
@@ -42,18 +46,20 @@ next: /lab3/lab3/
 
 ## 🔎 Tarea 1. Verificar el entorno y crear la estructura modular — 5 min
 
+{% assign tracking_task_id = "t001" %}
+
 Comprobarás que GCP sigue accesible desde Git Bash y prepararás la carpeta `lab2` dentro del directorio central ya existente, sin modificar el código ni el estado de `lab1`.
 
 ### Tarea 1.1. Comprobar herramientas y proyecto activo
 
 Verificar versiones, proyecto y credenciales disponibles antes de comenzar la configuración de módulos locales.
 
-- {% include step_label.html %} En **VS Code**, abre **Terminal > New Terminal** y selecciona el perfil **Git Bash**.
+- {% include step_label.html id="s001" %} En **VS Code**, abre **Terminal > New Terminal** y selecciona el perfil **Git Bash**.
 
   > **Salida esperada:** La terminal integrada muestra un prompt Bash terminado en `$`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **Git Bash**, confirma que Terraform, gcloud y SSH están disponibles.
+- {% include step_label.html id="s002" %} En **Git Bash**, confirma que Terraform, gcloud y SSH están disponibles.
 
   ```bash
   terraform version
@@ -64,7 +70,7 @@ Verificar versiones, proyecto y credenciales disponibles antes de comenzar la co
   > **Salida esperada:** Se muestran versiones de Terraform, gcloud CLI y OpenSSH, sin errores de comando inexistente.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Verifica el proyecto activo y que las credenciales ADC ya existan.
+- {% include step_label.html id="s003" %} Verifica el proyecto activo y que las credenciales ADC ya existan.
 
   > **Importante:** Si no aparece el proyecto, ejecuta `gcloud config set project TU_PROJECT_ID`; si falta ADC, `gcloud auth application-default login`.
   {: .lab-note .important .compact}
@@ -81,7 +87,7 @@ Verificar versiones, proyecto y credenciales disponibles antes de comenzar la co
 
 Crear las carpetas root module y child modules en el Escritorio efectivo de Windows y abrirlas en VS Code.
 
-- {% include step_label.html %} En **Git Bash**, localiza el Escritorio real y crea **lab2**, sin volver a crear otro directorio central.
+- {% include step_label.html id="s004" %} En **Git Bash**, localiza el Escritorio real y crea **lab2**, sin volver a crear otro directorio central.
 
   ```bash
   DESKTOP="$(powershell.exe -NoProfile -Command "[Environment]::GetFolderPath('Desktop')" | tr -d '\r')"
@@ -93,7 +99,7 @@ Crear las carpetas root module y child modules en el Escritorio efectivo de Wind
   > **Salida esperada:** La ruta actual termina en `terraform-gcp-intermediate/lab2`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Dentro de **lab2**, crea las carpetas `main`, `modules/network` y `modules/vm`.
+- {% include step_label.html id="s005" %} Dentro de **lab2**, crea las carpetas `main`, `modules/network` y `modules/vm`.
 
   ```bash
   mkdir -p main modules/network modules/vm
@@ -103,7 +109,7 @@ Crear las carpetas root module y child modules en el Escritorio efectivo de Wind
   > **Salida esperada:** Se listan `./main`, `./modules/network` y `./modules/vm`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Crea los archivos `.tf` vacíos y abre la carpeta **lab2** mediante **File > Open Folder** en VS Code.
+- {% include step_label.html id="s006" %} Crea los archivos `.tf` vacíos y abre la carpeta **lab2** mediante **File > Open Folder** en VS Code.
 
   > **Nota:** El directorio `main` contendrá el state del laboratorio; ejecutarás Terraform exclusivamente desde ahí.
   {: .lab-note .info .compact}
@@ -127,13 +133,15 @@ Crear las carpetas root module y child modules en el Escritorio efectivo de Wind
 
 ## 🌐 Tarea 2. Construir el módulo reutilizable de red — 5 min
 
+{% assign tracking_task_id = "t002" %}
+
 Crearás el child module `network` con la VPC, una subred personalizada y una regla SSH restringida; exportarás sus identificadores para que el módulo principal y la VM puedan reutilizarlos.
 
 ### Tarea 2.1. Definir recursos de VPC, subred y Firewall
 
 Configurar los tres recursos de Google Cloud y vincularlos mediante referencias HCL en `modules/network/main.tf`.
 
-- {% include step_label.html %} Abre **modules/network/main.tf** y define la VPC personalizada.
+- {% include step_label.html id="s007" %} Abre **modules/network/main.tf** y define la VPC personalizada.
 
   ```hcl
   resource "google_compute_network" "vpc" {
@@ -146,7 +154,7 @@ Configurar los tres recursos de Google Cloud y vincularlos mediante referencias 
   > **Salida esperada:** El recurso `google_compute_network.vpc` está declarado sin subredes automáticas.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En el mismo archivo, **debajo del cierre de la VPC**, agrega la subred de la región indicada.
+- {% include step_label.html id="s008" %} En el mismo archivo, **debajo del cierre de la VPC**, agrega la subred de la región indicada.
 
   ```hcl
   resource "google_compute_subnetwork" "subnet" {
@@ -161,7 +169,7 @@ Configurar los tres recursos de Google Cloud y vincularlos mediante referencias 
   > **Salida esperada:** La subred hace referencia a `google_compute_network.vpc.id`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de la subred, agrega el Firewall SSH para el tag `lab2-ssh`, limitado al CIDR de origen.
+- {% include step_label.html id="s009" %} Debajo de la subred, agrega el Firewall SSH para el tag `lab2-ssh`, limitado al CIDR de origen.
 
   > **Advertencia:** No utilices `0.0.0.0/0`: expone SSH a todo Internet. Solo la IP pública del participante debe aparecer en `allowed_ssh_cidr`.
   {: .lab-note .warning .compact}
@@ -188,7 +196,7 @@ Configurar los tres recursos de Google Cloud y vincularlos mediante referencias 
 
 Exponer las entradas del módulo que definirán proyecto, nombres, región y rango IP autorizado.
 
-- {% include step_label.html %} En **modules/network/variables.tf**, define las variables para identificar el proyecto y la región.
+- {% include step_label.html id="s010" %} En **modules/network/variables.tf**, define las variables para identificar el proyecto y la región.
 
   ```hcl
   variable "project_id" { type = string }
@@ -198,7 +206,7 @@ Exponer las entradas del módulo que definirán proyecto, nombres, región y ran
   > **Salida esperada:** Se declaran `project_id` y `region`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de esas variables, declara los nombres que recibirá el módulo.
+- {% include step_label.html id="s011" %} Debajo de esas variables, declara los nombres que recibirá el módulo.
 
   ```hcl
   variable "network_name"    { type = string }
@@ -208,7 +216,7 @@ Exponer las entradas del módulo que definirán proyecto, nombres, región y ran
   > **Salida esperada:** El módulo acepta nombres parametrizados de VPC y subred.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Al final de **variables.tf**, agrega `ip_cidr_range` y `allowed_ssh_cidr` usando el ejemplo.
+- {% include step_label.html id="s012" %} Al final de **variables.tf**, agrega `ip_cidr_range` y `allowed_ssh_cidr` usando el ejemplo.
 
   > **Importante:** El CIDR de la subred y el CIDR autorizado para SSH son valores distintos.
   {: .lab-note .important .compact}
@@ -225,7 +233,7 @@ Exponer las entradas del módulo que definirán proyecto, nombres, región y ran
 
 Configurar outputs, incluyendo una salida breve que el participante escribirá con apoyo de la documentación oficial.
 
-- {% include step_label.html %} En **modules/network/outputs.tf**, agrega primero el output de la VPC.
+- {% include step_label.html id="s013" %} En **modules/network/outputs.tf**, agrega primero el output de la VPC.
 
   ```hcl
   output "network_self_link" {
@@ -237,7 +245,7 @@ Configurar outputs, incluyendo una salida breve que el participante escribirá c
   > **Salida esperada:** El output `network_self_link` referencia la VPC.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Debajo de `network_self_link`**, crea un `output` llamado `subnetwork_self_link` con la propiedad `self_link` de `google_compute_subnetwork.subnet`.
+- {% include step_label.html id="s014" %} **Debajo de `network_self_link`**, crea un `output` llamado `subnetwork_self_link` con la propiedad `self_link` de `google_compute_subnetwork.subnet`.
 
   > **Nota:** Incluye una descripción. Consulta la [documentación oficial de outputs](https://developer.hashicorp.com/terraform/language/values/outputs); no copies el bloque anterior sin ajustar la referencia.
   {: .lab-note .info .compact}
@@ -245,7 +253,7 @@ Configurar outputs, incluyendo una salida breve que el participante escribirá c
   > **Salida esperada:** El archivo contiene `subnetwork_self_link` con `value = google_compute_subnetwork.subnet.self_link`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo de la salida de la subred, agrega el output del nombre del Firewall.
+- {% include step_label.html id="s015" %} Debajo de la salida de la subred, agrega el output del nombre del Firewall.
 
   ```hcl
   output "ssh_firewall_name" {
@@ -264,13 +272,15 @@ Configurar outputs, incluyendo una salida breve que el participante escribirá c
 
 ## 🖥️ Tarea 3. Construir el módulo reutilizable de VM — 6 min
 
+{% assign tracking_task_id = "t003" %}
+
 Separarás la creación de Compute Engine en `modules/vm`, configurando imagen, disco, red, metadatos SSH, etiquetas y outputs; evitarás mezclar OS Login con llaves en metadatos.
 
 ### Tarea 3.1. Declarar el recurso Compute Engine
 
 Crear una instancia de bajo costo con parámetros externos y una subred recibida del módulo Network.
 
-- {% include step_label.html %} En **modules/vm/main.tf**, inicia la VM y configura tipo, zona, tag y disco.
+- {% include step_label.html id="s016" %} En **modules/vm/main.tf**, inicia la VM y configura tipo, zona, tag y disco.
 
   ```hcl
   resource "google_compute_instance" "vm" {
@@ -293,7 +303,7 @@ Crear una instancia de bajo costo con parámetros externos y una subred recibida
   > **Salida esperada:** Existe un recurso `google_compute_instance.vm` con disco de arranque definido.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Dentro de `google_compute_instance.vm`**, agrega el bloque `network_interface` **después de `boot_disk` y antes de la llave final**.
+- {% include step_label.html id="s017" %} **Dentro de `google_compute_instance.vm`**, agrega el bloque `network_interface` **después de `boot_disk` y antes de la llave final**.
 
   ```hcl
   network_interface {
@@ -305,7 +315,7 @@ Crear una instancia de bajo costo con parámetros externos y una subred recibida
   > **Salida esperada:** La interfaz utiliza la subred recibida del módulo Network y solicita una IP pública efímera.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Debajo de `network_interface` y dentro de la VM**, configura la llave pública SSH en metadatos.
+- {% include step_label.html id="s018" %} **Debajo de `network_interface` y dentro de la VM**, configura la llave pública SSH en metadatos.
 
   > **Advertencia:** No agregues `enable-oslogin = "TRUE"`: OS Login ignora las llaves de metadatos. Este ejercicio supone que la organización permite esta modalidad.
   {: .lab-note .warning .compact}
@@ -320,7 +330,7 @@ Crear una instancia de bajo costo con parámetros externos y una subred recibida
   > **Salida esperada:** Solo se define la entrada `ssh-keys` en metadata, sin activar OS Login.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Antes de cerrar la VM**, crea un bloque `labels` con la clave `env` y valor `var.env`.
+- {% include step_label.html id="s019" %} **Antes de cerrar la VM**, crea un bloque `labels` con la clave `env` y valor `var.env`.
 
   > **Nota:** Apóyate en la [referencia oficial de `google_compute_instance`](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance); el bloque va al mismo nivel que `metadata`.
   {: .lab-note .info .compact}
@@ -332,7 +342,7 @@ Crear una instancia de bajo costo con parámetros externos y una subred recibida
 
 Parametrizar la instancia y publicar su enlace y su dirección IPv4 pública.
 
-- {% include step_label.html %} En **modules/vm/variables.tf**, declara identificadores de proyecto, zona, nombre y subred.
+- {% include step_label.html id="s020" %} En **modules/vm/variables.tf**, declara identificadores de proyecto, zona, nombre y subred.
 
   ```hcl
   variable "project_id"           { type = string }
@@ -344,7 +354,7 @@ Parametrizar la instancia y publicar su enlace y su dirección IPv4 pública.
   > **Salida esperada:** Se declaran cuatro entradas de identidad y conectividad.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo, agrega parámetros para tipo, imagen y características de disco.
+- {% include step_label.html id="s021" %} Debajo, agrega parámetros para tipo, imagen y características de disco.
 
   ```hcl
   variable "machine_type"       { type = string }
@@ -356,7 +366,7 @@ Parametrizar la instancia y publicar su enlace y su dirección IPv4 pública.
   > **Salida esperada:** La capacidad y el sistema operativo son configurables desde el root module.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Al final del archivo declara usuario y llave pública SSH, y etiqueta de entorno.
+- {% include step_label.html id="s022" %} Al final del archivo declara usuario y llave pública SSH, y etiqueta de entorno.
 
   ```hcl
   variable "ssh_username"   { type = string }
@@ -370,7 +380,7 @@ Parametrizar la instancia y publicar su enlace y su dirección IPv4 pública.
   > **Salida esperada:** El módulo declara once variables en total, incluida la etiqueta opcional `env`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **modules/vm/outputs.tf**, publica la referencia de la instancia y su IP externa.
+- {% include step_label.html id="s023" %} En **modules/vm/outputs.tf**, publica la referencia de la instancia y su IP externa.
 
   ```hcl
   output "instance_self_link" {
@@ -393,13 +403,15 @@ Parametrizar la instancia y publicar su enlace y su dirección IPv4 pública.
 
 ## 🧩 Tarea 4. Integrar ambos módulos desde la configuración principal — 10 min
 
+{% assign tracking_task_id = "t004" %}
+
 Definirás los parámetros del root module, pasarás al módulo VM un output del módulo Network, guardarás la IP permitida y configurarás la llave SSH sin pegar manualmente su contenido en los archivos.
 
 ### Tarea 4.1. Configurar el proveedor y las variables del root module
 
 Definir la versión del proveedor de Google y las variables que consumirá el proyecto principal.
 
-- {% include step_label.html %} En **main/providers.tf**, configura el proveedor oficial de Google Cloud.
+- {% include step_label.html id="s024" %} En **main/providers.tf**, configura el proveedor oficial de Google Cloud.
 
   ```hcl
   terraform {
@@ -421,7 +433,7 @@ Definir la versión del proveedor de Google y las variables que consumirá el pr
   > **Salida esperada:** Terraform requiere un proveedor Google de la serie 6.x y un proyecto, región y zona configurables.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **main/variables.tf**, declara los parámetros generales del proyecto y ubicación.
+- {% include step_label.html id="s025" %} En **main/variables.tf**, declara los parámetros generales del proyecto y ubicación.
 
   ```hcl
   variable "project_id" { type = string }
@@ -438,7 +450,7 @@ Definir la versión del proveedor de Google y las variables que consumirá el pr
   > **Salida esperada:** El proyecto es obligatorio y la región y zona tienen valores predeterminados.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Debajo, agrega las variables de características de la VM.
+- {% include step_label.html id="s026" %} Debajo, agrega las variables de características de la VM.
 
   ```hcl
   variable "machine_type" {
@@ -462,7 +474,7 @@ Definir la versión del proveedor de Google y las variables que consumirá el pr
   > **Salida esperada:** El root module define tamaño, imagen y disco de la VM.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Al final de **main/variables.tf**, declara usuario SSH y rango CIDR autorizado.
+- {% include step_label.html id="s027" %} Al final de **main/variables.tf**, declara usuario SSH y rango CIDR autorizado.
 
   ```hcl
   variable "ssh_username" {
@@ -486,7 +498,7 @@ Definir la versión del proveedor de Google y las variables que consumirá el pr
 
 Consumir los módulos locales mediante sus rutas, variables y referencias de output.
 
-- {% include step_label.html %} En **main/main.tf**, inserta el bloque de consumo del módulo `network`.
+- {% include step_label.html id="s028" %} En **main/main.tf**, inserta el bloque de consumo del módulo `network`.
 
   ```hcl
   module "network" {
@@ -503,7 +515,7 @@ Consumir los módulos locales mediante sus rutas, variables y referencias de out
   > **Salida esperada:** El root module apunta a `../modules/network` y define los datos de red.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Debajo del módulo Network**, inicia el módulo VM con sus campos básicos.
+- {% include step_label.html id="s029" %} **Debajo del módulo Network**, inicia el módulo VM con sus campos básicos.
 
   ```hcl
   module "vm" {
@@ -524,7 +536,7 @@ Consumir los módulos locales mediante sus rutas, variables y referencias de out
   > **Salida esperada:** El módulo VM existe y lee el archivo local de llave pública sin copiarlo en `terraform.tfvars`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Dentro de `module "vm"`, antes de la llave de cierre**, agrega la entrada `subnetwork_self_link` usando el output de `module.network`.
+- {% include step_label.html id="s030" %} **Dentro de `module "vm"`, antes de la llave de cierre**, agrega la entrada `subnetwork_self_link` usando el output de `module.network`.
 
   > **Nota:** Lee la [documentación oficial sobre módulos](https://developer.hashicorp.com/terraform/language/modules/syntax) y utiliza la referencia `module.network.subnetwork_self_link`.
   {: .lab-note .info .compact}
@@ -532,7 +544,7 @@ Consumir los módulos locales mediante sus rutas, variables y referencias de out
   > **Salida esperada:** El módulo VM recibe `subnetwork_self_link = module.network.subnetwork_self_link`; Terraform infiere la dependencia.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Guarda **main/main.tf** y comprueba que aparecen exactamente dos bloques `module`.
+- {% include step_label.html id="s031" %} Guarda **main/main.tf** y comprueba que aparecen exactamente dos bloques `module`.
 
   ```bash
   grep -nE '^module "(network|vm)"' main/main.tf
@@ -545,7 +557,7 @@ Consumir los módulos locales mediante sus rutas, variables y referencias de out
 
 Recuperar el proyecto activo, generar la llave si falta y proporcionar únicamente datos específicos del participante.
 
-- {% include step_label.html %} En **Git Bash**, ejecuta este comando para entrar al directorio raíz de Terraform.
+- {% include step_label.html id="s032" %} En **Git Bash**, ejecuta este comando para entrar al directorio raíz de Terraform.
 
   ```bash
   cd main
@@ -555,7 +567,7 @@ Recuperar el proyecto activo, generar la llave si falta y proporcionar únicamen
   > **Salida esperada:** La ruta actual termina en `/lab2/main`; todos los comandos Terraform posteriores se ejecutan aquí.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Verifica si existe tu llave SSH; si falta, genera una llave Ed25519 personal.
+- {% include step_label.html id="s033" %} Verifica si existe tu llave SSH; si falta, genera una llave Ed25519 personal.
 
   > **Importante:** No uses la contraseña compartida del material original. Si `ssh-keygen` solicita passphrase, crea una personal o acepta vacío solo para este laboratorio controlado.
   {: .lab-note .important .compact}
@@ -569,7 +581,7 @@ Recuperar el proyecto activo, generar la llave si falta y proporcionar únicamen
   > **Salida esperada:** La llave pública existe en `~/.ssh/gcp-demo.pub` y la privada en `~/.ssh/gcp-demo`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Obtén tu proyecto e IP pública; usa el navegador si la consulta de IP no responde.
+- {% include step_label.html id="s034" %} Obtén tu proyecto e IP pública; usa el navegador si la consulta de IP no responde.
 
   > **Importante:** Si tu red usa VPN o cambia de salida a Internet, usa la IP pública desde la que saldrá el cliente SSH.
   {: .lab-note .important .compact}
@@ -582,7 +594,7 @@ Recuperar el proyecto activo, generar la llave si falta y proporcionar únicamen
   > **Salida esperada:** Se obtienen un PROJECT_ID y una dirección IPv4 pública de tu conexión.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **main/terraform.tfvars**, establece los valores reales de `project_id` y `allowed_ssh_cidr`.
+- {% include step_label.html id="s035" %} En **main/terraform.tfvars**, establece los valores reales de `project_id` y `allowed_ssh_cidr`.
 
   > **Advertencia:** Reemplaza ambos marcadores. El `/32` debe corresponder a tu IP pública; no pegues aquí el contenido de llaves privadas.
   {: .lab-note .warning .compact}
@@ -595,7 +607,7 @@ Recuperar el proyecto activo, generar la llave si falta y proporcionar únicamen
   > **Salida esperada:** El archivo contiene el ID real y tu dirección pública con `/32`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} En **main/outputs.tf**, publica la referencia de la VM que crea el módulo.
+- {% include step_label.html id="s036" %} En **main/outputs.tf**, publica la referencia de la VM que crea el módulo.
 
   ```hcl
   output "vm_self_link" {
@@ -607,7 +619,7 @@ Recuperar el proyecto activo, generar la llave si falta y proporcionar únicamen
   > **Salida esperada:** Se declara el output `vm_self_link`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Debajo de `vm_self_link`**, crea un output llamado `vm_external_ip` que devuelva `module.vm.external_ip`.
+- {% include step_label.html id="s037" %} **Debajo de `vm_self_link`**, crea un output llamado `vm_external_ip` que devuelva `module.vm.external_ip`.
 
   > **Nota:** Consulta [Outputs de Terraform](https://developer.hashicorp.com/terraform/language/values/outputs). Es un bloque independiente, no una línea dentro del output anterior.
   {: .lab-note .info .compact}
@@ -622,18 +634,20 @@ Recuperar el proyecto activo, generar la llave si falta y proporcionar únicamen
 
 ## 🚀 Tarea 5. Validar, desplegar y acceder a la máquina virtual — 9 min
 
+{% assign tracking_task_id = "t005" %}
+
 Inicializarás Terraform dentro del root module, corregirás formato y sintaxis, revisarás el plan y crearás los recursos para comprobar la conexión SSH desde Git Bash.
 
 ### Tarea 5.1. Inicializar, formatear, validar, planificar y aplicar
 
 Ejecutar el ciclo básico de Terraform comprobando recursos y errores antes del despliegue real.
 
-- {% include step_label.html %} En **Git Bash**, situado en **lab2/main**, inicializa los proveedores y módulos.
+- {% include step_label.html id="s038" %} En **Git Bash**, situado en **lab2/main**, inicializa los proveedores y módulos.
 
   > **Salida esperada:** Termina con `Terraform has been successfully initialized!`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Aplica formato HCL a los archivos del root module y a ambos módulos locales.
+- {% include step_label.html id="s039" %} Aplica formato HCL a los archivos del root module y a ambos módulos locales.
 
   ```bash
   terraform fmt -recursive ..
@@ -642,12 +656,12 @@ Ejecutar el ciclo básico de Terraform comprobando recursos y errores antes del 
   > **Salida esperada:** Terraform informa de los archivos formateados o termina sin errores si ya tenían formato correcto.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Valida la estructura del proyecto.
+- {% include step_label.html id="s040" %} Valida la estructura del proyecto.
 
   > **Salida esperada:** Se muestra `Success! The configuration is valid.`
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Genera el plan y verifica el número de recursos antes de desplegar.
+- {% include step_label.html id="s041" %} Genera el plan y verifica el número de recursos antes de desplegar.
 
   > **Importante:** Se esperan cuatro recursos nuevos: VPC, subred, Firewall y VM. Si aparece una cantidad distinta o un error, revisa variables y archivos.
   {: .lab-note .important .compact}
@@ -659,7 +673,7 @@ Ejecutar el ciclo básico de Terraform comprobando recursos y errores antes del 
   > **Salida esperada:** El resumen indica `Plan: 4 to add, 0 to change, 0 to destroy`, si el proyecto estaba limpio.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Aplica el plan guardado y espera la confirmación de creación.
+- {% include step_label.html id="s042" %} Aplica el plan guardado y espera la confirmación de creación.
 
   > **Advertencia:** Esta acción crea recursos facturables. `terraform apply lab2.tfplan` aplica el plan guardado sin pedir `yes` de nuevo.
   {: .lab-note .warning .compact}
@@ -675,7 +689,7 @@ Ejecutar el ciclo básico de Terraform comprobando recursos y errores antes del 
 
 Verificar desde Git Bash que la VM está disponible y acepta la llave privada correspondiente a la pública instalada.
 
-- {% include step_label.html %} Consulta la IP externa desde el output del módulo raíz.
+- {% include step_label.html id="s043" %} Consulta la IP externa desde el output del módulo raíz.
 
   ```bash
   terraform output -raw vm_external_ip
@@ -684,7 +698,7 @@ Verificar desde Git Bash que la VM está disponible y acepta la llave privada co
   > **Salida esperada:** Se imprime una IPv4 pública asignada a `lab2-vm`.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Conéctate desde **Git Bash** mediante la llave privada; revisa la huella SSH antes de aceptarla.
+- {% include step_label.html id="s044" %} Conéctate desde **Git Bash** mediante la llave privada; revisa la huella SSH antes de aceptarla.
 
   > **Importante:** Si tu organización obliga OS Login o bloquea metadatos SSH, esta variante del laboratorio debe adaptarse a su política.
   {: .lab-note .important .compact}
@@ -697,7 +711,7 @@ Verificar desde Git Bash que la VM está disponible y acepta la llave privada co
   > **Salida esperada:** El prompt cambia al shell Linux de `lab2-vm`; confirma la huella solo si corresponde a la VM creada.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} **Dentro de la VM Linux**, consulta el sistema operativo y después cierra SSH.
+- {% include step_label.html id="s045" %} **Dentro de la VM Linux**, consulta el sistema operativo y después cierra SSH.
 
   ```bash
   cat /etc/os-release | head -n 3
@@ -715,13 +729,15 @@ Verificar desde Git Bash que la VM está disponible y acepta la llave privada co
 
 ## 🧹 Tarea 6. Verificar el estado y eliminar los recursos — 5 min
 
+{% assign tracking_task_id = "t006" %}
+
 Revisarás los outputs y la consistencia del estado local, destruirás los recursos para evitar costos y conservarás el código modular para futuras prácticas.
 
 ### Tarea 6.1. Inspeccionar los recursos administrados
 
 Confirmar qué recursos administra el estado actual y que no existan cambios pendientes tras el despliegue.
 
-- {% include step_label.html %} En **Git Bash**, desde **lab2/main**, enumera los recursos incluidos en el estado.
+- {% include step_label.html id="s046" %} En **Git Bash**, desde **lab2/main**, enumera los recursos incluidos en el estado.
 
   ```bash
   terraform state list
@@ -730,7 +746,7 @@ Confirmar qué recursos administra el estado actual y que no existan cambios pen
   > **Salida esperada:** Se listan cuatro direcciones: una VM y tres recursos de red dentro de los módulos.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Consulta los outputs y comprueba que Terraform no tiene cambios pendientes.
+- {% include step_label.html id="s047" %} Consulta los outputs y comprueba que Terraform no tiene cambios pendientes.
 
   > **Nota:** El código de salida 0 significa sin cambios; 2 significa cambios previstos y 1 significa error.
   {: .lab-note .info .compact}
@@ -747,7 +763,7 @@ Confirmar qué recursos administra el estado actual y que no existan cambios pen
 
 Eliminar los recursos creados sin borrar la estructura ni el código de los módulos locales.
 
-- {% include step_label.html %} Ejecuta **terraform destroy** desde `lab2/main` y confirma escribiendo `yes` cuando se solicite.
+- {% include step_label.html id="s048" %} Ejecuta **terraform destroy** desde `lab2/main` y confirma escribiendo `yes` cuando se solicite.
 
   > **Advertencia:** Elimina únicamente los recursos administrados por el estado de este directorio. No ejecutes el comando en `lab1`.
   {: .lab-note .warning .compact}
@@ -759,7 +775,7 @@ Eliminar los recursos creados sin borrar la estructura ni el código de los mód
   > **Salida esperada:** Terraform muestra `Destroy complete! Resources: 4 destroyed.` en un despliegue completo.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Comprueba que Terraform ya no gestiona recursos de esta práctica.
+- {% include step_label.html id="s049" %} Comprueba que Terraform ya no gestiona recursos de esta práctica.
 
   ```bash
   terraform state list
@@ -768,7 +784,7 @@ Eliminar los recursos creados sin borrar la estructura ni el código de los mód
   > **Salida esperada:** No aparece ningún recurso activo en la lista del estado.
   {: .lab-note .output .compact}
 
-- {% include step_label.html %} Elimina el plan temporal guardado; conserva los archivos `.tf`, la llave y la estructura modular.
+- {% include step_label.html id="s050" %} Elimina el plan temporal guardado; conserva los archivos `.tf`, la llave y la estructura modular.
 
   ```bash
   rm -f lab2.tfplan

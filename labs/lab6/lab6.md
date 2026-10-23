@@ -1,4 +1,8 @@
 ---
+course_id: terrgcpint
+lab_id: l006
+tracking: true
+position: 6
 layout: lab
 title: "Práctica 6: Crear múltiples subredes y validar valores de entrada"
 permalink: /lab6/lab6/
@@ -45,6 +49,8 @@ next: /lab7/lab7/
 
 ## 🔎 Tarea 1. Preparar directorio y verificar el entorno GCP — 5 min
 
+{% assign tracking_task_id = "t001" %}
+
 Organizarás la carpeta `lab6` dentro del directorio principal del curso y confirmarás que Terraform y Google Cloud CLI apuntan al proyecto correcto. Esta preparación evita modificar accidentalmente la infraestructura de otras prácticas.
 
 
@@ -53,7 +59,7 @@ Organizarás la carpeta `lab6` dentro del directorio principal del curso y confi
 Preparar un directorio independiente para no modificar los recursos de prácticas anteriores.
 
 
-- {% include step_label.html %} En **VS Code**, abre el directorio principal del curso con las siguientes opciones. Comprueba la carpeta elegida antes de crear nuevos archivos.
+- {% include step_label.html id="s001" %} En **VS Code**, abre el directorio principal del curso con las siguientes opciones. Comprueba la carpeta elegida antes de crear nuevos archivos.
 
   > **Nota:** No abras `lab5`; el laboratorio tendrá su propio estado local.
   {: .lab-note .info .compact}
@@ -69,7 +75,7 @@ Preparar un directorio independiente para no modificar los recursos de práctica
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Abre una terminal integrada y comprueba que sea **Git Bash** antes de pegar comandos de Linux.
+- {% include step_label.html id="s002" %} Abre una terminal integrada y comprueba que sea **Git Bash** antes de pegar comandos de Linux.
 
   > **Nota:** Todos los comandos bash se ejecutarán dentro de la terminal integrada.
   {: .lab-note .info .compact}
@@ -82,7 +88,7 @@ Preparar un directorio independiente para no modificar los recursos de práctica
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En **Git Bash**, crea `lab6` y los archivos del ejercicio.
+- {% include step_label.html id="s003" %} En **Git Bash**, crea `lab6` y los archivos del ejercicio.
 
 
   ```bash
@@ -104,7 +110,7 @@ Preparar un directorio independiente para no modificar los recursos de práctica
 Validar el contexto para evitar crear recursos en un proyecto incorrecto.
 
 
-- {% include step_label.html %} Comprueba las versiones instaladas de Terraform y gcloud.
+- {% include step_label.html id="s004" %} Comprueba las versiones instaladas de Terraform y gcloud.
 
 
   ```bash
@@ -116,7 +122,7 @@ Validar el contexto para evitar crear recursos en un proyecto incorrecto.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Consulta la cuenta y el proyecto configurados; confirma que pertenecen al curso.
+- {% include step_label.html id="s005" %} Consulta la cuenta y el proyecto configurados; confirma que pertenecen al curso.
 
 
   ```bash
@@ -128,7 +134,7 @@ Validar el contexto para evitar crear recursos en un proyecto incorrecto.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Guarda y verifica el Project ID activo; comprueba que la API de Compute esté habilitada.
+- {% include step_label.html id="s006" %} Guarda y verifica el Project ID activo; comprueba que la API de Compute esté habilitada.
 
 
   ```bash
@@ -149,6 +155,8 @@ Validar el contexto para evitar crear recursos en un proyecto incorrecto.
 
 ## 🔎 Tarea 2. Definir variables y reglas de validación — 12 min
 
+{% assign tracking_task_id = "t002" %}
+
 Declararás variables tipadas y reglas `validation` para controlar nombres, regiones, tipos y rangos CIDR. Probarás estas restricciones posteriormente, antes de crear infraestructura y generar costos.
 
 
@@ -157,7 +165,7 @@ Declararás variables tipadas y reglas `validation` para controlar nombres, regi
 Crear variables sencillas y una validación de región.
 
 
-- {% include step_label.html %} En `lab6/providers.tf`, configura Terraform y Google Provider.
+- {% include step_label.html id="s007" %} En `lab6/providers.tf`, configura Terraform y Google Provider.
 
 
   ```hcl
@@ -182,7 +190,7 @@ Crear variables sencillas y una validación de región.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `lab6/variables.tf`, crea la variable obligatoria `project_id` y `network_name`.
+- {% include step_label.html id="s008" %} En `lab6/variables.tf`, crea la variable obligatoria `project_id` y `network_name`.
 
 
   ```hcl
@@ -211,7 +219,7 @@ Crear variables sencillas y una validación de región.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Debajo de `network_name`, crea la variable `region` mediante una **construcción dirigida**.
+- {% include step_label.html id="s009" %} Debajo de `network_name`, crea la variable `region` mediante una **construcción dirigida**.
 
   > **Importante:** Declara `region` al nivel raíz del archivo, debajo del cierre de `network_name`.
   {: .lab-note .important .compact}
@@ -228,7 +236,7 @@ Crear variables sencillas y una validación de región.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Guarda `providers.tf` y `variables.tf` con **Ctrl+S**. Revisa el panel **Problems** de VS Code y verifica que no haya llaves sin cerrar ni variables duplicadas; no confundas las advertencias del editor con una validación definitiva de Terraform.
+- {% include step_label.html id="s010" %} Guarda `providers.tf` y `variables.tf` con **Ctrl+S**. Revisa el panel **Problems** de VS Code y verifica que no haya llaves sin cerrar ni variables duplicadas; no confundas las advertencias del editor con una validación definitiva de Terraform.
 
 
   > **Nota:** Terraform realizará la comprobación efectiva con `terraform validate` más adelante.
@@ -243,7 +251,7 @@ Crear variables sencillas y una validación de región.
 Usar `map(object)` y controles de formato, tipo y duplicados.
 
 
-- {% include step_label.html %} Al final de `variables.tf`, agrega una variable `subnets` que acepte un mapa de objetos.
+- {% include step_label.html id="s011" %} Al final de `variables.tf`, agrega una variable `subnets` que acepte un mapa de objetos.
 
   > **Importante:** Deja abierto este bloque `variable "subnets"` mientras añades las validaciones siguientes.
   {: .lab-note .important .compact}
@@ -261,7 +269,7 @@ Usar `map(object)` y controles de formato, tipo y duplicados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Dentro de `subnets`, agrega una validación de nombres y cantidad de elementos.
+- {% include step_label.html id="s012" %} Dentro de `subnets`, agrega una validación de nombres y cantidad de elementos.
 
 
   ```hcl
@@ -279,7 +287,7 @@ Usar `map(object)` y controles de formato, tipo y duplicados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Dentro de `subnets`, construye una validación para `tipo` **sin copiar un bloque completo**.
+- {% include step_label.html id="s013" %} Dentro de `subnets`, construye una validación para `tipo` **sin copiar un bloque completo**.
 
 
   **Requisitos:**
@@ -295,7 +303,7 @@ Usar `map(object)` y controles de formato, tipo y duplicados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Agrega una validación del formato IPv4/CIDR utilizando `can(cidrhost(...))`.
+- {% include step_label.html id="s014" %} Agrega una validación del formato IPv4/CIDR utilizando `can(cidrhost(...))`.
 
   > **Nota:** `cidrhost` comprueba que el prefijo sea interpretable; la expresión regular limita la entrada a notación IPv4.
   {: .lab-note .info .compact}
@@ -315,7 +323,7 @@ Usar `map(object)` y controles de formato, tipo y duplicados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Agrega una validación de CIDR repetidos y cierra `variable "subnets"`.
+- {% include step_label.html id="s015" %} Agrega una validación de CIDR repetidos y cierra `variable "subnets"`.
 
   > **Advertencia:** Esta validación detecta duplicados exactos; no identifica todos los rangos CIDR parcialmente superpuestos.
   {: .lab-note .warning .compact}
@@ -339,7 +347,7 @@ Usar `map(object)` y controles de formato, tipo y duplicados.
 Asignar CIDR diferentes y clasificación lógica public/private.
 
 
-- {% include step_label.html %} En `lab6/terraform.tfvars`, define el proyecto del curso y la región; sustituye `TU_PROJECT_ID`.
+- {% include step_label.html id="s016" %} En `lab6/terraform.tfvars`, define el proyecto del curso y la región; sustituye `TU_PROJECT_ID`.
 
 
   ```hcl
@@ -353,7 +361,7 @@ Asignar CIDR diferentes y clasificación lógica public/private.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Debajo de `network_name`, define `subnets` con frontend y backend.
+- {% include step_label.html id="s017" %} Debajo de `network_name`, define `subnets` con frontend y backend.
 
 
   ```hcl
@@ -374,7 +382,7 @@ Asignar CIDR diferentes y clasificación lógica public/private.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba en `terraform.tfvars` que ambos registros tengan valores diferentes antes de guardar con **Ctrl+S**.
+- {% include step_label.html id="s018" %} Comprueba en `terraform.tfvars` que ambos registros tengan valores diferentes antes de guardar con **Ctrl+S**.
 
   > **Nota:** La clasificación `public` y `private` es una etiqueta lógica para filtrar recursos; GCP no asigna esa propiedad a las subredes.
   {: .lab-note .info .compact}
@@ -396,6 +404,8 @@ Asignar CIDR diferentes y clasificación lógica public/private.
 
 ## 🔎 Tarea 3. Implementar infraestructura dinámica de red — 10 min
 
+{% assign tracking_task_id = "t003" %}
+
 Construirás una VPC personalizada y generarás dos subredes a partir de un solo bloque `for_each`. Agregarás una regla Firewall condicional y outputs que permitan inspeccionar los recursos sin duplicar configuraciones.
 
 
@@ -404,7 +414,7 @@ Construirás una VPC personalizada y generarás dos subredes a partir de un solo
 Usar una red personalizada sin crear automáticamente subredes.
 
 
-- {% include step_label.html %} En `lab6/main.tf`, crea una VPC personalizada `google_compute_network.vpc`.
+- {% include step_label.html id="s019" %} En `lab6/main.tf`, crea una VPC personalizada `google_compute_network.vpc`.
 
 
   ```hcl
@@ -420,14 +430,14 @@ Usar una red personalizada sin crear automáticamente subredes.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Confirma que la VPC utiliza `var.network_name` y tiene `auto_create_subnetworks = false`.
+- {% include step_label.html id="s020" %} Confirma que la VPC utiliza `var.network_name` y tiene `auto_create_subnetworks = false`.
 
 
   > **Salida esperada:** La VPC tiene `auto_create_subnetworks = false`, por lo que únicamente existirán las subredes declaradas explícitamente.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `main.tf`, deja una línea en blanco después del cierre de la VPC para insertar el bloque de subredes.
+- {% include step_label.html id="s021" %} En `main.tf`, deja una línea en blanco después del cierre de la VPC para insertar el bloque de subredes.
 
   > **Nota:** La siguiente configuración va al nivel raíz, nunca dentro de la VPC.
   {: .lab-note .info .compact}
@@ -441,7 +451,7 @@ Usar una red personalizada sin crear automáticamente subredes.
 Crear dos recursos a partir de un mapa sin duplicar bloques.
 
 
-- {% include step_label.html %} Debajo de la VPC, inicia un recurso `google_compute_subnetwork.subnets`.
+- {% include step_label.html id="s022" %} Debajo de la VPC, inicia un recurso `google_compute_subnetwork.subnets`.
 
   > **Importante:** El bloque está incompleto deliberadamente: `each.key` todavía requiere `for_each`.
   {: .lab-note .important .compact}
@@ -459,7 +469,7 @@ Crear dos recursos a partir de un mapa sin duplicar bloques.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Dentro del bloque de subredes, agrega `for_each` como **construcción dirigida**.
+- {% include step_label.html id="s023" %} Dentro del bloque de subredes, agrega `for_each` como **construcción dirigida**.
 
 
   **Requisitos:**
@@ -474,7 +484,7 @@ Crear dos recursos a partir de un mapa sin duplicar bloques.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Verifica que `network` se asocie con `google_compute_network.vpc.id` y no con otra VPC.
+- {% include step_label.html id="s024" %} Verifica que `network` se asocie con `google_compute_network.vpc.id` y no con otra VPC.
 
 
   > **Nota:** El recurso crea automáticamente la dependencia entre subredes y VPC.
@@ -484,7 +494,7 @@ Crear dos recursos a partir de un mapa sin duplicar bloques.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Identifica cómo Terraform nombrará cada subred: `lab6-frontend` y `lab6-backend`.
+- {% include step_label.html id="s025" %} Identifica cómo Terraform nombrará cada subred: `lab6-frontend` y `lab6-backend`.
 
 
   > **Salida esperada:** Durante `terraform plan` aparecerán `google_compute_subnetwork.subnets["frontend"]` y `google_compute_subnetwork.subnets["backend"]`.
@@ -496,7 +506,7 @@ Crear dos recursos a partir de un mapa sin duplicar bloques.
 Configurar una regla condicional con origen y destino limitados.
 
 
-- {% include step_label.html %} Debajo del recurso subredes, declara `locals` y construye `public_subnets` mediante un filtro **dirigido**.
+- {% include step_label.html id="s026" %} Debajo del recurso subredes, declara `locals` y construye `public_subnets` mediante un filtro **dirigido**.
 
 
   **Requisitos:**
@@ -512,7 +522,7 @@ Configurar una regla condicional con origen y destino limitados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Al final de `main.tf`, crea un Firewall condicional para cada entrada de `local.public_subnets`.
+- {% include step_label.html id="s027" %} Al final de `main.tf`, crea un Firewall condicional para cada entrada de `local.public_subnets`.
 
 
   ```hcl
@@ -539,7 +549,7 @@ Configurar una regla condicional con origen y destino limitados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Verifica la diferencia entre origen y destino de la regla Firewall.
+- {% include step_label.html id="s028" %} Verifica la diferencia entre origen y destino de la regla Firewall.
 
 
   > **Importante:** `source_ranges` limita IPs de origen y `destination_ranges` limita IPs de destino. Las reglas VPC se aplican a la red, no se adjuntan directamente a subredes.
@@ -552,7 +562,7 @@ Configurar una regla condicional con origen y destino limitados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `outputs.tf`, agrega nombres de VPC y Firewall condicional para inspección.
+- {% include step_label.html id="s029" %} En `outputs.tf`, agrega nombres de VPC y Firewall condicional para inspección.
 
 
   ```hcl
@@ -572,7 +582,7 @@ Configurar una regla condicional con origen y destino limitados.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} En `outputs.tf`, agrega el output `subnets` como **construcción dirigida**.
+- {% include step_label.html id="s030" %} En `outputs.tf`, agrega el output `subnets` como **construcción dirigida**.
 
 
   **Requisitos:**
@@ -596,6 +606,8 @@ Configurar una regla condicional con origen y destino limitados.
 
 ## 🔎 Tarea 4. Validar configuraciones y desplegar recursos — 9 min
 
+{% assign tracking_task_id = "t004" %}
+
 Ejecutarás pruebas negativas de `validation` con valores inválidos y después restaurarás la configuración. Cuando Terraform confirme que el plan es correcto, desplegarás cuatro recursos y verificarás sus atributos con `gcloud`.
 
 
@@ -604,7 +616,7 @@ Ejecutarás pruebas negativas de `validation` con valores inválidos y después 
 Verificar la sintaxis y rechazar valores inválidos antes del despliegue.
 
 
-- {% include step_label.html %} En `lab6`, inicializa Terraform y da formato a todos los archivos HCL.
+- {% include step_label.html id="s031" %} En `lab6`, inicializa Terraform y da formato a todos los archivos HCL.
 
 
   ```bash
@@ -617,7 +629,7 @@ Verificar la sintaxis y rechazar valores inválidos antes del despliegue.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Comprueba estructura y sintaxis ejecutando `terraform validate`.
+- {% include step_label.html id="s032" %} Comprueba estructura y sintaxis ejecutando `terraform validate`.
 
 
   ```bash
@@ -629,7 +641,7 @@ Verificar la sintaxis y rechazar valores inválidos antes del despliegue.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Prueba una región no permitida sin editar archivos; espera un error de `validation`.
+- {% include step_label.html id="s033" %} Prueba una región no permitida sin editar archivos; espera un error de `validation`.
 
 
   ```bash
@@ -641,7 +653,7 @@ Verificar la sintaxis y rechazar valores inválidos antes del despliegue.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Prueba un valor `tipo` incorrecto editando temporalmente `terraform.tfvars`, luego restaura el valor.
+- {% include step_label.html id="s034" %} Prueba un valor `tipo` incorrecto editando temporalmente `terraform.tfvars`, luego restaura el valor.
 
 
   En `lab6/terraform.tfvars`, cambia únicamente `frontend.tipo` de `"public"` a `"externa"`. Ejecuta:
@@ -659,7 +671,7 @@ Verificar la sintaxis y rechazar valores inválidos antes del despliegue.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Prueba un CIDR inválido y vuelve al valor original.
+- {% include step_label.html id="s035" %} Prueba un CIDR inválido y vuelve al valor original.
 
 
   En `terraform.tfvars`, cambia temporalmente `frontend.cidr` a `"10.60.999.0/24"` y ejecuta:
@@ -679,7 +691,7 @@ Verificar la sintaxis y rechazar valores inválidos antes del despliegue.
 Crear cuatro recursos y comprobar las subredes y la regla Firewall.
 
 
-- {% include step_label.html %} Con todos los valores restaurados, ejecuta `terraform plan` y revisa los recursos esperados.
+- {% include step_label.html id="s036" %} Con todos los valores restaurados, ejecuta `terraform plan` y revisa los recursos esperados.
 
 
   ```bash
@@ -692,7 +704,7 @@ Crear cuatro recursos y comprobar las subredes y la regla Firewall.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Despliega la infraestructura desde **Git Bash** y confirma el resultado.
+- {% include step_label.html id="s037" %} Despliega la infraestructura desde **Git Bash** y confirma el resultado.
 
 
   ```bash
@@ -704,7 +716,7 @@ Crear cuatro recursos y comprobar las subredes y la regla Firewall.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Consulta outputs y estado Terraform para comprobar los cuatro recursos.
+- {% include step_label.html id="s038" %} Consulta outputs y estado Terraform para comprobar los cuatro recursos.
 
 
   ```bash
@@ -717,7 +729,7 @@ Crear cuatro recursos y comprobar las subredes y la regla Firewall.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Valida los recursos con gcloud en el proyecto asignado.
+- {% include step_label.html id="s039" %} Valida los recursos con gcloud en el proyecto asignado.
 
 
   ```bash
@@ -739,6 +751,8 @@ Crear cuatro recursos y comprobar las subredes y la regla Firewall.
 
 ## 🔎 Tarea 5. Eliminar recursos y verificar limpieza — 4 min
 
+{% assign tracking_task_id = "t005" %}
+
 Eliminarás únicamente los recursos creados en `lab6` y verificarás tanto el estado local como el proyecto GCP. La inspección del plan de destrucción es obligatoria para evitar afectar otras prácticas.
 
 
@@ -747,7 +761,7 @@ Eliminarás únicamente los recursos creados en `lab6` y verificarás tanto el e
 Confirmar que la configuración es válida y evitar eliminar infraestructura de otras prácticas.
 
 
-- {% include step_label.html %} Confirma desde Git Bash que sigues en el directorio `lab6` y revisa recursos administrados.
+- {% include step_label.html id="s040" %} Confirma desde Git Bash que sigues en el directorio `lab6` y revisa recursos administrados.
 
 
   ```bash
@@ -760,7 +774,7 @@ Confirmar que la configuración es válida y evitar eliminar infraestructura de 
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Ejecuta `terraform destroy` y confirma `yes` después de revisar el plan.
+- {% include step_label.html id="s041" %} Ejecuta `terraform destroy` y confirma `yes` después de revisar el plan.
 
 
   ```bash
@@ -777,7 +791,7 @@ Confirmar que la configuración es válida y evitar eliminar infraestructura de 
 Comprobar el estado Terraform y consultar el proyecto GCP.
 
 
-- {% include step_label.html %} Comprueba que el estado Terraform ya no tenga recursos administrados.
+- {% include step_label.html id="s042" %} Comprueba que el estado Terraform ya no tenga recursos administrados.
 
 
   ```bash
@@ -789,7 +803,7 @@ Comprobar el estado Terraform y consultar el proyecto GCP.
   {: .lab-note .output .compact}
 
 
-- {% include step_label.html %} Verifica en GCP que la VPC y la regla firewall de lab6 ya no existan.
+- {% include step_label.html id="s043" %} Verifica en GCP que la VPC y la regla firewall de lab6 ya no existan.
 
 
   ```bash
