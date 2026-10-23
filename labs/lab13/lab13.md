@@ -7,7 +7,7 @@ layout: lab
 title: "Práctica 13: Crear un wrapper básico con Terragrunt"
 permalink: /lab13/lab13/
 images_base: /labs/lab13/img
-duration: "25 minutos"
+duration: "26 minutos"
 objective:
   - "Crear un módulo Terraform reutilizable para Cloud Storage y administrarlo mediante Terragrunt desde tres entornos lógicos, con configuración compartida y estado local independiente."
   - "Planificar, desplegar, verificar y destruir los buckets de dev, test y prod sin afectar recursos de otras prácticas."
