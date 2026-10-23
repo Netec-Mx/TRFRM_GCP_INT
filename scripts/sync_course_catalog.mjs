@@ -409,6 +409,8 @@ async function loadSnapshots(
     const snapshotFile =
       resolve(
         rootDir,
+        'labcontrol',
+        catalog.courseId,
         relativePath,
       );
 
