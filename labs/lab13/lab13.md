@@ -625,6 +625,9 @@ Corroborar en Terraform y Google Cloud que solo quedaron archivos fuente del lab
   > **Salida esperada:** Los tres buckets de la práctica ya no existen; los cuatro archivos fuente del módulo permanecen disponibles.
   {: .lab-note .output .compact}
 
+
+- {% include step_label.html id="s033" %} **Prueba temporal de versionado:** confirma que el laboratorio conserva su configuración final.
+
 {% assign results = site.data.task-results[page.slug].results %}
 {% capture r5 %}{{ results[4] }}{% endcapture %}
 {% include task-result.html title="Tarea finalizada" content=r5 %}
