@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "code": "TRFRM_GCP_INT",
+  "trackingId": "terrgcpint",
+  "name": "Terraform en Google Cloud: Nivel intermedio",
+  "description": "Implementa infraestructura en Google Cloud con Terraform utilizando módulos, estado remoto, Workspaces y prácticas de gestión de infraestructura como código."
+}
