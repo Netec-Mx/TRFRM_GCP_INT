@@ -80,10 +80,32 @@ jobs:
           JEKYLL_ENV: production
         run: bundle exec jekyll build --trace
 
+      - name: Package GitHub Pages artifact
+        shell: bash
+        run: |
+          tar --dereference --hard-dereference \
+            -C ./_site \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=".[^/]*" \
+            -cf "$RUNNER_TEMP/artifact.tar" .
+
+          if [ -d ./_site/.well-known ]; then
+            tar --append \
+              -f "$RUNNER_TEMP/artifact.tar" \
+              -C ./_site .well-known
+          fi
+
+          tar -tf "$RUNNER_TEMP/artifact.tar" |
+            grep -F '.well-known/labcontrol-course-link.txt'
+
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
-          path: ./_site
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
 
   deploy:
     needs: build
