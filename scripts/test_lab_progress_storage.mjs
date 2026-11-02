@@ -295,6 +295,7 @@ function createBrowser({
   courseId,
   labId = 'l001',
   localStorage,
+  demoSessionId = null,
 } = {}) {
   const document =
     new FakeEventTarget();
@@ -370,6 +371,19 @@ function createBrowser({
     pathname:
       '/lab1/lab1/',
   };
+
+  if (demoSessionId) {
+    window.LabControlDemo = {
+      isActive: () => true,
+      getProgressKey: (courseId, labId) =>
+        [
+          'netec:instructorDemoProgress',
+          demoSessionId,
+          courseId || 'legacy',
+          labId,
+        ].join(':'),
+    };
+  }
 
   window.innerHeight =
     1000;
@@ -584,6 +598,135 @@ await test(
       courseAKey !==
         courseBKey,
       'Los cursos no deben compartir la misma clave.',
+    );
+  },
+);
+
+await test(
+  'el instructor conserva progreso aislado del participante',
+  async () => {
+    const courseId = 'terrgcpint';
+    const labId = 'l001';
+
+    const participantKey =
+      `netec:stepProgress:${courseId}:${labId}`;
+
+    const instructorKey =
+      `netec:instructorDemoProgress:session-157:${courseId}:${labId}`;
+
+    const originalParticipantState = JSON.stringify({
+      version: 1,
+      completed: ['s002'],
+      updatedAt: 123,
+    });
+
+    const storage = new MemoryStorage({
+      [participantKey]: originalParticipantState,
+    });
+
+    const browser = createBrowser({
+      courseId,
+      labId,
+      localStorage: storage,
+      demoSessionId: 'session-157',
+    });
+
+    const step = browser.steps[0];
+    const click = step.listeners.get('click');
+
+    assert(
+      typeof click === 'function',
+      'No se registró el evento click del paso.',
+    );
+
+    click({
+      preventDefault() {},
+      stopPropagation() {},
+    });
+
+    const stored = storage.getItem(instructorKey);
+
+    assert(
+      stored !== null,
+      'No se guardó progreso del instructor.',
+    );
+
+    const state = JSON.parse(stored);
+
+    assert(
+      state.completed.includes('s001'),
+      'El paso marcado no aparece en el progreso del instructor.',
+    );
+
+    assert(
+      storage.getItem(participantKey) === originalParticipantState,
+      'El progreso del participante fue modificado.',
+    );
+
+    // Desmarcar el paso.
+    click({
+      preventDefault() {},
+      stopPropagation() {},
+    });
+
+    const unmarked = JSON.parse(
+      storage.getItem(instructorKey),
+    );
+
+    assert(
+      !unmarked.completed.includes('s001'),
+      'El instructor no pudo desmarcar el paso.',
+    );
+
+    // Volver a marcarlo.
+    click({
+      preventDefault() {},
+      stopPropagation() {},
+    });
+
+    // Simular una recarga con el mismo localStorage.
+    const reloaded = createBrowser({
+      courseId,
+      labId,
+      localStorage: storage,
+      demoSessionId: 'session-157',
+    });
+
+    const recovered = JSON.parse(
+      storage.getItem(instructorKey),
+    );
+
+    assert(
+      recovered.completed.includes('s001'),
+      'La marca del instructor no sobrevivió a la recarga.',
+    );
+
+    assert(
+      reloaded.steps.length === 2,
+      'No se inicializaron los pasos tras la recarga.',
+    );
+
+    const restoredStep = reloaded.steps[0];
+
+    assert(
+      restoredStep.attributes.get('aria-pressed') === 'true',
+      'La interfaz no restauró el paso como completado.',
+    );
+
+    assert(
+      restoredStep.attributes.get('title') ===
+        'Marcar este paso como pendiente',
+      'La interfaz no restauró la acción de desmarcado.',
+    );
+
+    assert(
+      reloaded.steps[1].attributes.get('aria-pressed') === 'false',
+      'La interfaz marcó incorrectamente un paso pendiente.',
+    );
+
+    assert(
+      storage.getItem(participantKey) === originalParticipantState,
+      'La demostración alteró el progreso del participante.',
     );
   },
 );

@@ -86,6 +86,15 @@
     courseId,
     labId
   ) {
+    const demoKey =
+      window.LabControlDemo?.getProgressKey(
+        courseId,
+        labId
+      );
+
+    if (demoKey) {
+      return demoKey;
+    }
     /*
      * En Labs con tracking, courseId + labId forman
      * la identidad local estable.
@@ -139,7 +148,8 @@
      */
     if (
       !stored &&
-      courseId
+      courseId &&
+      !window.LabControlDemo?.isActive()
     ) {
       const legacyKey =
         getLegacyStorageKey(

@@ -219,6 +219,17 @@
   }
 
   function applyLabControlNavigation() {
+    /*
+     * En modo demostración conservamos Atrás,
+     * Siguiente y Lista General.
+     *
+     * La navegación oficial del participante
+     * permanece sin modificaciones.
+     */
+    if (window.LabControlDemo?.isActive()) {
+      return;
+    }
+
     const returnUrl =
       sessionStorage.getItem(
         RETURN_URL_KEY
@@ -957,9 +968,40 @@
       return;
     }
 
-    captureAccessContextFromHash();
+    /*
+     * El contexto de demostración debe permanecer
+     * disponible para el almacenamiento local aislado.
+     * No capturar lab-return como retorno de participante.
+     */
+    if (!window.LabControlDemo?.isActive()) {
+      captureAccessContextFromHash();
+    }
 
     applyLabControlNavigation();
+
+    /*
+     * El instructor usa lab-progress.js con almacenamiento
+     * aislado. Nunca sincronizamos sus marcas con la API.
+     */
+    if (window.LabControlDemo?.isActive()) {
+      /*
+       * Mantener el contexto de demostración al navegar
+       * entre laboratorios, sin sincronizar con la API.
+       */
+      window.LabControlDemo.propagateNavigation();
+
+      /*
+       * Mostrar el regreso a Lab Control exclusivamente
+       * durante la demostración del instructor.
+       */
+      window.LabControlDemo.renderReturnLink();
+
+      /*
+       * No utilizar ni modificar tokens de participantes.
+       * No iniciar tracking, heartbeat ni sincronización.
+       */
+      return;
+    }
 
     observeProgressChanges(
       root,
